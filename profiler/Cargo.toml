@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+prost = "0.12"
+# Only necessary if using Protobuf well-known types:
+prost-types = "0.12"
