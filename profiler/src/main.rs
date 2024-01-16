@@ -1,16 +1,15 @@
-use std::{path::Path, io::{BufReader, BufWriter, Write, BufRead, Read}, fs::File};
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::Path,
+};
 
-use bytes::{BytesMut, BufMut, Buf};
+use bytes::{Buf, BytesMut};
 use flate2::{bufread::GzEncoder, Compression};
-use profile_builder::{build_profile, perftools::profiles::Profile};
+use profile_builder::build_profile;
 use prost::Message;
 
 mod profile_builder;
-
-
-enum SampleType {
-    ContractCall
-}
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 struct FunctionName(String);
@@ -19,30 +18,30 @@ struct Location(Vec<FunctionName>);
 
 impl Location {
     #[inline]
-    fn from(s: &Vec<&str>) -> Location {
+    fn from(s: &[&str]) -> Location {
         Location(s.iter().map(|s| FunctionName(s.to_string())).collect())
     }
+}
+
+enum SampleType {
+    ContractCall,
 }
 
 pub struct Sample {
     location: Location,
     sample_type: SampleType,
-    count: u64,
 }
-
 
 fn main() {
     let samples = vec![
         Sample {
-            location: Location::from(&vec!["A"]),
+            location: Location::from(&["A"]),
             sample_type: SampleType::ContractCall,
-            count: 1
         },
         Sample {
-            location: Location::from(&vec!["A", "B"]),
+            location: Location::from(&["A", "B"]),
             sample_type: SampleType::ContractCall,
-            count: 1
-        }
+        },
     ];
 
     let profile = build_profile(samples);
@@ -52,10 +51,10 @@ fn main() {
 
     let mut buffer = BytesMut::new();
     profile.encode(&mut buffer).unwrap();
-    
+
     let mut buffer_reader = buffer.reader();
     let mut encoder = GzEncoder::new(&mut buffer_reader, Compression::default());
-    
+
     let mut encoded = vec![];
     encoder.read_to_end(&mut encoded).unwrap();
     file.write_all(&encoded).unwrap();
