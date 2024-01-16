@@ -9,3 +9,8 @@ edition = "2021"
 prost = "0.12"
 # Only necessary if using Protobuf well-known types:
 prost-types = "0.12"
+bytes = "1.5.0"
+flate2 = "1.0.28"
+
+[build-dependencies]
+prost-build = { version = "0.12" }
