@@ -16,7 +16,7 @@ mod trace_data;
 mod trace_reader;
 
 fn main() {
-    let trace_path = Path::new("./trace");
+    let trace_path = Path::new("./trace.json");
 
     let data = fs::read_to_string(trace_path).expect("Failed to write call trace to a file");
     let serialized_trace: CallTrace =
