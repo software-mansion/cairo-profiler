@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{self, File},
     io::{Read, Write},
     path::Path,
 };
@@ -8,41 +8,21 @@ use bytes::{Buf, BytesMut};
 use flate2::{bufread::GzEncoder, Compression};
 use profile_builder::build_profile;
 use prost::Message;
+use trace_data::CallTrace;
+use trace_reader::collect_samples_from_trace;
 
 mod profile_builder;
-
-#[derive(Clone, Hash, Eq, PartialEq)]
-struct FunctionName(String);
-#[derive(Clone, Hash, Eq, PartialEq)]
-struct Location(Vec<FunctionName>);
-
-impl Location {
-    #[inline]
-    fn from(s: &[&str]) -> Location {
-        Location(s.iter().map(|s| FunctionName(s.to_string())).collect())
-    }
-}
-
-enum SampleType {
-    ContractCall,
-}
-
-pub struct Sample {
-    location: Location,
-    sample_type: SampleType,
-}
+mod trace_data;
+mod trace_reader;
 
 fn main() {
-    let samples = vec![
-        Sample {
-            location: Location::from(&["A"]),
-            sample_type: SampleType::ContractCall,
-        },
-        Sample {
-            location: Location::from(&["A", "B"]),
-            sample_type: SampleType::ContractCall,
-        },
-    ];
+    let trace_path = Path::new("./trace");
+
+    let data = fs::read_to_string(trace_path).expect("Failed to write call trace to a file");
+    let serialized_trace: CallTrace =
+        serde_json::from_str(&data).expect("Failed to read call trace");
+
+    let samples = collect_samples_from_trace(&serialized_trace);
 
     let profile = build_profile(samples);
 
