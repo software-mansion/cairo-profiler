@@ -21,6 +21,9 @@ pub struct CallEntryPoint {
     pub caller_address: ContractAddress,
     pub call_type: CallType,
     pub initial_gas: u64,
+
+    /// Contract name to display instead of contract address
+    pub contract_name: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, Deserialize, Serialize)]
@@ -29,19 +32,3 @@ pub enum CallType {
     Call = 0,
     Delegate = 1,
 }
-
-// pub fn save_trace_data(summary: &TestCaseSummary<Single>) {
-//     if let TestCaseSummary::Passed {
-//         name, trace_data, ..
-//     } = summary
-//     {
-//         let serialized_trace =
-//             serde_json::to_string(trace_data).expect("Failed to serialize call trace");
-//         let dir_to_save_trace = PathBuf::from(TRACE_DIR);
-//         fs::create_dir_all(&dir_to_save_trace)
-//             .expect("Failed to create a file to save call trace to");
-
-//         fs::write(dir_to_save_trace.join(name), serialized_trace)
-//             .expect("Failed to write call trace to a file");
-//     }
-// }

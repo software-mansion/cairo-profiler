@@ -3,6 +3,7 @@ use std::fmt::Display;
 
 // structs copied from blockifier to make CallEntryPoint serializable
 use serde::{Deserialize, Serialize};
+use starknet_api::core::ContractAddress;
 
 use crate::trace_data::CallTrace;
 
@@ -33,6 +34,16 @@ pub struct ContractId {
     name: Option<String>,
 }
 
+impl ContractId {
+    fn from(name: Option<String>, contract_address: ContractAddress) -> Self {
+        let address_str = format!("0x{}", hex::encode(contract_address.0.key().bytes()));
+        ContractId {
+            name,
+            address: address_str,
+        }
+    }
+}
+
 impl Display for ContractId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = self.name.clone().unwrap_or(String::from("<unknown>"));
@@ -59,11 +70,10 @@ fn collect_samples(
     current_path: &mut Vec<ContractId>,
     trace: &CallTrace,
 ) {
-    let contract_id = ContractId {
-        name: None,
-        address: format!("{:?}", trace.entry_point.storage_address),
-    };
-    current_path.push(contract_id);
+    current_path.push(ContractId::from(
+        trace.entry_point.contract_name.clone(),
+        trace.entry_point.storage_address,
+    ));
 
     samples.push(Sample {
         location: Location::from(current_path),

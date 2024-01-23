@@ -1563,6 +1563,7 @@ dependencies = [
  "bytes",
  "clap",
  "flate2",
+ "hex",
  "prost",
  "prost-build",
  "prost-types",
