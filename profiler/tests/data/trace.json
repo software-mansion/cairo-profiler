@@ -1,0 +1,178 @@
+{
+    "entry_point": {
+        "class_hash": null,
+        "code_address": "0x1724987234973219347210837402",
+        "entry_point_type": "EXTERNAL",
+        "entry_point_selector": "0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
+        "calldata": [],
+        "storage_address": "0x1724987234973219347210837402",
+        "caller_address": "0x0",
+        "call_type": "Call",
+        "initial_gas": 18446744073709551615
+    },
+    "nested_calls": [
+        {
+            "entry_point": {
+                "class_hash": null,
+                "code_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                "entry_point_type": "CONSTRUCTOR",
+                "entry_point_selector": "0x28ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
+                "calldata": [
+                    "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d"
+                ],
+                "storage_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                "caller_address": "0x1724987234973219347210837402",
+                "call_type": "Call",
+                "initial_gas": 18446744073709551615
+            },
+            "nested_calls": [
+                {
+                    "entry_point": {
+                        "class_hash": null,
+                        "code_address": "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                        "entry_point_type": "EXTERNAL",
+                        "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+                        "calldata": [
+                            "0x1"
+                        ],
+                        "storage_address": "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                        "caller_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                        "call_type": "Call",
+                        "initial_gas": 18446744073709476265
+                    },
+                    "nested_calls": []
+                }
+            ]
+        },
+        {
+            "entry_point": {
+                "class_hash": null,
+                "code_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                "entry_point_type": "EXTERNAL",
+                "entry_point_selector": "0x14d7bff2015b0a213b958b57be5d1588a9720baebac310a441c990bae986710",
+                "calldata": [
+                    "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d"
+                ],
+                "storage_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                "caller_address": "0x1724987234973219347210837402",
+                "call_type": "Call",
+                "initial_gas": 18446744073709551615
+            },
+            "nested_calls": [
+                {
+                    "entry_point": {
+                        "class_hash": null,
+                        "code_address": "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                        "entry_point_type": "EXTERNAL",
+                        "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+                        "calldata": [
+                            "0x2"
+                        ],
+                        "storage_address": "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                        "caller_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                        "call_type": "Call",
+                        "initial_gas": 18446744073709475465
+                    },
+                    "nested_calls": []
+                }
+            ]
+        },
+        {
+            "entry_point": {
+                "class_hash": null,
+                "code_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                "entry_point_type": "EXTERNAL",
+                "entry_point_selector": "0x4bdc46cbf005c1cd386c527a40ebef01d1a9ea4c226b74b6495539b8f16a7a",
+                "calldata": [
+                    "0x2ceadceef4724e6c1f007b92d6b7cef128fb174f1a41d0d87c7b95d7f3b0d10"
+                ],
+                "storage_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                "caller_address": "0x1724987234973219347210837402",
+                "call_type": "Call",
+                "initial_gas": 18446744073709551615
+            },
+            "nested_calls": [
+                {
+                    "entry_point": {
+                        "class_hash": "0x2ceadceef4724e6c1f007b92d6b7cef128fb174f1a41d0d87c7b95d7f3b0d10",
+                        "code_address": null,
+                        "entry_point_type": "EXTERNAL",
+                        "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+                        "calldata": [
+                            "0x3"
+                        ],
+                        "storage_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                        "caller_address": "0x1724987234973219347210837402",
+                        "call_type": "Delegate",
+                        "initial_gas": 18446744073709475465
+                    },
+                    "nested_calls": []
+                }
+            ]
+        },
+        {
+            "entry_point": {
+                "class_hash": null,
+                "code_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                "entry_point_type": "EXTERNAL",
+                "entry_point_selector": "0x3f55930393ea07087c654a727a871299cabe3617a1330514cdc490470be9aa0",
+                "calldata": [
+                    "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                    "0x6471bbfe0a4f614c87e408628bdb22723feca29731f58182a0441a763b5f2ab"
+                ],
+                "storage_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                "caller_address": "0x1724987234973219347210837402",
+                "call_type": "Call",
+                "initial_gas": 18446744073709551615
+            },
+            "nested_calls": [
+                {
+                    "entry_point": {
+                        "class_hash": null,
+                        "code_address": "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                        "entry_point_type": "EXTERNAL",
+                        "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+                        "calldata": [
+                            "0x2a"
+                        ],
+                        "storage_address": "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                        "caller_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                        "call_type": "Call",
+                        "initial_gas": 18446744073709458355
+                    },
+                    "nested_calls": []
+                },
+                {
+                    "entry_point": {
+                        "class_hash": null,
+                        "code_address": "0x6471bbfe0a4f614c87e408628bdb22723feca29731f58182a0441a763b5f2ab",
+                        "entry_point_type": "EXTERNAL",
+                        "entry_point_selector": "0x10d869dd492a59760ea0fa8b9f9ac52808445c51200f97727af69506e959b7f",
+                        "calldata": [],
+                        "storage_address": "0x6471bbfe0a4f614c87e408628bdb22723feca29731f58182a0441a763b5f2ab",
+                        "caller_address": "0x1df0fe17965ec5b596442da6477377de402f6f4ae6e98455e957b181e20773",
+                        "call_type": "Call",
+                        "initial_gas": 18446744073709397355
+                    },
+                    "nested_calls": []
+                }
+            ]
+        },
+        {
+            "entry_point": {
+                "class_hash": null,
+                "code_address": "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                "entry_point_type": "EXTERNAL",
+                "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+                "calldata": [
+                    "0x4"
+                ],
+                "storage_address": "0x57cf0089c58132746ce51622985adcddf73e8b2db520eaefb753cf76ff2a79d",
+                "caller_address": "0x1724987234973219347210837402",
+                "call_type": "Call",
+                "initial_gas": 18446744073709551615
+            },
+            "nested_calls": []
+        }
+    ]
+}

@@ -11,6 +11,15 @@ prost = "0.12"
 prost-types = "0.12"
 bytes = "1.5.0"
 flate2 = "1.0.28"
+hex = "0.4.3"
+starknet_api = "0.6.0-rc2"
+clap = { version = "4.4.7", features = ["derive"] }
+serde = { version = "1.0.195", features = ["derive"] }
+serde_json = "1.0.111"
+camino = { version = "1.1.4", features = ["serde1"] }
+assert_fs = "1.1.1"
+project-root = "0.2.2"
+snapbox = "0.4.16"
 
 [build-dependencies]
 prost-build = { version = "0.12" }

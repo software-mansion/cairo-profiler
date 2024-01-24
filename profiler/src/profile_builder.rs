@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use perftools::profiles as pprof;
 
-use crate::{FunctionName, Location, Sample, SampleType};
+use crate::trace_reader::{FunctionName, Location, Sample, SampleType};
 
 #[derive(Clone, Copy)]
 struct StringId(u64);
