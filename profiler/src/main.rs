@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, File},
+    fs,
     io::{Read, Write},
     path::Path,
 };
@@ -19,7 +19,7 @@ mod trace_reader;
 
 #[derive(Parser, Debug)]
 #[command(version)]
-#[clap(name = "snforge")]
+#[clap(name = "cairo-profiler")]
 struct Cli {
     /// Path to .json with trace data
     path_to_trace_data: Utf8PathBuf,
@@ -29,16 +29,16 @@ fn main() {
     let cli = Cli::parse();
 
     let data =
-        fs::read_to_string(cli.path_to_trace_data).expect("Failed to write call trace to a file");
+        fs::read_to_string(cli.path_to_trace_data).expect("Failed to read call trace from a file");
     let serialized_trace: CallTrace =
-        serde_json::from_str(&data).expect("Failed to read call trace");
+        serde_json::from_str(&data).expect("Failed to deserialize call trace");
 
     let samples = collect_samples_from_trace(&serialized_trace);
 
     let profile = build_profile(samples);
 
     let path = Path::new("profile.pb.gz");
-    let mut file = File::create(path).unwrap();
+    let mut file = fs::File::create(path).unwrap();
 
     let mut buffer = BytesMut::new();
     profile.encode(&mut buffer).unwrap();

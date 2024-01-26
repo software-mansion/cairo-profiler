@@ -13,7 +13,7 @@ fn simple_package() {
         .current_dir(&temp_dir)
         .arg("./trace.json")
         .assert()
-        .code(0);
+        .success();
 
     assert!(temp_dir.join("profile.pb.gz").exists());
 
