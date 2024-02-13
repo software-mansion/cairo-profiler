@@ -14,7 +14,7 @@ pub struct Location(pub Vec<FunctionName>);
 impl Location {
     #[inline]
     fn from(s: &[EntryPointId]) -> Location {
-        Location(s.iter().map(|c| FunctionName(format!("{}", c))).collect())
+        Location(s.iter().map(|c| FunctionName(format!("{c}"))).collect())
     }
 }
 
