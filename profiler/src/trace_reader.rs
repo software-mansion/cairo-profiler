@@ -49,6 +49,7 @@ impl Sample {
         .collect();
 
         for (builtin, count) in &self.flat_resources.vm_resources.builtin_instance_counter {
+            assert!(measurements_map.get(&&**builtin).is_none());
             measurements_map.insert(builtin, *count as i64);
         }
 
@@ -59,6 +60,7 @@ impl Sample {
             .map(|(syscall, count)| (format!("{syscall:?}"), *count))
             .collect();
         for (syscall, count) in &syscall_counter_with_string {
+            assert!(measurements_map.get(&&**syscall).is_none());
             measurements_map.insert(syscall, *count as i64);
         }
 
@@ -128,7 +130,7 @@ pub struct ResourcesKeys {
 }
 
 impl ResourcesKeys {
-    pub fn value_types(&self, context: &mut ProfilerContext) -> Vec<ValueType> {
+    pub fn measurement_types(&self, context: &mut ProfilerContext) -> Vec<ValueType> {
         let mut value_types = vec![];
 
         for builtin in &self.builtins {

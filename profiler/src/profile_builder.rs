@@ -159,7 +159,7 @@ fn build_samples(
             unit: context.string_id(&String::from("count")).into(),
         },
     ];
-    measurement_types.append(&mut resources_keys.value_types(context));
+    measurement_types.append(&mut resources_keys.measurement_types(context));
 
     let samples = samples
         .iter()
