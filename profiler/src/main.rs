@@ -4,6 +4,7 @@ use std::{
     path::Path,
 };
 
+use crate::trace_reader::collect_resources_keys;
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
 use clap::Parser;
@@ -34,8 +35,9 @@ fn main() {
         serde_json::from_str(&data).expect("Failed to deserialize call trace");
 
     let samples = collect_samples_from_trace(&serialized_trace);
+    let resources_keys = collect_resources_keys(&samples);
 
-    let profile = build_profile(samples);
+    let profile = build_profile(samples, resources_keys);
 
     let path = Path::new("profile.pb.gz");
     let mut file = fs::File::create(path).unwrap();
