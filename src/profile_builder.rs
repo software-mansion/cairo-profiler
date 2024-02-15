@@ -8,10 +8,10 @@ use std::collections::HashMap;
 
 use perftools::profiles as pprof;
 
-use crate::trace_reader::{FunctionName, Location, Sample, SampleType};
+use crate::trace_reader::{FunctionName, Location, ResourcesKeys, Sample, SampleType};
 
-#[derive(Clone, Copy)]
-struct StringId(u64);
+#[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
+pub struct StringId(pub u64);
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 struct LocationId(u64);
@@ -37,8 +37,9 @@ impl From<FunctionId> for u64 {
     }
 }
 
-struct ProfilerContext {
+pub struct ProfilerContext {
     strings: HashMap<String, StringId>,
+    id_to_string: HashMap<StringId, String>,
     functions: HashMap<FunctionName, pprof::Function>,
     locations: HashMap<Location, pprof::Location>,
 }
@@ -47,18 +48,28 @@ impl ProfilerContext {
     fn new() -> Self {
         ProfilerContext {
             strings: vec![("".to_string(), StringId(0))].into_iter().collect(),
+            id_to_string: vec![(StringId(0), "".to_string())].into_iter().collect(),
             functions: HashMap::new(),
             locations: HashMap::new(),
         }
     }
 
-    fn string_id(&mut self, string: &String) -> StringId {
+    pub fn string_from_string_id(&self, string_id: StringId) -> &str {
+        self.id_to_string
+            .get(&string_id)
+            .unwrap_or_else(|| panic!("String with string id {string_id:?} not found"))
+    }
+
+    pub fn string_id(&mut self, string: &String) -> StringId {
         match self.strings.get(string) {
             Some(id) => *id,
             None => {
-                self.strings
-                    .insert(string.clone(), StringId(self.strings.len() as u64));
-                StringId((self.strings.len() - 1) as u64)
+                let string_id = StringId(self.strings.len() as u64);
+
+                self.strings.insert(string.clone(), string_id);
+                self.id_to_string.insert(string_id, string.clone());
+
+                string_id
             }
         }
     }
@@ -128,33 +139,47 @@ impl ProfilerContext {
 fn build_samples(
     context: &mut ProfilerContext,
     samples: Vec<Sample>,
+    resources_keys: ResourcesKeys,
 ) -> (Vec<pprof::ValueType>, Vec<pprof::Sample>) {
     assert!(samples
         .iter()
         .all(|x| matches!(x.sample_type, SampleType::ContractCall)));
 
-    let sample_types = vec![pprof::ValueType {
-        r#type: context.string_id(&String::from("calls")).into(),
-        unit: context.string_id(&String::from("")).into(),
-    }];
+    let mut measurement_types = vec![
+        pprof::ValueType {
+            r#type: context.string_id(&String::from("calls")).into(),
+            unit: context.string_id(&String::from(" calls")).into(),
+        },
+        pprof::ValueType {
+            r#type: context.string_id(&String::from("n_steps")).into(),
+            unit: context.string_id(&String::from(" steps")).into(),
+        },
+        pprof::ValueType {
+            r#type: context.string_id(&String::from("n_memory_holes")).into(),
+            unit: context.string_id(&String::from(" memory holes")).into(),
+        },
+    ];
+    measurement_types.append(&mut resources_keys.measurement_types(context));
+
     let samples = samples
         .iter()
         .map(|s| pprof::Sample {
             location_id: vec![context.location_id(&s.location).into()],
-            value: vec![1],
+            value: s.extract_measurements(&measurement_types, context),
             label: vec![],
         })
         .collect();
-    (sample_types, samples)
+
+    (measurement_types, samples)
 }
 
-pub fn build_profile(samples: Vec<Sample>) -> pprof::Profile {
+pub fn build_profile(samples: Vec<Sample>, resources_keys: ResourcesKeys) -> pprof::Profile {
     let mut context = ProfilerContext::new();
-    let (sample_types, samples) = build_samples(&mut context, samples);
+    let (measurement_types, samples) = build_samples(&mut context, samples, resources_keys);
     let (string_table, functions, locations) = context.context_data();
 
     pprof::Profile {
-        sample_type: sample_types,
+        sample_type: measurement_types,
         sample: samples,
         mapping: vec![],
         location: locations,
