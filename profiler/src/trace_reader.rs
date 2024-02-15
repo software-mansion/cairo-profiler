@@ -1,6 +1,7 @@
 use core::fmt;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
+use std::ops::Add;
 
 use crate::profile_builder::perftools::profiles::ValueType;
 use crate::profile_builder::{ProfilerContext, StringId};
@@ -134,15 +135,19 @@ impl ResourcesKeys {
         let mut value_types = vec![];
 
         for builtin in &self.builtins {
+            let unit_string = " ".to_string().add(&builtin.replace('_', " "));
             value_types.push(ValueType {
                 r#type: context.string_id(builtin).into(),
-                unit: context.string_id(&String::from("count")).into(),
+                unit: context.string_id(&unit_string).into(),
             });
         }
         for syscall in &self.syscalls {
+            let type_string = format!("{syscall:?}");
+            let unit_string = " ".to_string().add(&type_string);
+
             value_types.push(ValueType {
-                r#type: context.string_id(&format!("{syscall:?}")).into(),
-                unit: context.string_id(&String::from("count")).into(),
+                r#type: context.string_id(&type_string).into(),
+                unit: context.string_id(&unit_string).into(),
             });
         }
 

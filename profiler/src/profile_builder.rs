@@ -148,15 +148,15 @@ fn build_samples(
     let mut measurement_types = vec![
         pprof::ValueType {
             r#type: context.string_id(&String::from("calls")).into(),
-            unit: context.string_id(&String::from("count")).into(),
+            unit: context.string_id(&String::from(" calls")).into(),
         },
         pprof::ValueType {
             r#type: context.string_id(&String::from("n_steps")).into(),
-            unit: context.string_id(&String::from("count")).into(),
+            unit: context.string_id(&String::from(" steps")).into(),
         },
         pprof::ValueType {
             r#type: context.string_id(&String::from("n_memory_holes")).into(),
-            unit: context.string_id(&String::from("count")).into(),
+            unit: context.string_id(&String::from(" memory holes")).into(),
         },
     ];
     measurement_types.append(&mut resources_keys.measurement_types(context));
