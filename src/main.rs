@@ -36,7 +36,7 @@ fn main() {
     let samples = collect_samples_from_trace(&serialized_trace);
     let resources_keys = collect_resources_keys(&samples);
 
-    let profile = build_profile(samples, resources_keys);
+    let profile = build_profile(&samples, &resources_keys);
 
     let path = Path::new("profile.pb.gz");
     let mut file = fs::File::create(path).unwrap();
