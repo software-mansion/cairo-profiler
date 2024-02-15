@@ -21,7 +21,7 @@ struct FunctionId(u64);
 
 impl From<StringId> for i64 {
     fn from(v: StringId) -> i64 {
-        v.0 as i64
+        i64::try_from(v.0).unwrap()
     }
 }
 
