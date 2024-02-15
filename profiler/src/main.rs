@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use crate::trace_reader::collect_resources_keys;
+use crate::trace_reader::{collect_resources_keys, collect_samples_from_trace};
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
 use clap::Parser;
@@ -12,7 +12,6 @@ use flate2::{bufread::GzEncoder, Compression};
 use profile_builder::build_profile;
 use prost::Message;
 use trace_data::CallTrace;
-use trace_reader::collect_samples_from_trace;
 
 mod profile_builder;
 mod trace_data;

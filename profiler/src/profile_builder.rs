@@ -39,7 +39,7 @@ impl From<FunctionId> for u64 {
 
 pub struct ProfilerContext {
     strings: HashMap<String, StringId>,
-    id_to_strings: HashMap<StringId, String>,
+    id_to_string: HashMap<StringId, String>,
     functions: HashMap<FunctionName, pprof::Function>,
     locations: HashMap<Location, pprof::Location>,
 }
@@ -48,14 +48,14 @@ impl ProfilerContext {
     fn new() -> Self {
         ProfilerContext {
             strings: vec![("".to_string(), StringId(0))].into_iter().collect(),
-            id_to_strings: vec![(StringId(0), "".to_string())].into_iter().collect(),
+            id_to_string: vec![(StringId(0), "".to_string())].into_iter().collect(),
             functions: HashMap::new(),
             locations: HashMap::new(),
         }
     }
 
     pub fn string_from_string_id(&self, string_id: StringId) -> &str {
-        self.id_to_strings
+        self.id_to_string
             .get(&string_id)
             .unwrap_or_else(|| panic!("String with string id {string_id:?} not found"))
     }
@@ -67,7 +67,7 @@ impl ProfilerContext {
                 let string_id = StringId(self.strings.len() as u64);
 
                 self.strings.insert(string.clone(), string_id);
-                self.id_to_strings.insert(string_id, string.clone());
+                self.id_to_string.insert(string_id, string.clone());
 
                 string_id
             }
