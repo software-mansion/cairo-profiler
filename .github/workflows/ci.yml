@@ -12,9 +12,6 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./profiler
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -26,9 +23,6 @@ jobs:
   rustfmt:
     name: Check formatting
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./profiler
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -38,9 +32,6 @@ jobs:
   clippy:
     name: Check linter
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./profiler
     env:
       # Make sure CI fails on all warnings - including Clippy lints.
       RUSTFLAGS: "-Dwarnings"
@@ -54,9 +45,6 @@ jobs:
   typos:
     name: Check typos
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./profiler
     steps:
       - uses: actions/checkout@v4
       - name: typos-action
