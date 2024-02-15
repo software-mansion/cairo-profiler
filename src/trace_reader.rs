@@ -26,6 +26,7 @@ pub enum SampleType {
     ContractCall,
 }
 
+#[allow(clippy::struct_field_names)]
 pub struct Sample {
     pub location: Location,
     pub sample_type: SampleType,
