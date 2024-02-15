@@ -95,7 +95,7 @@ message Profile {
   int64 default_sample_type = 14;
 }
 
-// ValueType describes the semantics and measurement units of a value.
+// `ValueType` describes the semantics and measurement units of a value.
 message ValueType {
   int64 type = 1; // Index into string table.
   int64 unit = 2; // Index into string table.

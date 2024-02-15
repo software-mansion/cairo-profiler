@@ -21,7 +21,7 @@ struct FunctionId(u64);
 
 impl From<StringId> for i64 {
     fn from(v: StringId) -> i64 {
-        v.0 as i64
+        i64::try_from(v.0).unwrap()
     }
 }
 
@@ -47,8 +47,8 @@ pub struct ProfilerContext {
 impl ProfilerContext {
     fn new() -> Self {
         ProfilerContext {
-            strings: vec![("".to_string(), StringId(0))].into_iter().collect(),
-            id_to_string: vec![(StringId(0), "".to_string())].into_iter().collect(),
+            strings: vec![(String::new(), StringId(0))].into_iter().collect(),
+            id_to_string: vec![(StringId(0), String::new())].into_iter().collect(),
             functions: HashMap::new(),
             locations: HashMap::new(),
         }
@@ -61,16 +61,15 @@ impl ProfilerContext {
     }
 
     pub fn string_id(&mut self, string: &String) -> StringId {
-        match self.strings.get(string) {
-            Some(id) => *id,
-            None => {
-                let string_id = StringId(self.strings.len() as u64);
+        if let Some(id) = self.strings.get(string) {
+            *id
+        } else {
+            let string_id = StringId(self.strings.len() as u64);
 
-                self.strings.insert(string.clone(), string_id);
-                self.id_to_string.insert(string_id, string.clone());
+            self.strings.insert(string.clone(), string_id);
+            self.id_to_string.insert(string_id, string.clone());
 
-                string_id
-            }
+            string_id
         }
     }
 
@@ -86,46 +85,44 @@ impl ProfilerContext {
     }
 
     fn location_id(&mut self, location: &Location) -> LocationId {
-        match self.locations.get(location) {
-            Some(loc) => LocationId(loc.id),
-            None => {
-                let mut line = self.build_line(location);
-                line.reverse();
-                let location_data = pprof::Location {
-                    id: (self.locations.len() + 1) as u64,
-                    mapping_id: 0,
-                    address: 0,
-                    // pprof format represents callstack from the least meaningful element
-                    line,
-                    is_folded: true,
-                };
-                self.locations.insert(location.clone(), location_data);
-                LocationId(self.locations.len() as u64)
-            }
+        if let Some(loc) = self.locations.get(location) {
+            LocationId(loc.id)
+        } else {
+            let mut line = self.build_line(location);
+            line.reverse();
+            let location_data = pprof::Location {
+                id: (self.locations.len() + 1) as u64,
+                mapping_id: 0,
+                address: 0,
+                // pprof format represents callstack from the least meaningful element
+                line,
+                is_folded: true,
+            };
+            self.locations.insert(location.clone(), location_data);
+            LocationId(self.locations.len() as u64)
         }
     }
 
     fn function_id(&mut self, function_name: &FunctionName) -> FunctionId {
-        match self.functions.get(function_name) {
-            Some(f) => FunctionId(f.id),
-            None => {
-                let function_data = pprof::Function {
-                    id: (self.functions.len() + 1) as u64,
-                    name: self.string_id(&function_name.0).into(),
-                    system_name: self.string_id(&"system".to_string()).into(),
-                    filename: self.string_id(&"global".to_string()).into(),
-                    start_line: 0,
-                };
-                self.functions.insert(function_name.clone(), function_data);
-                FunctionId(self.functions.len() as u64)
-            }
+        if let Some(f) = self.functions.get(function_name) {
+            FunctionId(f.id)
+        } else {
+            let function_data = pprof::Function {
+                id: (self.functions.len() + 1) as u64,
+                name: self.string_id(&function_name.0).into(),
+                system_name: self.string_id(&"system".to_string()).into(),
+                filename: self.string_id(&"global".to_string()).into(),
+                start_line: 0,
+            };
+            self.functions.insert(function_name.clone(), function_data);
+            FunctionId(self.functions.len() as u64)
         }
     }
 
     fn context_data(self) -> (Vec<String>, Vec<pprof::Function>, Vec<pprof::Location>) {
         let mut string_table: Vec<String> = self.strings.clone().into_keys().collect();
         for (st, id) in self.strings {
-            string_table[id.0 as usize] = st;
+            string_table[usize::try_from(id.0).unwrap()] = st;
         }
 
         let functions = self.functions.into_values().collect();
@@ -138,8 +135,8 @@ impl ProfilerContext {
 
 fn build_samples(
     context: &mut ProfilerContext,
-    samples: Vec<Sample>,
-    resources_keys: ResourcesKeys,
+    samples: &[Sample],
+    resources_keys: &ResourcesKeys,
 ) -> (Vec<pprof::ValueType>, Vec<pprof::Sample>) {
     assert!(samples
         .iter()
@@ -173,7 +170,7 @@ fn build_samples(
     (measurement_types, samples)
 }
 
-pub fn build_profile(samples: Vec<Sample>, resources_keys: ResourcesKeys) -> pprof::Profile {
+pub fn build_profile(samples: &[Sample], resources_keys: &ResourcesKeys) -> pprof::Profile {
     let mut context = ProfilerContext::new();
     let (measurement_types, samples) = build_samples(&mut context, samples, resources_keys);
     let (string_table, functions, locations) = context.context_data();

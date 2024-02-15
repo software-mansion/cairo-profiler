@@ -53,7 +53,7 @@ impl AddAssign<&VmExecutionResources> for VmExecutionResources {
     fn add_assign(&mut self, rhs: &VmExecutionResources) {
         self.n_steps += rhs.n_steps;
         self.n_memory_holes += rhs.n_memory_holes;
-        for (k, v) in rhs.builtin_instance_counter.iter() {
+        for (k, v) in &rhs.builtin_instance_counter {
             *self.builtin_instance_counter.entry(k.clone()).or_insert(0) += v;
         }
     }
@@ -63,7 +63,7 @@ impl SubAssign<&VmExecutionResources> for VmExecutionResources {
     fn sub_assign(&mut self, rhs: &VmExecutionResources) {
         self.n_steps -= rhs.n_steps;
         self.n_memory_holes -= rhs.n_memory_holes;
-        for (k, v) in rhs.builtin_instance_counter.iter() {
+        for (k, v) in &rhs.builtin_instance_counter {
             let entry = self.builtin_instance_counter.entry(k.clone()).or_insert(0);
             *entry = (*entry).saturating_sub(*v);
         }

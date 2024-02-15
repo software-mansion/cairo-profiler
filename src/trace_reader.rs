@@ -18,7 +18,7 @@ pub struct Location(pub Vec<FunctionName>);
 impl Location {
     #[inline]
     fn from(s: &[EntryPointId]) -> Location {
-        Location(s.iter().map(|c| FunctionName(format!("{}", c))).collect())
+        Location(s.iter().map(|c| FunctionName(format!("{c}"))).collect())
     }
 }
 
@@ -26,6 +26,7 @@ pub enum SampleType {
     ContractCall,
 }
 
+#[allow(clippy::struct_field_names)]
 pub struct Sample {
     pub location: Location,
     pub sample_type: SampleType,
@@ -40,10 +41,13 @@ impl Sample {
     ) -> Vec<i64> {
         let mut measurements_map: HashMap<&str, i64> = vec![
             ("calls", 1),
-            ("n_steps", self.flat_resources.vm_resources.n_steps as i64),
+            (
+                "n_steps",
+                i64::try_from(self.flat_resources.vm_resources.n_steps).unwrap(),
+            ),
             (
                 "n_memory_holes",
-                self.flat_resources.vm_resources.n_memory_holes as i64,
+                i64::try_from(self.flat_resources.vm_resources.n_memory_holes).unwrap(),
             ),
         ]
         .into_iter()
@@ -51,7 +55,7 @@ impl Sample {
 
         for (builtin, count) in &self.flat_resources.vm_resources.builtin_instance_counter {
             assert!(measurements_map.get(&&**builtin).is_none());
-            measurements_map.insert(builtin, *count as i64);
+            measurements_map.insert(builtin, i64::try_from(*count).unwrap());
         }
 
         let syscall_counter_with_string: Vec<_> = self
@@ -62,13 +66,14 @@ impl Sample {
             .collect();
         for (syscall, count) in &syscall_counter_with_string {
             assert!(measurements_map.get(&&**syscall).is_none());
-            measurements_map.insert(syscall, *count as i64);
+            measurements_map.insert(syscall, i64::try_from(*count).unwrap());
         }
 
         let mut measurements = vec![];
         for value_type in measurement_types {
-            let value_type_str = context.string_from_string_id(StringId(value_type.r#type as u64));
-            measurements.push(*measurements_map.get(value_type_str).unwrap_or(&0))
+            let value_type_str =
+                context.string_from_string_id(StringId(u64::try_from(value_type.r#type).unwrap()));
+            measurements.push(*measurements_map.get(value_type_str).unwrap_or(&0));
         }
 
         measurements
@@ -167,9 +172,9 @@ pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
                 .keys()
                 .cloned(),
         );
-        syscalls.extend(sample.flat_resources.syscall_counter.keys())
+        syscalls.extend(sample.flat_resources.syscall_counter.keys());
     }
-    ResourcesKeys { syscalls, builtins }
+    ResourcesKeys { builtins, syscalls }
 }
 
 fn collect_samples<'a>(
