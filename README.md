@@ -42,6 +42,10 @@ It is the json file containing the trace to be profiled.
 cairo-profiler path/to/trace.json
 ```
 
+> 📝 **Note**
+>
+> Trace needs to be in the correct format. See [trace.json](./tests/data/trace.json) file.
+
 ### See profiler graph
 
 To see results from the generated file you will need to install:
