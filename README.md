@@ -15,7 +15,7 @@ trace in the [expected](https://github.com/software-mansion/cairo-profiler/blob/
 To start using `cairo-profiler` download archive file from the GitHub releases
 
 ```shell
-wget https://github.com/software-mansion/cairo-profiler/releases/download/v0.1.0/cairo-compiler-v0.1.0-aarch64-apple-darwin.tar.gz
+wget https://github.com/software-mansion/cairo-profiler/releases/download/v0.1.0/cairo-profiler-v0.1.0-aarch64-apple-darwin.tar.gz
 ```
 
 and unpack it.
