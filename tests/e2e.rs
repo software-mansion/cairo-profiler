@@ -9,7 +9,7 @@ fn simple_package() {
         .copy_from(project_root.join("tests/data/"), &["trace.json"])
         .unwrap();
 
-    SnapboxCommand::new(cargo_bin!("profiler"))
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
         .current_dir(&temp_dir)
         .arg("./trace.json")
         .assert()

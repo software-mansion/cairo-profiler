@@ -1,0 +1,161 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  get-version:
+    name: Get version from Cargo.toml
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from Cargo.toml
+        id: lookupVersion
+        uses: mikefarah/yq@dd648994340a5d03225d97abf19c9bf1086c3f07
+        with:
+          cmd: yq -oy '"v" + .package.version' 'Cargo.toml'
+
+      - name: Print version
+        id: version
+        run: |
+          VERSION=${{ steps.lookupVersion.outputs.result }}
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  build-binaries:
+    name: Build ${{ matrix.target }}
+    continue-on-error: true
+    needs: get-version
+    runs-on: ${{ matrix.os }}
+
+    env:
+      # Cross-compiled targets will override this to `cross`.
+      CARGO: cargo
+
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            cross: true
+
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            cross: true
+
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            cross: true
+
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+            cross: true
+
+          - target: x86_64-apple-darwin
+            os: macos-latest
+
+          - target: aarch64-apple-darwin
+            os: macos-latest
+
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@439cf607258077187679211f12aa6f19af4a0af7
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
+
+      - name: Install cross
+        if: matrix.cross
+        uses: taiki-e/install-action@cross
+
+      - name: Enable cross-compilation
+        if: matrix.cross
+        shell: bash
+        run: |
+          echo "CARGO=cross" >> $GITHUB_ENV
+
+      - uses: actions/setup-go@v5
+      - uses: arduino/setup-protoc@v3
+
+      - name: Configure cross and build
+        continue-on-error: true
+        shell: bash
+        run: |
+          export PROTOC=$(which protoc)
+          
+          path=$(which protoc)
+          
+          cross_toml_content="
+          [build.env]
+          passthrough = [
+          \"PROTOC\"
+          ]
+          volumes = [
+          \"PROTOC=${path}\"
+          ]
+          "
+          
+          printf "$cross_toml_content" >> Cross.toml
+          
+          ${{ env.CARGO }} build --release --locked --target ${{ matrix.target }}
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PKG_FULL_NAME="cairo-compiler-${{ needs.get-version.outputs.version }}-${{ matrix.target }}"
+          echo "PKG_FULL_NAME=$PKG_FULL_NAME" >> $GITHUB_ENV
+
+          bash ./scripts/package.sh "${{ matrix.target }}" "$PKG_FULL_NAME"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.target }}
+          path: ${{ env.PKG_FULL_NAME }}.*
+
+  create-release:
+    name: Create release
+    runs-on: ubuntu-latest
+    needs: [build-binaries, get-version]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts-dl
+
+      - name: Unpack artifacts to staging directory
+        run: |
+          mkdir -p artifacts
+          mv artifacts-dl/build-*/cairo-compiler-* artifacts/
+
+      - name: Create GitHub release
+        id: create-release
+        uses: taiki-e/create-gh-release-action@8df4de6534ceacdaed10a08f73418ca751f31793
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          changelog: CHANGELOG.md
+          allow-missing-changelog: true
+          title: $version
+          ref: refs/tags/${{ needs.get-version.outputs.version }}
+
+      - name: Upload artifacts to the release
+        working-directory: artifacts
+        run: gh release upload "$TAG" *
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.create-release.outputs.computed-prefix }}${{ steps.create-release.outputs.version }}
