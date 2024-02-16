@@ -4,7 +4,7 @@ Profiler for cairo programming language &amp; starknet
 ## External tools integration
 
 `cairo-profiler` is tool-agnostic which means that it accepts input from any tool. Those tools need to generate
-trace in the expected format.
+trace in the [expected](https://github.com/software-mansion/cairo-profiler/blob/d5a5a2722fdf81a0cbabfa44a91cbd69ebe7110d/src/trace_data.rs#L10) format.
 
 ### Integrated tools
 
