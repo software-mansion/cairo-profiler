@@ -115,7 +115,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          PKG_FULL_NAME="cairo-compiler-${{ needs.get-version.outputs.version }}-${{ matrix.target }}"
+          PKG_FULL_NAME="cairo-profiler-${{ needs.get-version.outputs.version }}-${{ matrix.target }}"
           echo "PKG_FULL_NAME=$PKG_FULL_NAME" >> $GITHUB_ENV
 
           bash ./scripts/package.sh "${{ matrix.target }}" "$PKG_FULL_NAME"
@@ -141,7 +141,7 @@ jobs:
       - name: Unpack artifacts to staging directory
         run: |
           mkdir -p artifacts
-          mv artifacts-dl/build-*/cairo-compiler-* artifacts/
+          mv artifacts-dl/build-*/cairo-profiler-* artifacts/
 
       - name: Create GitHub release
         id: create-release
