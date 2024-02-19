@@ -32,10 +32,10 @@ struct Cli {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let data =
-        fs::read_to_string(cli.path_to_trace_data).expect("Failed to read call trace from a file");
+    let data = fs::read_to_string(cli.path_to_trace_data)
+        .context("Failed to read call trace from a file")?;
     let serialized_trace: CallTrace =
-        serde_json::from_str(&data).expect("Failed to deserialize call trace");
+        serde_json::from_str(&data).context("Failed to deserialize call trace")?;
     let samples = collect_samples_from_trace(&serialized_trace);
     let resources_keys = collect_resources_keys(&samples);
 
@@ -45,16 +45,20 @@ fn main() -> Result<()> {
         fs::create_dir_all(parent)
             .context("Failed to create parent directories for the output file")?;
     }
-    let mut file = fs::File::create(cli.output_path).unwrap();
+    let mut file = fs::File::create(cli.output_path).context("Failed to create the output file")?;
 
     let mut buffer = BytesMut::new();
-    profile.encode(&mut buffer).unwrap();
+    profile
+        .encode(&mut buffer)
+        .expect("Failed to encode the profile to the buffer");
 
     let mut buffer_reader = buffer.reader();
     let mut encoder = GzEncoder::new(&mut buffer_reader, Compression::default());
 
     let mut encoded = vec![];
-    encoder.read_to_end(&mut encoded).unwrap();
+    encoder
+        .read_to_end(&mut encoded)
+        .context("Failed to read bytes from the encoder")?;
     file.write_all(&encoded).unwrap();
 
     Ok(())
