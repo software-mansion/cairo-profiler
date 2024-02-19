@@ -1,10 +1,10 @@
 use std::{
     fs,
     io::{Read, Write},
-    path::Path,
 };
 
 use crate::trace_reader::{collect_resources_keys, collect_samples_from_trace};
+use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
 use clap::Parser;
@@ -23,23 +23,29 @@ mod trace_reader;
 struct Cli {
     /// Path to .json with trace data
     path_to_trace_data: Utf8PathBuf,
+
+    /// Path to the output file
+    #[arg(short, long, default_value = "profile.pb.gz")]
+    output_path: Utf8PathBuf,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let data =
         fs::read_to_string(cli.path_to_trace_data).expect("Failed to read call trace from a file");
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).expect("Failed to deserialize call trace");
-
     let samples = collect_samples_from_trace(&serialized_trace);
     let resources_keys = collect_resources_keys(&samples);
 
     let profile = build_profile(&samples, &resources_keys);
 
-    let path = Path::new("profile.pb.gz");
-    let mut file = fs::File::create(path).unwrap();
+    if let Some(parent) = cli.output_path.parent() {
+        fs::create_dir_all(parent)
+            .context("Failed to create parent directories for the output file")?;
+    }
+    let mut file = fs::File::create(cli.output_path).unwrap();
 
     let mut buffer = BytesMut::new();
     profile.encode(&mut buffer).unwrap();
@@ -50,4 +56,6 @@ fn main() {
     let mut encoded = vec![];
     encoder.read_to_end(&mut encoded).unwrap();
     file.write_all(&encoded).unwrap();
+
+    Ok(())
 }
