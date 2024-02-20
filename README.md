@@ -35,7 +35,7 @@ Usage flow consists of two steps:
 ### Generating output file
 
 To generate the file run `cairo-profiler` with the `<PATH_TO_TRACE_DATA>` argument containing
-the json file path with the trace to be profiled. You can also specify the `--output-path <OUTPUT_PATH>` -
+the path to the json file with the trace to be profiled. You can also specify the `--output-path <OUTPUT_PATH>` -
 by default the output file will be saved as `profile.pb.gz`
 
 #### Example
@@ -52,8 +52,8 @@ cairo-profiler path/to/trace.json
 
 To see results from the generated file you will need to install:
 
-- [go](https://go.dev/doc/install)
-- [graphviz](https://www.graphviz.org/download/)
+- [Go](https://go.dev/doc/install)
+- [Graphviz](https://www.graphviz.org/download/)
 - [pprof](https://github.com/google/pprof?tab=readme-ov-file#building-pprof)
 
 and run:
@@ -71,11 +71,58 @@ You can learn more about pprof usage options [here](https://github.com/google/pp
 
 - [ ] Starknet calls profiling:
   - [x] L2 resources - steps, memory holes, builtins, syscalls 
-  - [ ] L1 resources profiling - costs of storage on L1: contract updates, L2 -> L1 messages
+  - [ ] L1 resources - contract updates, L2 -> L1 messages
 - [ ] Function level profiling
 - [ ] Exposing `cairo-profiler` library to allow other tools to integrate
 
-## Setup for development
+## Development
 
+### Environment setup
 You need to install: [Rust](https://www.rust-lang.org/tools/install), [Go](https://go.dev/doc/install), 
-[protoc](https://grpc.io/docs/protoc-installation), [pprof](https://github.com/google/pprof?tab=readme-ov-file#building-pprof) and [graphviz](https://graphviz.org/download). 
+[protoc](https://grpc.io/docs/protoc-installation), [pprof](https://github.com/google/pprof?tab=readme-ov-file#building-pprof) and [Graphviz](https://graphviz.org/download). 
+
+### Running the binary
+
+The binary can be run with:
+
+```shell
+cargo run <PATH_TO_TRACE_DATA>
+```
+
+### Running tests
+
+Tests can be run with:
+
+```shell
+cargo test
+```
+
+### Formatting and lints
+
+cairo-profiler uses [rustfmt](https://github.com/rust-lang/rustfmt) for formatting. You can run the formatter with:
+
+```shell
+cargo fmt
+```
+
+For linting, it uses [clippy](https://github.com/rust-lang/rust-clippy). You can run it using our defined alias:
+
+```shell
+cargo lint
+```
+
+### Spelling
+
+cairo-profiler uses [typos](https://github.com/marketplace/actions/typos-action) for spelling checks.
+
+You can run the checker with
+
+```shell
+typos
+```
+
+Some typos can be automatically fixed by running
+
+```shell
+typos -w
+```
