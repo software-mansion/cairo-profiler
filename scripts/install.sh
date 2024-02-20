@@ -56,7 +56,6 @@ download_and_extract_binary() {
 }
 
 get_architecture() {
-  local _ostype _cputype _arch _clibtype
   _ostype="$(uname -s)"
   _cputype="$(uname -m)"
   _clibtype="gnu"
