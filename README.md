@@ -4,7 +4,7 @@ Profiler for Cairo programming language &amp; Starknet.
 
 ## Installation
 
-To install the latest version of cairo-profiler, run:
+To install the latest version of `cairo-profiler`, run:
 
 ```shell
 curl -L https://raw.githubusercontent.com/software-mansion/cairo-profiler/main/scripts/install.sh | sh
@@ -99,7 +99,7 @@ cargo test
 
 ### Formatting and lints
 
-cairo-profiler uses [rustfmt](https://github.com/rust-lang/rustfmt) for formatting. You can run the formatter with:
+`cairo-profiler` uses [rustfmt](https://github.com/rust-lang/rustfmt) for formatting. You can run the formatter with:
 
 ```shell
 cargo fmt
@@ -113,7 +113,7 @@ cargo lint
 
 ### Spelling
 
-cairo-profiler uses [typos](https://github.com/marketplace/actions/typos-action) for spelling checks.
+`cairo-profiler` uses [typos](https://github.com/marketplace/actions/typos-action) for spelling checks.
 
 You can run the checker with
 
