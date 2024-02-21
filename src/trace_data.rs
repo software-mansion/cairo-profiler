@@ -117,7 +117,6 @@ pub struct CallEntryPoint {
     pub storage_address: ContractAddress,
     pub caller_address: ContractAddress,
     pub call_type: CallType,
-    pub initial_gas: u64,
 
     /// Contract name to display instead of contract address
     pub contract_name: Option<String>,
