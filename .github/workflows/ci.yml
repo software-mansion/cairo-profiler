@@ -49,3 +49,43 @@ jobs:
       - uses: actions/checkout@v4
       - name: typos-action
         uses: crate-ci/typos@v1.16.23
+
+  verify-installation-script:
+    name: Verify installation script
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+
+          - target: x86_64-apple-darwin
+            os: macos-latest
+
+          - target: aarch64-apple-darwin
+            os: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install and check
+        shell: bash
+        run: |
+          bash ./scripts/install.sh
+          
+          source ~/.bashrc
+          
+          if ! command -v cairo-profiler &> /dev/null; then
+            echo "cairo-profiler was not installed"
+            exit 1
+          fi
