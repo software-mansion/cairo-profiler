@@ -16,6 +16,21 @@ If you want to install a specific a version, run the following command with the 
 curl -L https://raw.githubusercontent.com/software-mansion/cairo-profiler/main/scripts/install.sh | sh -s -- v0.1.0
 ```
 
+### Installation on Windows
+
+As for now, `cairo-profiler` on Windows needs manual installation, but necessary steps are kept to minimum:
+
+1. [Download the release](https://github.com/software-mansion/cairo-profiler/releases) archive matching your CPU architecture.
+2. Extract it to a location where you would like to have `cairo-profiler` installed. A folder named cairo_profiler in your [`%LOCALAPPDATA%\Programs`](https://learn.microsoft.com/en-us/windows/win32/shell/knownfolderid?redirectedfrom=MSDN#FOLDERID_UserProgramFiles) directory will suffice:
+```batch
+%LOCALAPPDATA%\Programs\cairo_profiler
+```
+3. Add path to the cairo_profiler\bin directory to your PATH environment variable.
+4. Verify installation by running the following command in new terminal session:
+```shell
+cairo-profiler --version
+```
+
 ## External tools integration
 
 `cairo-profiler` is a tool-agnostic profiler which means that it accepts input from any tool. Those tools need to generate
