@@ -2,6 +2,8 @@
 
 Profiler for Cairo programming language &amp; Starknet.
 
+![Example output](.github/images/demo.gif)
+
 ## Installation
 
 To install the latest version of `cairo-profiler`, run:
