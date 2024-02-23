@@ -130,3 +130,34 @@ pub enum CallType {
     Call = 0,
     Delegate = 1,
 }
+
+impl ExecutionResources {
+    #[must_use]
+    pub fn gt_eq_than(&self, other: &ExecutionResources) -> bool {
+        if self.vm_resources.n_steps < other.vm_resources.n_steps
+            || self.vm_resources.n_memory_holes < other.vm_resources.n_memory_holes
+        {
+            return false;
+        }
+
+        let self_builtin_counter = &self.vm_resources.builtin_instance_counter;
+        let other_builtin_counter = &other.vm_resources.builtin_instance_counter;
+        for (builtin, other_count) in other_builtin_counter {
+            let self_count = self_builtin_counter.get(builtin).unwrap_or(&0);
+            if self_count < other_count {
+                return false;
+            }
+        }
+
+        let self_builtin_counter = &self.syscall_counter;
+        let other_builtin_counter = &other.syscall_counter;
+        for (syscall, other_count) in other_builtin_counter {
+            let self_count = self_builtin_counter.get(syscall).unwrap_or(&0);
+            if self_count < other_count {
+                return false;
+            }
+        }
+
+        true
+    }
+}
