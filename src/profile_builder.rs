@@ -41,7 +41,7 @@ pub struct ProfilerContext {
     strings: HashMap<String, StringId>,
     id_to_string: HashMap<StringId, String>,
     functions: HashMap<FunctionName, pprof::Function>,
-    locations: HashMap<Location, Vec<pprof::Location>>,
+    locations: HashMap<Location, pprof::Location>,
 }
 
 impl ProfilerContext {
@@ -73,35 +73,24 @@ impl ProfilerContext {
         }
     }
 
-    fn build_locations(&mut self, location: &Location) -> Vec<pprof::Location> {
-        location
-            .0
-            .iter()
-            .enumerate()
-            .map(|(i, f_name)| pprof::Location {
-                id: (1 + self.locations.values().flatten().count() + i) as u64,
-                mapping_id: 0,
-                line: vec![pprof::Line {
-                    function_id: self.function_id(f_name).0,
-                    line: 0,
-                }],
-                address: 0,
-                is_folded: false,
-            })
-            .rev() // pprof format represents callstack from the least meaningful element
-            .collect()
-    }
-
-    fn location_ids(&mut self, location: &Location) -> Vec<LocationId> {
-        if let Some(locations) = self.locations.get(location) {
-            locations.iter().map(|loc| LocationId(loc.id)).collect()
+    fn location_id(&mut self, location: &Location) -> LocationId {
+        if let Some(loc) = self.locations.get(location) {
+            LocationId(loc.id)
         } else {
-            let locations = self.build_locations(location);
-            let locations_ids = locations.iter().map(|loc| LocationId(loc.id)).collect();
+            let line = pprof::Line {
+                function_id: self.function_id(&location.0).into(),
+                line: 0,
+            };
+            let location_data = pprof::Location {
+                id: (self.locations.len() + 1) as u64,
+                mapping_id: 0,
+                address: 0,
+                line: vec![line],
+                is_folded: true,
+            };
 
-            self.locations.insert(location.clone(), locations);
-
-            locations_ids
+            self.locations.insert(location.clone(), location_data);
+            LocationId(self.locations.len() as u64)
         }
     }
 
@@ -129,7 +118,7 @@ impl ProfilerContext {
 
         let functions = self.functions.into_values().collect();
 
-        let locations = self.locations.into_values().flatten().collect();
+        let locations = self.locations.into_values().collect();
 
         (string_table, functions, locations)
     }
@@ -163,10 +152,11 @@ fn build_samples(
     let samples = samples
         .iter()
         .map(|s| pprof::Sample {
-            location_id: context
-                .location_ids(&s.location)
-                .into_iter()
-                .map(std::convert::Into::into)
+            location_id: s
+                .locations
+                .iter()
+                .map(|loc| context.location_id(loc).into())
+                .rev() // pprof format represents callstack from the least meaningful element
                 .collect(),
             value: s.extract_measurements(&measurement_types, context),
             label: vec![],

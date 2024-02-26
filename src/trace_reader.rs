@@ -13,12 +13,12 @@ use crate::trace_data::{CallTrace, DeprecatedSyscallSelector, ExecutionResources
 pub struct FunctionName(pub String);
 
 #[derive(Clone, Hash, Eq, PartialEq)]
-pub struct Location(pub Vec<FunctionName>);
+pub struct Location(pub FunctionName);
 
 impl Location {
     #[inline]
-    fn from(s: &[EntryPointId]) -> Location {
-        Location(s.iter().map(|c| FunctionName(format!("{c}"))).collect())
+    fn from(entry_point_id: &EntryPointId) -> Location {
+        Location(FunctionName(format!("{entry_point_id}")))
     }
 }
 
@@ -28,7 +28,7 @@ pub enum SampleType {
 
 #[allow(clippy::struct_field_names)]
 pub struct Sample {
-    pub location: Location,
+    pub locations: Vec<Location>,
     pub sample_type: SampleType,
     pub flat_resources: ExecutionResources,
 }
@@ -195,7 +195,7 @@ fn collect_samples<'a>(
     }
 
     samples.push(Sample {
-        location: Location::from(current_path),
+        locations: current_path.iter().map(Location::from).collect(),
         sample_type: SampleType::ContractCall,
         flat_resources: &trace.cumulative_resources - &children_resources,
     });
