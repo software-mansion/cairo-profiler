@@ -1,486 +1,559 @@
 {
-  "entry_point": {
-    "class_hash": "0x117",
-    "code_address": "0x1724987234973219347210837402",
-    "entry_point_type": "EXTERNAL",
-    "entry_point_selector": "0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
-    "calldata": [
+  "entry_point":{
+    "class_hash":"0x117",
+    "code_address":"0x1724987234973219347210837402",
+    "entry_point_type":"EXTERNAL",
+    "entry_point_selector":"0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
+    "calldata":[
+
     ],
-    "storage_address": "0x1724987234973219347210837402",
-    "caller_address": "0x0",
-    "call_type": "Call",
-    "initial_gas": 18446744073709551615,
-    "contract_name": "SNFORGE_TEST_CODE",
-    "function_name": "SNFORGE_TEST_CODE_FUNCTION"
+    "storage_address":"0x1724987234973219347210837402",
+    "caller_address":"0x0",
+    "call_type":"Call",
+    "initial_gas":18446744073709551615,
+    "contract_name":"SNFORGE_TEST_CODE",
+    "function_name":"SNFORGE_TEST_CODE_FUNCTION"
   },
-  "used_execution_resources": {
-    "vm_resources": {
-      "n_steps": 16795,
-      "n_memory_holes": 958,
-      "builtin_instance_counter": {
-        "bitwise_builtin": 11,
-        "range_check_builtin": 695,
-        "poseidon_builtin": 11,
-        "pedersen_builtin": 11,
-        "ec_op_builtin": 11
+  "used_execution_resources":{
+    "vm_resources":{
+      "n_steps":17136,
+      "n_memory_holes":958,
+      "builtin_instance_counter":{
+        "bitwise_builtin":11,
+        "pedersen_builtin":11,
+        "range_check_builtin":695,
+        "poseidon_builtin":11,
+        "ec_op_builtin":11
       }
     },
-    "syscall_counter": {
-      "EmitEvent": 11,
-      "StorageWrite": 11,
-      "Deploy": 14,
-      "SendMessageToL1": 11,
-      "StorageRead": 11,
-      "GetBlockHash": 11,
-      "CallContract": 8,
-      "LibraryCall": 1,
-      "GetExecutionInfo": 11,
-      "Keccak": 11
+    "syscall_counter":{
+      "CallContract":8,
+      "SendMessageToL1":22,
+      "StorageRead":11,
+      "Deploy":14,
+      "GetBlockHash":11,
+      "Keccak":11,
+      "LibraryCall":1,
+      "GetExecutionInfo":11,
+      "StorageWrite":11,
+      "EmitEvent":11
     }
   },
-  "nested_calls": [
+  "used_onchain_data":{
+    "l2_l1_message_sizes":[
+      2,
+      2
+    ]
+  },
+  "nested_calls":[
     {
-      "entry_point": {
-        "class_hash": "0x35515738987017ace4e90d012a218e21f62035b59191f43da97cbb42974b8fd",
-        "code_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-        "entry_point_type": "CONSTRUCTOR",
-        "entry_point_selector": "0x28ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
-        "calldata": [
-          "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+      "entry_point":{
+        "class_hash":"0x6c2df60c34cb926e750c6b01fb7693e70cab92b14bbb1dff345a99878432bc2",
+        "code_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+        "entry_point_type":"CONSTRUCTOR",
+        "entry_point_selector":"0x28ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
+        "calldata":[
+          "0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x5"
         ],
-        "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-        "caller_address": "0x1724987234973219347210837402",
-        "call_type": "Call",
-        "initial_gas": 18446744073709551615,
-        "contract_name": "TraceInfoProxy",
-        "function_name": "constructor"
+        "storage_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+        "caller_address":"0x1724987234973219347210837402",
+        "call_type":"Call",
+        "initial_gas":18446744073709551615,
+        "contract_name":"TraceInfoProxy",
+        "function_name":"constructor"
       },
-      "used_execution_resources": {
-        "vm_resources": {
-          "n_steps": 2849,
-          "n_memory_holes": 167,
-          "builtin_instance_counter": {
-            "bitwise_builtin": 2,
-            "range_check_builtin": 119,
-            "poseidon_builtin": 2,
-            "pedersen_builtin": 2,
-            "ec_op_builtin": 2
+      "used_execution_resources":{
+        "vm_resources":{
+          "n_steps":2911,
+          "n_memory_holes":167,
+          "builtin_instance_counter":{
+            "bitwise_builtin":2,
+            "pedersen_builtin":2,
+            "range_check_builtin":119,
+            "poseidon_builtin":2,
+            "ec_op_builtin":2
           }
         },
-        "syscall_counter": {
-          "StorageRead": 2,
-          "CallContract": 1,
-          "GetExecutionInfo": 2,
-          "SendMessageToL1": 2,
-          "Keccak": 2,
-          "StorageWrite": 2,
-          "GetBlockHash": 2,
-          "Deploy": 2,
-          "EmitEvent": 2
+        "syscall_counter":{
+          "Deploy":2,
+          "StorageRead":2,
+          "SendMessageToL1":4,
+          "StorageWrite":2,
+          "GetExecutionInfo":2,
+          "GetBlockHash":2,
+          "CallContract":1,
+          "EmitEvent":2,
+          "Keccak":2
         }
       },
-      "nested_calls": [
+      "used_onchain_data":{
+        "l2_l1_message_sizes":[
+          2,
+          2
+        ]
+      },
+      "nested_calls":[
         {
-          "entry_point": {
-            "class_hash": "0x315acf918027428734c945916e600b96ad5846ead439c67cfd9f12b1bce40c3",
-            "code_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-            "entry_point_type": "EXTERNAL",
-            "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-            "calldata": [
+          "entry_point":{
+            "class_hash":"0x1dd979df4780ac35af86ceaa783ea54e9f0a7428fa011346e7e686878546ed8",
+            "code_address":"0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+            "entry_point_type":"EXTERNAL",
+            "entry_point_selector":"0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+            "calldata":[
               "0x1",
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x32"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-            "caller_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-            "call_type": "Call",
-            "initial_gas": 18446744073708912465,
-            "contract_name": "TraceInfoChecker",
-            "function_name": "from_proxy"
+            "storage_address":"0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+            "caller_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+            "call_type":"Call",
+            "initial_gas":18446744073708894365,
+            "contract_name":"TraceInfoChecker",
+            "function_name":"from_proxy"
           },
-          "used_execution_resources": {
-            "vm_resources": {
-              "n_steps": 1375,
-              "n_memory_holes": 82,
-              "builtin_instance_counter": {
-                "bitwise_builtin": 1,
-                "range_check_builtin": 58,
-                "poseidon_builtin": 1,
-                "pedersen_builtin": 1,
-                "ec_op_builtin": 1
+          "used_execution_resources":{
+            "vm_resources":{
+              "n_steps":1406,
+              "n_memory_holes":82,
+              "builtin_instance_counter":{
+                "bitwise_builtin":1,
+                "pedersen_builtin":1,
+                "range_check_builtin":58,
+                "poseidon_builtin":1,
+                "ec_op_builtin":1
               }
             },
-            "syscall_counter": {
-              "GetBlockHash": 1,
-              "Keccak": 1,
-              "StorageRead": 1,
-              "StorageWrite": 1,
-              "GetExecutionInfo": 1,
-              "Deploy": 1,
-              "SendMessageToL1": 1,
-              "EmitEvent": 1
+            "syscall_counter":{
+              "EmitEvent":1,
+              "GetBlockHash":1,
+              "StorageRead":1,
+              "GetExecutionInfo":1,
+              "SendMessageToL1":2,
+              "Keccak":1,
+              "Deploy":1,
+              "StorageWrite":1
             }
           },
-          "nested_calls": [
+          "used_onchain_data":{
+            "l2_l1_message_sizes":[
+              2,
+              2
+            ]
+          },
+          "nested_calls":[
+
           ]
         }
       ]
     },
     {
-      "entry_point": {
-        "class_hash": "0x35515738987017ace4e90d012a218e21f62035b59191f43da97cbb42974b8fd",
-        "code_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-        "entry_point_type": "EXTERNAL",
-        "entry_point_selector": "0x14d7bff2015b0a213b958b57be5d1588a9720baebac310a441c990bae986710",
-        "calldata": [
-          "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+      "entry_point":{
+        "class_hash":"0x6c2df60c34cb926e750c6b01fb7693e70cab92b14bbb1dff345a99878432bc2",
+        "code_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+        "entry_point_type":"EXTERNAL",
+        "entry_point_selector":"0x14d7bff2015b0a213b958b57be5d1588a9720baebac310a441c990bae986710",
+        "calldata":[
+          "0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x1"
         ],
-        "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-        "caller_address": "0x1724987234973219347210837402",
-        "call_type": "Call",
-        "initial_gas": 18446744073709551615,
-        "contract_name": "TraceInfoProxy",
-        "function_name": "regular_call"
+        "storage_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+        "caller_address":"0x1724987234973219347210837402",
+        "call_type":"Call",
+        "initial_gas":18446744073709551615,
+        "contract_name":"TraceInfoProxy",
+        "function_name":"regular_call"
       },
-      "used_execution_resources": {
-        "vm_resources": {
-          "n_steps": 2857,
-          "n_memory_holes": 167,
-          "builtin_instance_counter": {
-            "bitwise_builtin": 2,
-            "range_check_builtin": 119,
-            "poseidon_builtin": 2,
-            "pedersen_builtin": 2,
-            "ec_op_builtin": 2
+      "used_execution_resources":{
+        "vm_resources":{
+          "n_steps":2919,
+          "n_memory_holes":167,
+          "builtin_instance_counter":{
+            "bitwise_builtin":2,
+            "pedersen_builtin":2,
+            "range_check_builtin":119,
+            "poseidon_builtin":2,
+            "ec_op_builtin":2
           }
         },
-        "syscall_counter": {
-          "Keccak": 2,
-          "Deploy": 2,
-          "CallContract": 1,
-          "GetExecutionInfo": 2,
-          "SendMessageToL1": 2,
-          "EmitEvent": 2,
-          "StorageWrite": 2,
-          "StorageRead": 2,
-          "GetBlockHash": 2
+        "syscall_counter":{
+          "StorageRead":2,
+          "SendMessageToL1":4,
+          "GetBlockHash":2,
+          "CallContract":1,
+          "GetExecutionInfo":2,
+          "Deploy":2,
+          "EmitEvent":2,
+          "Keccak":2,
+          "StorageWrite":2
         }
       },
-      "nested_calls": [
+      "used_onchain_data":{
+        "l2_l1_message_sizes":[
+          2,
+          2
+        ]
+      },
+      "nested_calls":[
         {
-          "entry_point": {
-            "class_hash": "0x315acf918027428734c945916e600b96ad5846ead439c67cfd9f12b1bce40c3",
-            "code_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-            "entry_point_type": "EXTERNAL",
-            "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-            "calldata": [
+          "entry_point":{
+            "class_hash":"0x1dd979df4780ac35af86ceaa783ea54e9f0a7428fa011346e7e686878546ed8",
+            "code_address":"0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+            "entry_point_type":"EXTERNAL",
+            "entry_point_selector":"0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+            "calldata":[
               "0x2",
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0xa"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-            "caller_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-            "call_type": "Call",
-            "initial_gas": 18446744073708911665,
-            "contract_name": "TraceInfoChecker",
-            "function_name": "from_proxy"
+            "storage_address":"0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+            "caller_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+            "call_type":"Call",
+            "initial_gas":18446744073708893565,
+            "contract_name":"TraceInfoChecker",
+            "function_name":"from_proxy"
           },
-          "used_execution_resources": {
-            "vm_resources": {
-              "n_steps": 1375,
-              "n_memory_holes": 82,
-              "builtin_instance_counter": {
-                "bitwise_builtin": 1,
-                "range_check_builtin": 58,
-                "poseidon_builtin": 1,
-                "pedersen_builtin": 1,
-                "ec_op_builtin": 1
+          "used_execution_resources":{
+            "vm_resources":{
+              "n_steps":1406,
+              "n_memory_holes":82,
+              "builtin_instance_counter":{
+                "bitwise_builtin":1,
+                "pedersen_builtin":1,
+                "range_check_builtin":58,
+                "poseidon_builtin":1,
+                "ec_op_builtin":1
               }
             },
-            "syscall_counter": {
-              "EmitEvent": 1,
-              "StorageRead": 1,
-              "Keccak": 1,
-              "StorageWrite": 1,
-              "SendMessageToL1": 1,
-              "GetExecutionInfo": 1,
-              "Deploy": 1,
-              "GetBlockHash": 1
+            "syscall_counter":{
+              "StorageRead":1,
+              "Keccak":1,
+              "EmitEvent":1,
+              "Deploy":1,
+              "GetExecutionInfo":1,
+              "GetBlockHash":1,
+              "SendMessageToL1":2,
+              "StorageWrite":1
             }
           },
-          "nested_calls": [
+          "used_onchain_data":{
+            "l2_l1_message_sizes":[
+              2,
+              2
+            ]
+          },
+          "nested_calls":[
+
           ]
         }
       ]
     },
     {
-      "entry_point": {
-        "class_hash": "0x35515738987017ace4e90d012a218e21f62035b59191f43da97cbb42974b8fd",
-        "code_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-        "entry_point_type": "EXTERNAL",
-        "entry_point_selector": "0x4bdc46cbf005c1cd386c527a40ebef01d1a9ea4c226b74b6495539b8f16a7a",
-        "calldata": [
-          "0x315acf918027428734c945916e600b96ad5846ead439c67cfd9f12b1bce40c3",
+      "entry_point":{
+        "class_hash":"0x6c2df60c34cb926e750c6b01fb7693e70cab92b14bbb1dff345a99878432bc2",
+        "code_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+        "entry_point_type":"EXTERNAL",
+        "entry_point_selector":"0x4bdc46cbf005c1cd386c527a40ebef01d1a9ea4c226b74b6495539b8f16a7a",
+        "calldata":[
+          "0x1dd979df4780ac35af86ceaa783ea54e9f0a7428fa011346e7e686878546ed8",
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x2"
         ],
-        "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-        "caller_address": "0x1724987234973219347210837402",
-        "call_type": "Call",
-        "initial_gas": 18446744073709551615,
-        "contract_name": "TraceInfoProxy",
-        "function_name": "with_libcall"
+        "storage_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+        "caller_address":"0x1724987234973219347210837402",
+        "call_type":"Call",
+        "initial_gas":18446744073709551615,
+        "contract_name":"TraceInfoProxy",
+        "function_name":"with_libcall"
       },
-      "used_execution_resources": {
-        "vm_resources": {
-          "n_steps": 2857,
-          "n_memory_holes": 167,
-          "builtin_instance_counter": {
-            "bitwise_builtin": 2,
-            "range_check_builtin": 119,
-            "poseidon_builtin": 2,
-            "pedersen_builtin": 2,
-            "ec_op_builtin": 2
+      "used_execution_resources":{
+        "vm_resources":{
+          "n_steps":2919,
+          "n_memory_holes":167,
+          "builtin_instance_counter":{
+            "bitwise_builtin":2,
+            "pedersen_builtin":2,
+            "range_check_builtin":119,
+            "poseidon_builtin":2,
+            "ec_op_builtin":2
           }
         },
-        "syscall_counter": {
-          "LibraryCall": 1,
-          "EmitEvent": 2,
-          "Deploy": 2,
-          "SendMessageToL1": 2,
-          "StorageWrite": 2,
-          "Keccak": 2,
-          "GetBlockHash": 2,
-          "GetExecutionInfo": 2,
-          "StorageRead": 2
+        "syscall_counter":{
+          "SendMessageToL1":4,
+          "GetExecutionInfo":2,
+          "StorageWrite":2,
+          "EmitEvent":2,
+          "LibraryCall":1,
+          "GetBlockHash":2,
+          "StorageRead":2,
+          "Deploy":2,
+          "Keccak":2
         }
       },
-      "nested_calls": [
+      "used_onchain_data":{
+        "l2_l1_message_sizes":[
+          2,
+          2
+        ]
+      },
+      "nested_calls":[
         {
-          "entry_point": {
-            "class_hash": "0x315acf918027428734c945916e600b96ad5846ead439c67cfd9f12b1bce40c3",
-            "code_address": null,
-            "entry_point_type": "EXTERNAL",
-            "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-            "calldata": [
+          "entry_point":{
+            "class_hash":"0x1dd979df4780ac35af86ceaa783ea54e9f0a7428fa011346e7e686878546ed8",
+            "code_address":null,
+            "entry_point_type":"EXTERNAL",
+            "entry_point_selector":"0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+            "calldata":[
               "0x3",
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x14"
             ],
-            "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-            "caller_address": "0x1724987234973219347210837402",
-            "call_type": "Delegate",
-            "initial_gas": 18446744073708911665,
-            "contract_name": "TraceInfoChecker",
-            "function_name": "from_proxy"
+            "storage_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+            "caller_address":"0x1724987234973219347210837402",
+            "call_type":"Delegate",
+            "initial_gas":18446744073708893565,
+            "contract_name":"TraceInfoChecker",
+            "function_name":"from_proxy"
           },
-          "used_execution_resources": {
-            "vm_resources": {
-              "n_steps": 1375,
-              "n_memory_holes": 82,
-              "builtin_instance_counter": {
-                "bitwise_builtin": 1,
-                "range_check_builtin": 58,
-                "poseidon_builtin": 1,
-                "pedersen_builtin": 1,
-                "ec_op_builtin": 1
+          "used_execution_resources":{
+            "vm_resources":{
+              "n_steps":1406,
+              "n_memory_holes":82,
+              "builtin_instance_counter":{
+                "bitwise_builtin":1,
+                "pedersen_builtin":1,
+                "range_check_builtin":58,
+                "poseidon_builtin":1,
+                "ec_op_builtin":1
               }
             },
-            "syscall_counter": {
-              "GetExecutionInfo": 1,
-              "Keccak": 1,
-              "GetBlockHash": 1,
-              "SendMessageToL1": 1,
-              "EmitEvent": 1,
-              "StorageWrite": 1,
-              "Deploy": 1,
-              "StorageRead": 1
+            "syscall_counter":{
+              "GetExecutionInfo":1,
+              "SendMessageToL1":2,
+              "EmitEvent":1,
+              "Deploy":1,
+              "Keccak":1,
+              "GetBlockHash":1,
+              "StorageRead":1,
+              "StorageWrite":1
             }
           },
-          "nested_calls": [
+          "used_onchain_data":{
+            "l2_l1_message_sizes":[
+              2,
+              2
+            ]
+          },
+          "nested_calls":[
+
           ]
         }
       ]
     },
     {
-      "entry_point": {
-        "class_hash": "0x35515738987017ace4e90d012a218e21f62035b59191f43da97cbb42974b8fd",
-        "code_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-        "entry_point_type": "EXTERNAL",
-        "entry_point_selector": "0x3f55930393ea07087c654a727a871299cabe3617a1330514cdc490470be9aa0",
-        "calldata": [
-          "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-          "0x76f7be198a49522a73019075fc24d6b2eaaf714de367ccb20f751af179738bf",
+      "entry_point":{
+        "class_hash":"0x6c2df60c34cb926e750c6b01fb7693e70cab92b14bbb1dff345a99878432bc2",
+        "code_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+        "entry_point_type":"EXTERNAL",
+        "entry_point_selector":"0x3f55930393ea07087c654a727a871299cabe3617a1330514cdc490470be9aa0",
+        "calldata":[
+          "0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+          "0x4c99ce9c262ccb816178d8fa1f31040c57f33f6e8d9b898270226db52f2d084",
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x3"
         ],
-        "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-        "caller_address": "0x1724987234973219347210837402",
-        "call_type": "Call",
-        "initial_gas": 18446744073709551615,
-        "contract_name": "TraceInfoProxy",
-        "function_name": "call_two"
+        "storage_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+        "caller_address":"0x1724987234973219347210837402",
+        "call_type":"Call",
+        "initial_gas":18446744073709551615,
+        "contract_name":"TraceInfoProxy",
+        "function_name":"call_two"
       },
-      "used_execution_resources": {
-        "vm_resources": {
-          "n_steps": 4294,
-          "n_memory_holes": 250,
-          "builtin_instance_counter": {
-            "bitwise_builtin": 3,
-            "range_check_builtin": 180,
-            "poseidon_builtin": 3,
-            "pedersen_builtin": 3,
-            "ec_op_builtin": 3
+      "used_execution_resources":{
+        "vm_resources":{
+          "n_steps":4387,
+          "n_memory_holes":250,
+          "builtin_instance_counter":{
+            "bitwise_builtin":3,
+            "pedersen_builtin":3,
+            "range_check_builtin":180,
+            "poseidon_builtin":3,
+            "ec_op_builtin":3
           }
         },
-        "syscall_counter": {
-          "EmitEvent": 3,
-          "CallContract": 2,
-          "GetBlockHash": 3,
-          "SendMessageToL1": 3,
-          "StorageRead": 3,
-          "GetExecutionInfo": 3,
-          "Deploy": 3,
-          "StorageWrite": 3,
-          "Keccak": 3
+        "syscall_counter":{
+          "Keccak":3,
+          "SendMessageToL1":6,
+          "StorageWrite":3,
+          "GetExecutionInfo":3,
+          "StorageRead":3,
+          "EmitEvent":3,
+          "CallContract":2,
+          "Deploy":3,
+          "GetBlockHash":3
         }
       },
-      "nested_calls": [
+      "used_onchain_data":{
+        "l2_l1_message_sizes":[
+          2,
+          2
+        ]
+      },
+      "nested_calls":[
         {
-          "entry_point": {
-            "class_hash": "0x315acf918027428734c945916e600b96ad5846ead439c67cfd9f12b1bce40c3",
-            "code_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-            "entry_point_type": "EXTERNAL",
-            "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-            "calldata": [
+          "entry_point":{
+            "class_hash":"0x1dd979df4780ac35af86ceaa783ea54e9f0a7428fa011346e7e686878546ed8",
+            "code_address":"0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+            "entry_point_type":"EXTERNAL",
+            "entry_point_selector":"0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+            "calldata":[
               "0x2a",
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x1e"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-            "caller_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-            "call_type": "Call",
-            "initial_gas": 18446744073709294175,
-            "contract_name": "TraceInfoChecker",
-            "function_name": "from_proxy"
+            "storage_address":"0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+            "caller_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+            "call_type":"Call",
+            "initial_gas":18446744073709281075,
+            "contract_name":"TraceInfoChecker",
+            "function_name":"from_proxy"
           },
-          "used_execution_resources": {
-            "vm_resources": {
-              "n_steps": 1375,
-              "n_memory_holes": 82,
-              "builtin_instance_counter": {
-                "bitwise_builtin": 1,
-                "range_check_builtin": 58,
-                "poseidon_builtin": 1,
-                "pedersen_builtin": 1,
-                "ec_op_builtin": 1
+          "used_execution_resources":{
+            "vm_resources":{
+              "n_steps":1406,
+              "n_memory_holes":82,
+              "builtin_instance_counter":{
+                "bitwise_builtin":1,
+                "pedersen_builtin":1,
+                "range_check_builtin":58,
+                "poseidon_builtin":1,
+                "ec_op_builtin":1
               }
             },
-            "syscall_counter": {
-              "Keccak": 1,
-              "StorageWrite": 1,
-              "GetExecutionInfo": 1,
-              "EmitEvent": 1,
-              "StorageRead": 1,
-              "Deploy": 1,
-              "SendMessageToL1": 1,
-              "GetBlockHash": 1
+            "syscall_counter":{
+              "StorageRead":1,
+              "SendMessageToL1":2,
+              "GetExecutionInfo":1,
+              "Keccak":1,
+              "StorageWrite":1,
+              "EmitEvent":1,
+              "GetBlockHash":1,
+              "Deploy":1
             }
           },
-          "nested_calls": [
+          "used_onchain_data":{
+            "l2_l1_message_sizes":[
+              2,
+              2
+            ]
+          },
+          "nested_calls":[
+
           ]
         },
         {
-          "entry_point": {
-            "class_hash": "0x4c9c0475b4e7d7170854a70243ef9b5b748c06fc45420625018887848078146",
-            "code_address": "0x76f7be198a49522a73019075fc24d6b2eaaf714de367ccb20f751af179738bf",
-            "entry_point_type": "EXTERNAL",
-            "entry_point_selector": "0x10d869dd492a59760ea0fa8b9f9ac52808445c51200f97727af69506e959b7f",
-            "calldata": [
+          "entry_point":{
+            "class_hash":"0x1603ebd3c4c50f31ee27fe44380b97710fb6964230e19704299582f5ed51ef4",
+            "code_address":"0x4c99ce9c262ccb816178d8fa1f31040c57f33f6e8d9b898270226db52f2d084",
+            "entry_point_type":"EXTERNAL",
+            "entry_point_selector":"0x10d869dd492a59760ea0fa8b9f9ac52808445c51200f97727af69506e959b7f",
+            "calldata":[
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x3c"
             ],
-            "storage_address": "0x76f7be198a49522a73019075fc24d6b2eaaf714de367ccb20f751af179738bf",
-            "caller_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
-            "call_type": "Call",
-            "initial_gas": 18446744073708273415,
-            "contract_name": "TraceDummy",
-            "function_name": "from_proxy_dummy"
+            "storage_address":"0x4c99ce9c262ccb816178d8fa1f31040c57f33f6e8d9b898270226db52f2d084",
+            "caller_address":"0x2acef2974925c84dd5a67252489beb15a21866dc81a3503e0c64523ce7ae9e4",
+            "call_type":"Call",
+            "initial_gas":18446744073708237215,
+            "contract_name":"TraceDummy",
+            "function_name":"from_proxy_dummy"
           },
-          "used_execution_resources": {
-            "vm_resources": {
-              "n_steps": 1345,
-              "n_memory_holes": 82,
-              "builtin_instance_counter": {
-                "bitwise_builtin": 1,
-                "range_check_builtin": 58,
-                "poseidon_builtin": 1,
-                "pedersen_builtin": 1,
-                "ec_op_builtin": 1
+          "used_execution_resources":{
+            "vm_resources":{
+              "n_steps":1376,
+              "n_memory_holes":82,
+              "builtin_instance_counter":{
+                "bitwise_builtin":1,
+                "pedersen_builtin":1,
+                "range_check_builtin":58,
+                "poseidon_builtin":1,
+                "ec_op_builtin":1
               }
             },
-            "syscall_counter": {
-              "GetBlockHash": 1,
-              "StorageRead": 1,
-              "SendMessageToL1": 1,
-              "Keccak": 1,
-              "Deploy": 1,
-              "GetExecutionInfo": 1,
-              "EmitEvent": 1,
-              "StorageWrite": 1
+            "syscall_counter":{
+              "GetBlockHash":1,
+              "StorageRead":1,
+              "EmitEvent":1,
+              "StorageWrite":1,
+              "Keccak":1,
+              "GetExecutionInfo":1,
+              "SendMessageToL1":2,
+              "Deploy":1
             }
           },
-          "nested_calls": [
+          "used_onchain_data":{
+            "l2_l1_message_sizes":[
+              2,
+              2
+            ]
+          },
+          "nested_calls":[
+
           ]
         }
       ]
     },
     {
-      "entry_point": {
-        "class_hash": "0x315acf918027428734c945916e600b96ad5846ead439c67cfd9f12b1bce40c3",
-        "code_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-        "entry_point_type": "EXTERNAL",
-        "entry_point_selector": "0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-        "calldata": [
+      "entry_point":{
+        "class_hash":"0x1dd979df4780ac35af86ceaa783ea54e9f0a7428fa011346e7e686878546ed8",
+        "code_address":"0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+        "entry_point_type":"EXTERNAL",
+        "entry_point_selector":"0x2eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
+        "calldata":[
           "0x4",
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x4"
         ],
-        "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
-        "caller_address": "0x1724987234973219347210837402",
-        "call_type": "Call",
-        "initial_gas": 18446744073709551615,
-        "contract_name": "TraceInfoChecker",
-        "function_name": "from_proxy"
+        "storage_address":"0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+        "caller_address":"0x1724987234973219347210837402",
+        "call_type":"Call",
+        "initial_gas":18446744073709551615,
+        "contract_name":"TraceInfoChecker",
+        "function_name":"from_proxy"
       },
-      "used_execution_resources": {
-        "vm_resources": {
-          "n_steps": 1375,
-          "n_memory_holes": 82,
-          "builtin_instance_counter": {
-            "bitwise_builtin": 1,
-            "range_check_builtin": 58,
-            "poseidon_builtin": 1,
-            "pedersen_builtin": 1,
-            "ec_op_builtin": 1
+      "used_execution_resources":{
+        "vm_resources":{
+          "n_steps":1406,
+          "n_memory_holes":82,
+          "builtin_instance_counter":{
+            "bitwise_builtin":1,
+            "pedersen_builtin":1,
+            "range_check_builtin":58,
+            "poseidon_builtin":1,
+            "ec_op_builtin":1
           }
         },
-        "syscall_counter": {
-          "SendMessageToL1": 1,
-          "StorageWrite": 1,
-          "StorageRead": 1,
-          "GetExecutionInfo": 1,
-          "Keccak": 1,
-          "EmitEvent": 1,
-          "GetBlockHash": 1,
-          "Deploy": 1
+        "syscall_counter":{
+          "Keccak":1,
+          "EmitEvent":1,
+          "SendMessageToL1":2,
+          "GetBlockHash":1,
+          "StorageRead":1,
+          "GetExecutionInfo":1,
+          "Deploy":1,
+          "StorageWrite":1
         }
       },
-      "nested_calls": [
+      "used_onchain_data":{
+        "l2_l1_message_sizes":[
+          2,
+          2
+        ]
+      },
+      "nested_calls":[
+
       ]
     }
   ]
