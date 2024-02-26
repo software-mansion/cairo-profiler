@@ -115,12 +115,9 @@ pub enum DeprecatedSyscallSelector {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct CallEntryPoint {
-    pub class_hash: Option<ClassHash>,
-    pub code_address: Option<ContractAddress>,
     pub entry_point_type: EntryPointType,
     pub entry_point_selector: EntryPointSelector,
-    pub storage_address: ContractAddress,
-    pub caller_address: ContractAddress,
+    pub contract_address: ContractAddress,
     pub call_type: CallType,
 
     /// Contract name to display instead of contract address

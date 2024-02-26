@@ -183,7 +183,7 @@ fn collect_samples<'a>(
     current_path.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
-        trace.entry_point.storage_address.clone(),
+        trace.entry_point.contract_address.clone(),
         trace.entry_point.entry_point_selector.clone(),
     ));
 
