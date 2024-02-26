@@ -1,9 +1,15 @@
 use serde::{Deserialize, Serialize};
-use starknet_api::core::{ClassHash, ContractAddress, EntryPointSelector};
-use starknet_api::deprecated_contract_class::EntryPointType;
-use starknet_api::transaction::Calldata;
 use std::collections::HashMap;
 use std::ops::{AddAssign, Sub, SubAssign};
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ClassHash(pub String);
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ContractAddress(pub String);
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct EntryPointSelector(pub String);
 
 /// Tree structure representing trace of a call.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -113,7 +119,6 @@ pub struct CallEntryPoint {
     pub code_address: Option<ContractAddress>,
     pub entry_point_type: EntryPointType,
     pub entry_point_selector: EntryPointSelector,
-    pub calldata: Calldata,
     pub storage_address: ContractAddress,
     pub caller_address: ContractAddress,
     pub call_type: CallType,
@@ -129,6 +134,14 @@ pub enum CallType {
     #[default]
     Call = 0,
     Delegate = 1,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub enum EntryPointType {
+    Constructor,
+    #[default]
+    External,
+    L1Handler,
 }
 
 impl ExecutionResources {
