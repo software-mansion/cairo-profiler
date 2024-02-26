@@ -135,9 +135,12 @@ pub enum CallType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub enum EntryPointType {
+    #[serde(rename = "CONSTRUCTOR")]
     Constructor,
+    #[serde(rename = "EXTERNAL")]
     #[default]
     External,
+    #[serde(rename = "L1_HANDLER")]
     L1Handler,
 }
 
