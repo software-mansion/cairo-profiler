@@ -5,7 +5,7 @@ use std::ops::Add;
 
 use crate::profile_builder::perftools::profiles::ValueType;
 use crate::profile_builder::{ProfilerContext, StringId};
-use starknet_api::core::{ContractAddress, EntryPointSelector};
+use crate::trace_data::{ContractAddress, EntryPointSelector};
 
 use crate::trace_data::{CallTrace, DeprecatedSyscallSelector, ExecutionResources};
 
@@ -94,11 +94,9 @@ impl EntryPointId {
         contract_address: ContractAddress,
         selector: EntryPointSelector,
     ) -> Self {
-        let address_str = format!("0x{}", hex::encode(contract_address.0.key().bytes()));
-        let selector_str = format!("{}", selector.0);
         EntryPointId {
-            address: address_str,
-            selector: selector_str,
+            address: contract_address.0,
+            selector: selector.0,
             contract_name,
             function_name,
         }
@@ -185,8 +183,8 @@ fn collect_samples<'a>(
     current_path.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
-        trace.entry_point.storage_address,
-        trace.entry_point.entry_point_selector,
+        trace.entry_point.contract_address.clone(),
+        trace.entry_point.entry_point_selector.clone(),
     ));
 
     let mut children_resources = ExecutionResources::default();

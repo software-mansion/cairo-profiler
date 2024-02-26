@@ -6,7 +6,7 @@
     "entry_point_selector": "0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
     "calldata": [
     ],
-    "storage_address": "0x1724987234973219347210837402",
+    "contract_address": "0x1724987234973219347210837402",
     "caller_address": "0x0",
     "call_type": "Call",
     "initial_gas": 18446744073709551615,
@@ -49,7 +49,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x1"
         ],
-        "storage_address": "0x26d64c984208aea7ca8095e84a87670d1680e559aa58ffb85be0ffc47205756",
+        "contract_address": "0x26d64c984208aea7ca8095e84a87670d1680e559aa58ffb85be0ffc47205756",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
@@ -92,7 +92,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0xa"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+            "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
             "caller_address": "0x26d64c984208aea7ca8095e84a87670d1680e559aa58ffb85be0ffc47205756",
             "call_type": "Call",
             "initial_gas": 18446744073708912465,
@@ -138,7 +138,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x2"
         ],
-        "storage_address": "0x60b4fc2f8c45f87748c0abf47dd43085db239244bd94d3706ff34fddb064215",
+        "contract_address": "0x60b4fc2f8c45f87748c0abf47dd43085db239244bd94d3706ff34fddb064215",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709018545,
@@ -181,7 +181,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x14"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+            "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
             "caller_address": "0x60b4fc2f8c45f87748c0abf47dd43085db239244bd94d3706ff34fddb064215",
             "call_type": "Call",
             "initial_gas": 18446744073708379395,
@@ -227,7 +227,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x3"
         ],
-        "storage_address": "0x7b",
+        "contract_address": "0x7b",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
@@ -270,7 +270,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x1e"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+            "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
             "caller_address": "0x7b",
             "call_type": "Call",
             "initial_gas": 18446744073708912465,
@@ -316,7 +316,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x4"
         ],
-        "storage_address": "0x7f0316424efc8b7268d7c05662bcfaa8066164950284e09cfbe2246104a79fa",
+        "contract_address": "0x7f0316424efc8b7268d7c05662bcfaa8066164950284e09cfbe2246104a79fa",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073707708815,
@@ -359,7 +359,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x28"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+            "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
             "caller_address": "0x7f0316424efc8b7268d7c05662bcfaa8066164950284e09cfbe2246104a79fa",
             "call_type": "Call",
             "initial_gas": 18446744073707069665,

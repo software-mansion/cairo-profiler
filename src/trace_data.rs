@@ -1,9 +1,15 @@
 use serde::{Deserialize, Serialize};
-use starknet_api::core::{ClassHash, ContractAddress, EntryPointSelector};
-use starknet_api::deprecated_contract_class::EntryPointType;
-use starknet_api::transaction::Calldata;
 use std::collections::HashMap;
 use std::ops::{AddAssign, Sub, SubAssign};
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ClassHash(pub String);
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ContractAddress(pub String);
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct EntryPointSelector(pub String);
 
 /// Tree structure representing trace of a call.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -109,13 +115,9 @@ pub enum DeprecatedSyscallSelector {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct CallEntryPoint {
-    pub class_hash: Option<ClassHash>,
-    pub code_address: Option<ContractAddress>,
     pub entry_point_type: EntryPointType,
     pub entry_point_selector: EntryPointSelector,
-    pub calldata: Calldata,
-    pub storage_address: ContractAddress,
-    pub caller_address: ContractAddress,
+    pub contract_address: ContractAddress,
     pub call_type: CallType,
 
     /// Contract name to display instead of contract address
@@ -129,4 +131,46 @@ pub enum CallType {
     #[default]
     Call = 0,
     Delegate = 1,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub enum EntryPointType {
+    #[serde(rename = "CONSTRUCTOR")]
+    Constructor,
+    #[serde(rename = "EXTERNAL")]
+    #[default]
+    External,
+    #[serde(rename = "L1_HANDLER")]
+    L1Handler,
+}
+
+impl ExecutionResources {
+    #[must_use]
+    pub fn gt_eq_than(&self, other: &ExecutionResources) -> bool {
+        if self.vm_resources.n_steps < other.vm_resources.n_steps
+            || self.vm_resources.n_memory_holes < other.vm_resources.n_memory_holes
+        {
+            return false;
+        }
+
+        let self_builtin_counter = &self.vm_resources.builtin_instance_counter;
+        let other_builtin_counter = &other.vm_resources.builtin_instance_counter;
+        for (builtin, other_count) in other_builtin_counter {
+            let self_count = self_builtin_counter.get(builtin).unwrap_or(&0);
+            if self_count < other_count {
+                return false;
+            }
+        }
+
+        let self_builtin_counter = &self.syscall_counter;
+        let other_builtin_counter = &other.syscall_counter;
+        for (syscall, other_count) in other_builtin_counter {
+            let self_count = self_builtin_counter.get(syscall).unwrap_or(&0);
+            if self_count < other_count {
+                return false;
+            }
+        }
+
+        true
+    }
 }
