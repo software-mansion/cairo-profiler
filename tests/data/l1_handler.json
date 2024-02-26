@@ -6,7 +6,7 @@
     "entry_point_selector": "0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
     "calldata": [
     ],
-    "storage_address": "0x1724987234973219347210837402",
+    "contract_address": "0x1724987234973219347210837402",
     "caller_address": "0x0",
     "call_type": "Call",
     "initial_gas": 18446744073709551615,
@@ -55,7 +55,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x1"
         ],
-        "storage_address": "0x727951796918192d30538f6fbf5ab3c569db06c33d951e2e686e01fc2137352",
+        "contract_address": "0x26d64c984208aea7ca8095e84a87670d1680e559aa58ffb85be0ffc47205756",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
@@ -104,8 +104,8 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0xa"
             ],
-            "storage_address": "0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
-            "caller_address": "0x727951796918192d30538f6fbf5ab3c569db06c33d951e2e686e01fc2137352",
+            "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+            "caller_address": "0x26d64c984208aea7ca8095e84a87670d1680e559aa58ffb85be0ffc47205756",
             "call_type": "Call",
             "initial_gas": 18446744073708894365,
             "contract_name": "TraceInfoChecker",
@@ -157,7 +157,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x2"
         ],
-        "storage_address": "0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+        "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
         "caller_address": "0x0",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
@@ -206,8 +206,8 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x14"
             ],
-            "storage_address": "0x727951796918192d30538f6fbf5ab3c569db06c33d951e2e686e01fc2137352",
-            "caller_address": "0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
+            "contract_address": "0x26d64c984208aea7ca8095e84a87670d1680e559aa58ffb85be0ffc47205756",
+            "caller_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
             "call_type": "Call",
             "initial_gas": 18446744073708890965,
             "contract_name": "TraceInfoProxy",
@@ -255,8 +255,8 @@
                   "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
                   "0xc8"
                 ],
-                "storage_address": "0x663f47e2c62013dd462c63c904c7d34fd9937ea5e4053a700d888e04241bd1c",
-                "caller_address": "0x727951796918192d30538f6fbf5ab3c569db06c33d951e2e686e01fc2137352",
+                "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+                "caller_address": "0x26d64c984208aea7ca8095e84a87670d1680e559aa58ffb85be0ffc47205756",
                 "call_type": "Call",
                 "initial_gas": 18446744073708232915,
                 "contract_name": "TraceInfoChecker",
