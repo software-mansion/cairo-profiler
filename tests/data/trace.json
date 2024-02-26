@@ -1,12 +1,10 @@
 {
   "entry_point": {
-    "class_hash": "0x117",
-    "code_address": "0x1724987234973219347210837402",
     "entry_point_type": "EXTERNAL",
     "entry_point_selector": "0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
     "calldata": [
     ],
-    "storage_address": "0x1724987234973219347210837402",
+    "contract_address": "0x1724987234973219347210837402",
     "caller_address": "0x0",
     "call_type": "Call",
     "initial_gas": 18446744073709551615,
@@ -50,7 +48,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x5"
         ],
-        "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
+        "contract_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
@@ -93,7 +91,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x32"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+            "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
             "caller_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
             "call_type": "Call",
             "initial_gas": 18446744073708912465,
@@ -139,7 +137,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x1"
         ],
-        "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
+        "contract_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
@@ -182,7 +180,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0xa"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+            "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
             "caller_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
             "call_type": "Call",
             "initial_gas": 18446744073708911665,
@@ -228,7 +226,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x2"
         ],
-        "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
+        "contract_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
@@ -271,7 +269,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x14"
             ],
-            "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
+            "contract_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
             "caller_address": "0x1724987234973219347210837402",
             "call_type": "Delegate",
             "initial_gas": 18446744073708911665,
@@ -318,7 +316,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x3"
         ],
-        "storage_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
+        "contract_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
@@ -361,7 +359,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x1e"
             ],
-            "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+            "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
             "caller_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
             "call_type": "Call",
             "initial_gas": 18446744073709294175,
@@ -404,7 +402,7 @@
               "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
               "0x3c"
             ],
-            "storage_address": "0x76f7be198a49522a73019075fc24d6b2eaaf714de367ccb20f751af179738bf",
+            "contract_address": "0x76f7be198a49522a73019075fc24d6b2eaaf714de367ccb20f751af179738bf",
             "caller_address": "0x73566c95e046d2bd81e3fb6359ad2e70da38e27e7d76d6aa33356022ff09018",
             "call_type": "Call",
             "initial_gas": 18446744073708273415,
@@ -450,7 +448,7 @@
           "0x1c7c5b166fa1157c2c9ac2379e334ea5802ebd7fe26c1e9717b1c836456f6dd",
           "0x4"
         ],
-        "storage_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
+        "contract_address": "0x5ca3e0f2f279d1e933294cff68b458ecd74af2605f9e4dc155b95209bbddc0c",
         "caller_address": "0x1724987234973219347210837402",
         "call_type": "Call",
         "initial_gas": 18446744073709551615,
