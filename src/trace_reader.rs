@@ -139,7 +139,7 @@ pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<Sample> {
 pub struct ResourcesKeys {
     pub builtins: HashSet<String>,
     pub syscalls: HashSet<DeprecatedSyscallSelector>,
-    pub onchain_data: HashSet<String>,
+    pub onchain_data: HashSet<(String, String)>,
 }
 
 impl ResourcesKeys {
@@ -162,10 +162,10 @@ impl ResourcesKeys {
                 unit: context.string_id(&unit_string).into(),
             });
         }
-        for data in &self.onchain_data {
+        for (type_name, unit_name) in &self.onchain_data {
             value_types.push(ValueType {
-                r#type: context.string_id(data).into(),
-                unit: context.string_id(&" payload length".to_string()).into(),
+                r#type: context.string_id(type_name).into(),
+                unit: context.string_id(unit_name).into(),
             });
         }
 
@@ -189,7 +189,10 @@ pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
         syscalls.extend(sample.flat_resources.syscall_counter.keys());
 
         if !sample.onchain_data.l2_l1_message_sizes.is_empty() {
-            onchain_data.insert("l2_l1_message_sizes".to_string());
+            onchain_data.insert((
+                "l2_l1_message_sizes".to_string(),
+                " payload length".to_string(),
+            ));
         }
     }
 
