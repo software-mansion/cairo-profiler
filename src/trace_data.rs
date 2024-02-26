@@ -11,6 +11,7 @@ pub struct CallTrace {
     pub entry_point: CallEntryPoint,
     #[serde(rename = "used_execution_resources")]
     pub cumulative_resources: ExecutionResources,
+    pub used_onchain_data: OnchainData,
     pub nested_calls: Vec<CallTrace>,
 }
 
@@ -129,4 +130,9 @@ pub enum CallType {
     #[default]
     Call = 0,
     Delegate = 1,
+}
+
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+pub struct OnchainData {
+    pub l2_l1_message_sizes: Vec<usize>,
 }
