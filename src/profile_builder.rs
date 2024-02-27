@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use perftools::profiles as pprof;
 
-use crate::trace_reader::{FunctionName, Location, ResourcesKeys, Sample, SampleType};
+use crate::trace_reader::{FunctionName, ResourcesKeys, Sample, SampleType};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub struct StringId(pub u64);
@@ -41,7 +41,7 @@ pub struct ProfilerContext {
     strings: HashMap<String, StringId>,
     id_to_string: HashMap<StringId, String>,
     functions: HashMap<FunctionName, pprof::Function>,
-    locations: HashMap<Location, pprof::Location>,
+    locations: HashMap<FunctionName, pprof::Location>,
 }
 
 impl ProfilerContext {
@@ -73,12 +73,12 @@ impl ProfilerContext {
         }
     }
 
-    fn location_id(&mut self, location: &Location) -> LocationId {
+    fn location_id(&mut self, location: &FunctionName) -> LocationId {
         if let Some(loc) = self.locations.get(location) {
             LocationId(loc.id)
         } else {
             let line = pprof::Line {
-                function_id: self.function_id(&location.0).into(),
+                function_id: self.function_id(location).into(),
                 line: 0,
             };
             let location_data = pprof::Location {
@@ -153,7 +153,7 @@ fn build_samples(
         .iter()
         .map(|s| pprof::Sample {
             location_id: s
-                .locations
+                .call_stack
                 .iter()
                 .map(|loc| context.location_id(loc).into())
                 .rev() // pprof format represents callstack from the least meaningful element

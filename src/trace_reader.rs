@@ -12,13 +12,10 @@ use crate::trace_data::{CallTrace, DeprecatedSyscallSelector, ExecutionResources
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
 
-#[derive(Clone, Hash, Eq, PartialEq)]
-pub struct Location(pub FunctionName);
-
-impl Location {
+impl FunctionName {
     #[inline]
-    fn from(entry_point_id: &EntryPointId) -> Location {
-        Location(FunctionName(format!("{entry_point_id}")))
+    fn from(entry_point_id: &EntryPointId) -> FunctionName {
+        FunctionName(format!("{entry_point_id}"))
     }
 }
 
@@ -28,7 +25,7 @@ pub enum SampleType {
 
 #[allow(clippy::struct_field_names)]
 pub struct Sample {
-    pub locations: Vec<Location>,
+    pub call_stack: Vec<FunctionName>,
     pub sample_type: SampleType,
     pub flat_resources: ExecutionResources,
 }
@@ -179,10 +176,10 @@ pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
 
 fn collect_samples<'a>(
     samples: &mut Vec<Sample>,
-    current_path: &mut Vec<EntryPointId>,
+    current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
 ) -> &'a ExecutionResources {
-    current_path.push(EntryPointId::from(
+    current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
         trace.entry_point.storage_address,
@@ -191,16 +188,16 @@ fn collect_samples<'a>(
 
     let mut children_resources = ExecutionResources::default();
     for sub_trace in &trace.nested_calls {
-        children_resources += &collect_samples(samples, current_path, sub_trace);
+        children_resources += &collect_samples(samples, current_call_stack, sub_trace);
     }
 
     samples.push(Sample {
-        locations: current_path.iter().map(Location::from).collect(),
+        call_stack: current_call_stack.iter().map(FunctionName::from).collect(),
         sample_type: SampleType::ContractCall,
         flat_resources: &trace.cumulative_resources - &children_resources,
     });
 
-    current_path.pop();
+    current_call_stack.pop();
 
     &trace.cumulative_resources
 }
