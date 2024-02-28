@@ -5,9 +5,9 @@ use std::ops::Add;
 
 use crate::profile_builder::perftools::profiles::ValueType;
 use crate::profile_builder::{ProfilerContext, StringId};
-use crate::trace_data::{ContractAddress, EntryPointSelector};
+use trace_data::{ContractAddress, EntryPointSelector};
 
-use crate::trace_data::{CallTrace, DeprecatedSyscallSelector, ExecutionResources};
+use trace_data::{CallTrace, DeprecatedSyscallSelector, ExecutionResources};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
