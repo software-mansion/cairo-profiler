@@ -703,9 +703,6 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 name = "trace-data"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "bytes",
- "flate2",
  "serde",
 ]
 
