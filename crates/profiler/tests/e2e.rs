@@ -6,7 +6,10 @@ fn simple_package() {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
-        .copy_from(project_root.join("crates/profiler/tests/data/"), &["trace.json"])
+        .copy_from(
+            project_root.join("crates/profiler/tests/data/"),
+            &["trace.json"],
+        )
         .unwrap();
 
     SnapboxCommand::new(cargo_bin!("cairo-profiler"))
@@ -25,7 +28,10 @@ fn output_path() {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
-        .copy_from(project_root.join("crates/profiler/tests/data/"), &["trace.json"])
+        .copy_from(
+            project_root.join("crates/profiler/tests/data/"),
+            &["trace.json"],
+        )
         .unwrap();
 
     SnapboxCommand::new(cargo_bin!("cairo-profiler"))
