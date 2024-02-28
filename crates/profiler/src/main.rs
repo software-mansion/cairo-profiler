@@ -14,7 +14,6 @@ use prost::Message;
 use trace_data::CallTrace;
 
 mod profile_builder;
-mod trace_data;
 mod trace_reader;
 
 #[derive(Parser, Debug)]

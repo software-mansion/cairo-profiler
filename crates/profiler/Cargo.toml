@@ -1,0 +1,32 @@
+[package]
+name = "profiler"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+prost.workspace = true
+prost-types.workspace = true
+bytes.workspace = true
+flate2.workspace = true
+hex.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+camino.workspace = true
+anyhow.workspace = true
+trace-data = { path="../trace-data" }
+
+
+[dev-dependencies]
+assert_fs.workspace = true
+project-root.workspace = true
+snapbox.workspace = true
+
+[build-dependencies]
+prost-build.workspace = true
+
+[[bin]]
+name = "cairo-profiler"
+path = "src/main.rs"
