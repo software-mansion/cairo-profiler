@@ -7,7 +7,7 @@ use crate::profile_builder::perftools::profiles::ValueType;
 use crate::profile_builder::{ProfilerContext, StringId};
 use trace_data::{ContractAddress, EntryPointSelector};
 
-use trace_data::{CallTrace, DeprecatedSyscallSelector, ExecutionResources};
+use trace_data::{CallTrace, ExecutionResources};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
@@ -126,27 +126,17 @@ pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<Sample> {
 }
 
 pub struct ResourcesKeys {
-    pub builtins: HashSet<String>,
-    pub syscalls: HashSet<DeprecatedSyscallSelector>,
+    pub keys: HashSet<String>,
 }
 
 impl ResourcesKeys {
     pub fn measurement_types(&self, context: &mut ProfilerContext) -> Vec<ValueType> {
         let mut value_types = vec![];
 
-        for builtin in &self.builtins {
-            let unit_string = " ".to_string().add(&builtin.replace('_', " "));
+        for key in &self.keys {
+            let unit_string = " ".to_string().add(&key.replace('_', " "));
             value_types.push(ValueType {
-                r#type: context.string_id(builtin).into(),
-                unit: context.string_id(&unit_string).into(),
-            });
-        }
-        for syscall in &self.syscalls {
-            let type_string = format!("{syscall:?}");
-            let unit_string = " ".to_string().add(&type_string);
-
-            value_types.push(ValueType {
-                r#type: context.string_id(&type_string).into(),
+                r#type: context.string_id(key).into(),
                 unit: context.string_id(&unit_string).into(),
             });
         }
@@ -156,10 +146,9 @@ impl ResourcesKeys {
 }
 
 pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
-    let mut syscalls = HashSet::new();
-    let mut builtins = HashSet::new();
+    let mut keys = HashSet::new();
     for sample in samples {
-        builtins.extend(
+        keys.extend(
             sample
                 .flat_resources
                 .vm_resources
@@ -167,9 +156,15 @@ pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
                 .keys()
                 .cloned(),
         );
-        syscalls.extend(sample.flat_resources.syscall_counter.keys());
+        keys.extend(
+            sample
+                .flat_resources
+                .syscall_counter
+                .keys()
+                .map(|x| format!("{x:?}")),
+        );
     }
-    ResourcesKeys { builtins, syscalls }
+    ResourcesKeys { keys }
 }
 
 fn collect_samples<'a>(
