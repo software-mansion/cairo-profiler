@@ -18,7 +18,7 @@ mod trace_reader;
 
 #[derive(Parser, Debug)]
 #[command(version)]
-#[clap(name = "cairo-profiler")]
+#[clap(name = "cairo-cairo-profiler")]
 struct Cli {
     /// Path to .json with trace data
     path_to_trace_data: Utf8PathBuf,

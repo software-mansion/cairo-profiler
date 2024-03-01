@@ -7,12 +7,12 @@ fn simple_package() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/profiler/tests/data/"),
+            project_root.join("../tests/data/"),
             &["trace.json"],
         )
         .unwrap();
 
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+    SnapboxCommand::new(cargo_bin!("cairo-cairo-profiler"))
         .current_dir(&temp_dir)
         .arg("./trace.json")
         .assert()
@@ -29,12 +29,12 @@ fn output_path() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/profiler/tests/data/"),
+            project_root.join("../tests/data/"),
             &["trace.json"],
         )
         .unwrap();
 
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+    SnapboxCommand::new(cargo_bin!("cairo-cairo-profiler"))
         .current_dir(&temp_dir)
         .arg("./trace.json")
         .args(["-o", "my/output/dir/my_file.pb.gz"])
