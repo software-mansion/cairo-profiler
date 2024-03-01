@@ -31,12 +31,12 @@ pub struct Sample {
 }
 
 impl Sample {
-    pub fn extract_samples_units_values(
+    pub fn extract_sample_values(
         &self,
         pprof_samples_units: &[pprof::ValueType],
         context: &ProfilerContext,
     ) -> Vec<i64> {
-        let mut units_values_map: HashMap<&str, i64> = vec![
+        let mut sample_values_map: HashMap<&str, i64> = vec![
             ("calls", 1),
             (
                 "n_steps",
@@ -51,8 +51,8 @@ impl Sample {
         .collect();
 
         for (builtin, count) in &self.flat_resources.vm_resources.builtin_instance_counter {
-            assert!(units_values_map.get(&&**builtin).is_none());
-            units_values_map.insert(builtin, i64::try_from(*count).unwrap());
+            assert!(sample_values_map.get(&&**builtin).is_none());
+            sample_values_map.insert(builtin, i64::try_from(*count).unwrap());
         }
 
         let syscall_counter_with_string: Vec<_> = self
@@ -62,18 +62,18 @@ impl Sample {
             .map(|(syscall, count)| (format!("{syscall:?}"), *count))
             .collect();
         for (syscall, count) in &syscall_counter_with_string {
-            assert!(units_values_map.get(&&**syscall).is_none());
-            units_values_map.insert(syscall, i64::try_from(*count).unwrap());
+            assert!(sample_values_map.get(&&**syscall).is_none());
+            sample_values_map.insert(syscall, i64::try_from(*count).unwrap());
         }
 
-        let mut samples_units_values = vec![];
+        let mut sample_values = vec![];
         for value_type in pprof_samples_units {
             let value_type_str =
                 context.string_from_string_id(StringId(u64::try_from(value_type.r#type).unwrap()));
-            samples_units_values.push(*units_values_map.get(value_type_str).unwrap_or(&0));
+            sample_values.push(*sample_values_map.get(value_type_str).unwrap_or(&0));
         }
 
-        samples_units_values
+        sample_values
     }
 }
 
@@ -125,14 +125,30 @@ pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<Sample> {
     samples
 }
 
-pub struct SamplesUnits(HashSet<String>);
+pub struct SampleUnits(HashSet<String>);
 
-impl SamplesUnits {
+impl SampleUnits {
+    pub fn new(mut units: HashSet<String>) -> Self {
+        units.extend([
+            String::from("calls"),
+            String::from("n_steps"),
+            String::from("n_memory_holes"),
+        ]);
+        Self(units)
+    }
+
     pub fn sample_units(&self, context: &mut ProfilerContext) -> Vec<pprof::ValueType> {
         let mut value_types = vec![];
 
         for unit in &self.0 {
-            let unit_string = " ".to_string().add(&unit.replace('_', " "));
+            let unit_without_underscores = unit.replace('_', " ");
+            let unit_without_prefix = if unit_without_underscores.starts_with("n ") {
+                unit_without_underscores.strip_prefix("n ").unwrap()
+            } else {
+                &unit_without_underscores
+            };
+            let unit_string = " ".to_string().add(unit_without_prefix);
+
             value_types.push(pprof::ValueType {
                 r#type: context.string_id(unit).into(),
                 unit: context.string_id(&unit_string).into(),
@@ -143,7 +159,7 @@ impl SamplesUnits {
     }
 }
 
-pub fn collect_samples_units(samples: &[Sample]) -> SamplesUnits {
+pub fn collect_samples_units(samples: &[Sample]) -> SampleUnits {
     let mut units = HashSet::new();
     for sample in samples {
         units.extend(
@@ -162,7 +178,7 @@ pub fn collect_samples_units(samples: &[Sample]) -> SamplesUnits {
                 .map(|x| format!("{x:?}")),
         );
     }
-    SamplesUnits(units)
+    SampleUnits::new(units)
 }
 
 fn collect_samples<'a>(

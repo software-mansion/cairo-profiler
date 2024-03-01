@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 pub use perftools::profiles as pprof;
 
-use crate::trace_reader::{FunctionName, Sample, SampleType, SamplesUnits};
+use crate::trace_reader::{FunctionName, Sample, SampleType, SampleUnits};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub struct StringId(pub u64);
@@ -127,27 +127,13 @@ impl ProfilerContext {
 fn build_samples(
     context: &mut ProfilerContext,
     samples: &[Sample],
-    samples_units: &SamplesUnits,
+    samples_units: &SampleUnits,
 ) -> (Vec<pprof::ValueType>, Vec<pprof::Sample>) {
     assert!(samples
         .iter()
         .all(|x| matches!(x.sample_type, SampleType::ContractCall)));
 
-    let mut pprof_samples_units = vec![
-        pprof::ValueType {
-            r#type: context.string_id(&String::from("calls")).into(),
-            unit: context.string_id(&String::from(" calls")).into(),
-        },
-        pprof::ValueType {
-            r#type: context.string_id(&String::from("n_steps")).into(),
-            unit: context.string_id(&String::from(" steps")).into(),
-        },
-        pprof::ValueType {
-            r#type: context.string_id(&String::from("n_memory_holes")).into(),
-            unit: context.string_id(&String::from(" memory holes")).into(),
-        },
-    ];
-    pprof_samples_units.append(&mut samples_units.sample_units(context));
+    let pprof_sample_units = samples_units.sample_units(context);
 
     let samples = samples
         .iter()
@@ -158,15 +144,15 @@ fn build_samples(
                 .map(|loc| context.location_id(loc).into())
                 .rev() // pprof format represents callstack from the least meaningful element
                 .collect(),
-            value: s.extract_samples_units_values(&pprof_samples_units, context),
+            value: s.extract_sample_values(&pprof_sample_units, context),
             label: vec![],
         })
         .collect();
 
-    (pprof_samples_units, samples)
+    (pprof_sample_units, samples)
 }
 
-pub fn build_profile(samples: &[Sample], samples_units: &SamplesUnits) -> pprof::Profile {
+pub fn build_profile(samples: &[Sample], samples_units: &SampleUnits) -> pprof::Profile {
     let mut context = ProfilerContext::new();
     let (sample_units, samples) = build_samples(&mut context, samples, samples_units);
     let (string_table, functions, locations) = context.context_data();
