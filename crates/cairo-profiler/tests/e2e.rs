@@ -7,7 +7,7 @@ fn simple_package() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/profiler/tests/data/"),
+            project_root.join("crates/cairo-profiler/tests/data/"),
             &["trace.json"],
         )
         .unwrap();
@@ -29,7 +29,7 @@ fn output_path() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/profiler/tests/data/"),
+            project_root.join("crates/cairo-profiler/tests/data/"),
             &["trace.json"],
         )
         .unwrap();

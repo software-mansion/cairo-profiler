@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "crates/trace-data",
-    "crates/profiler",
+    "crates/cairo-profiler",
 ]
 
 
