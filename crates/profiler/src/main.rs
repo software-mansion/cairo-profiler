@@ -3,7 +3,7 @@ use std::{
     io::{Read, Write},
 };
 
-use crate::trace_reader::{collect_resources_units, collect_samples_from_trace};
+use crate::trace_reader::{collect_samples_from_trace, collect_samples_units};
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
@@ -36,9 +36,9 @@ fn main() -> Result<()> {
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
     let samples = collect_samples_from_trace(&serialized_trace);
-    let resources_keys = collect_resources_units(&samples);
+    let samples_units = collect_samples_units(&samples);
 
-    let profile = build_profile(&samples, &resources_keys);
+    let profile = build_profile(&samples, &samples_units);
 
     if let Some(parent) = cli.output_path.parent() {
         fs::create_dir_all(parent)

@@ -31,9 +31,9 @@ pub struct Sample {
 }
 
 impl Sample {
-    pub fn extract_sample_units_values(
+    pub fn extract_samples_units_values(
         &self,
-        measurement_types: &[pprof::ValueType],
+        pprof_samples_units: &[pprof::ValueType],
         context: &ProfilerContext,
     ) -> Vec<i64> {
         let mut units_values_map: HashMap<&str, i64> = vec![
@@ -66,14 +66,14 @@ impl Sample {
             units_values_map.insert(syscall, i64::try_from(*count).unwrap());
         }
 
-        let mut measurements = vec![];
-        for value_type in measurement_types {
+        let mut samples_units_values = vec![];
+        for value_type in pprof_samples_units {
             let value_type_str =
                 context.string_from_string_id(StringId(u64::try_from(value_type.r#type).unwrap()));
-            measurements.push(*units_values_map.get(value_type_str).unwrap_or(&0));
+            samples_units_values.push(*units_values_map.get(value_type_str).unwrap_or(&0));
         }
 
-        measurements
+        samples_units_values
     }
 }
 
@@ -125,9 +125,9 @@ pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<Sample> {
     samples
 }
 
-pub struct ResourcesUnits(HashSet<String>);
+pub struct SamplesUnits(HashSet<String>);
 
-impl ResourcesUnits {
+impl SamplesUnits {
     pub fn sample_units(&self, context: &mut ProfilerContext) -> Vec<pprof::ValueType> {
         let mut value_types = vec![];
 
@@ -143,7 +143,7 @@ impl ResourcesUnits {
     }
 }
 
-pub fn collect_resources_units(samples: &[Sample]) -> ResourcesUnits {
+pub fn collect_samples_units(samples: &[Sample]) -> SamplesUnits {
     let mut units = HashSet::new();
     for sample in samples {
         units.extend(
@@ -162,7 +162,7 @@ pub fn collect_resources_units(samples: &[Sample]) -> ResourcesUnits {
                 .map(|x| format!("{x:?}")),
         );
     }
-    ResourcesUnits(units)
+    SamplesUnits(units)
 }
 
 fn collect_samples<'a>(

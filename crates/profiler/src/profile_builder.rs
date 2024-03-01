@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 pub use perftools::profiles as pprof;
 
-use crate::trace_reader::{FunctionName, ResourcesUnits, Sample, SampleType};
+use crate::trace_reader::{FunctionName, Sample, SampleType, SamplesUnits};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub struct StringId(pub u64);
@@ -127,13 +127,13 @@ impl ProfilerContext {
 fn build_samples(
     context: &mut ProfilerContext,
     samples: &[Sample],
-    resources_keys: &ResourcesUnits,
+    samples_units: &SamplesUnits,
 ) -> (Vec<pprof::ValueType>, Vec<pprof::Sample>) {
     assert!(samples
         .iter()
         .all(|x| matches!(x.sample_type, SampleType::ContractCall)));
 
-    let mut sample_units = vec![
+    let mut pprof_samples_units = vec![
         pprof::ValueType {
             r#type: context.string_id(&String::from("calls")).into(),
             unit: context.string_id(&String::from(" calls")).into(),
@@ -147,7 +147,7 @@ fn build_samples(
             unit: context.string_id(&String::from(" memory holes")).into(),
         },
     ];
-    sample_units.append(&mut resources_keys.sample_units(context));
+    pprof_samples_units.append(&mut samples_units.sample_units(context));
 
     let samples = samples
         .iter()
@@ -158,17 +158,17 @@ fn build_samples(
                 .map(|loc| context.location_id(loc).into())
                 .rev() // pprof format represents callstack from the least meaningful element
                 .collect(),
-            value: s.extract_sample_units_values(&sample_units, context),
+            value: s.extract_samples_units_values(&pprof_samples_units, context),
             label: vec![],
         })
         .collect();
 
-    (sample_units, samples)
+    (pprof_samples_units, samples)
 }
 
-pub fn build_profile(samples: &[Sample], resources_keys: &ResourcesUnits) -> pprof::Profile {
+pub fn build_profile(samples: &[Sample], samples_units: &SamplesUnits) -> pprof::Profile {
     let mut context = ProfilerContext::new();
-    let (sample_units, samples) = build_samples(&mut context, samples, resources_keys);
+    let (sample_units, samples) = build_samples(&mut context, samples, samples_units);
     let (string_table, functions, locations) = context.context_data();
 
     pprof::Profile {
