@@ -8,8 +8,6 @@ main () {
   check_cmd curl
   check_cmd tar
 
-  ls
-
   version=${1:-latest}
   release_tag=$(curl -# --fail -Ls -H 'Accept: application/json' "${REPO}/releases/{$version}" | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
 
