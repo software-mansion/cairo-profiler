@@ -33,7 +33,7 @@ pub struct Sample {
 impl Sample {
     pub fn extract_sample_values(
         &self,
-        pprof_samples_units: &[pprof::ValueType],
+        pprof_sample_units: &[pprof::ValueType],
         context: &ProfilerContext,
     ) -> Vec<i64> {
         let mut sample_values_map: HashMap<&str, i64> = vec![
@@ -67,7 +67,7 @@ impl Sample {
         }
 
         let mut sample_values = vec![];
-        for value_type in pprof_samples_units {
+        for value_type in pprof_sample_units {
             let value_type_str =
                 context.string_from_string_id(StringId(u64::try_from(value_type.r#type).unwrap()));
             sample_values.push(*sample_values_map.get(value_type_str).unwrap_or(&0));
