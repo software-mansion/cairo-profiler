@@ -37,7 +37,7 @@
       "GetExecutionInfo": 6
     }
   },
-  "used_onchain_data": {
+  "used_l1_resources": {
     "l2_l1_message_sizes": [
       2,
       2
@@ -86,7 +86,7 @@
           "StorageRead": 2
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -134,7 +134,7 @@
               "SendMessageToL1": 2
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -188,7 +188,7 @@
           "StorageWrite": 3
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -237,7 +237,7 @@
               "CallContract": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -285,7 +285,7 @@
                   "EmitEvent": 1
                 }
               },
-              "used_onchain_data": {
+              "used_l1_resources": {
                 "l2_l1_message_sizes": [
                   2,
                   2

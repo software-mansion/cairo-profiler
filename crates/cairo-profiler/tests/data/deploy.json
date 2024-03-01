@@ -37,7 +37,7 @@
       "GetBlockHash": 9
     }
   },
-  "used_onchain_data": {
+  "used_l1_resources": {
     "l2_l1_message_sizes": [
       2,
       2
@@ -86,7 +86,7 @@
           "EmitEvent": 2
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -134,7 +134,7 @@
               "GetExecutionInfo": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -187,7 +187,7 @@
           "GetBlockHash": 2
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -235,7 +235,7 @@
               "GetBlockHash": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -288,7 +288,7 @@
           "StorageRead": 2
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -336,7 +336,7 @@
               "GetBlockHash": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -389,7 +389,7 @@
           "GetBlockHash": 2
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -437,7 +437,7 @@
               "GetBlockHash": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2

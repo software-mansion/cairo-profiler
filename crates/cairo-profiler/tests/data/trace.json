@@ -36,7 +36,7 @@
       "EmitEvent": 11
     }
   },
-  "used_onchain_data": {
+  "used_l1_resources": {
     "l2_l1_message_sizes": [
       2,
       2
@@ -85,7 +85,7 @@
           "Keccak": 2
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -133,7 +133,7 @@
               "StorageWrite": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -186,7 +186,7 @@
           "StorageWrite": 2
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -234,7 +234,7 @@
               "StorageWrite": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -287,7 +287,7 @@
           "Keccak": 2
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -335,7 +335,7 @@
               "StorageWrite": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -389,7 +389,7 @@
           "GetBlockHash": 3
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
@@ -437,7 +437,7 @@
               "Deploy": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -486,7 +486,7 @@
               "Deploy": 1
             }
           },
-          "used_onchain_data": {
+          "used_l1_resources": {
             "l2_l1_message_sizes": [
               2,
               2
@@ -538,7 +538,7 @@
           "StorageWrite": 1
         }
       },
-      "used_onchain_data": {
+      "used_l1_resources": {
         "l2_l1_message_sizes": [
           2,
           2
