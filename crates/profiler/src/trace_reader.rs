@@ -125,15 +125,13 @@ pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<Sample> {
     samples
 }
 
-pub struct ResourcesKeys {
-    pub keys: HashSet<String>,
-}
+pub struct ResourcesUnits(HashSet<String>);
 
-impl ResourcesKeys {
+impl ResourcesUnits {
     pub fn measurement_types(&self, context: &mut ProfilerContext) -> Vec<ValueType> {
         let mut value_types = vec![];
 
-        for key in &self.keys {
+        for key in &self.0 {
             let unit_string = " ".to_string().add(&key.replace('_', " "));
             value_types.push(ValueType {
                 r#type: context.string_id(key).into(),
@@ -145,7 +143,7 @@ impl ResourcesKeys {
     }
 }
 
-pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
+pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesUnits {
     let mut keys = HashSet::new();
     for sample in samples {
         keys.extend(
@@ -164,7 +162,7 @@ pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
                 .map(|x| format!("{x:?}")),
         );
     }
-    ResourcesKeys { keys }
+    ResourcesUnits(keys)
 }
 
 fn collect_samples<'a>(

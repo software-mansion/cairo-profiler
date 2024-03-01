@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use perftools::profiles as pprof;
 
-use crate::trace_reader::{FunctionName, ResourcesKeys, Sample, SampleType};
+use crate::trace_reader::{FunctionName, ResourcesUnits, Sample, SampleType};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub struct StringId(pub u64);
@@ -127,7 +127,7 @@ impl ProfilerContext {
 fn build_samples(
     context: &mut ProfilerContext,
     samples: &[Sample],
-    resources_keys: &ResourcesKeys,
+    resources_keys: &ResourcesUnits,
 ) -> (Vec<pprof::ValueType>, Vec<pprof::Sample>) {
     assert!(samples
         .iter()
@@ -166,7 +166,7 @@ fn build_samples(
     (measurement_types, samples)
 }
 
-pub fn build_profile(samples: &[Sample], resources_keys: &ResourcesKeys) -> pprof::Profile {
+pub fn build_profile(samples: &[Sample], resources_keys: &ResourcesUnits) -> pprof::Profile {
     let mut context = ProfilerContext::new();
     let (measurement_types, samples) = build_samples(&mut context, samples, resources_keys);
     let (string_table, functions, locations) = context.context_data();
