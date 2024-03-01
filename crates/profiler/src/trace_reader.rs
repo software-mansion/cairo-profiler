@@ -131,10 +131,10 @@ impl ResourcesUnits {
     pub fn sample_units(&self, context: &mut ProfilerContext) -> Vec<pprof::ValueType> {
         let mut value_types = vec![];
 
-        for key in &self.0 {
-            let unit_string = " ".to_string().add(&key.replace('_', " "));
+        for unit in &self.0 {
+            let unit_string = " ".to_string().add(&unit.replace('_', " "));
             value_types.push(pprof::ValueType {
-                r#type: context.string_id(key).into(),
+                r#type: context.string_id(unit).into(),
                 unit: context.string_id(&unit_string).into(),
             });
         }
