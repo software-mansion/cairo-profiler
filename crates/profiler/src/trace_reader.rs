@@ -143,10 +143,10 @@ impl ResourcesUnits {
     }
 }
 
-pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesUnits {
-    let mut keys = HashSet::new();
+pub fn collect_resources_units(samples: &[Sample]) -> ResourcesUnits {
+    let mut units = HashSet::new();
     for sample in samples {
-        keys.extend(
+        units.extend(
             sample
                 .flat_resources
                 .vm_resources
@@ -154,7 +154,7 @@ pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesUnits {
                 .keys()
                 .cloned(),
         );
-        keys.extend(
+        units.extend(
             sample
                 .flat_resources
                 .syscall_counter
@@ -162,7 +162,7 @@ pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesUnits {
                 .map(|x| format!("{x:?}")),
         );
     }
-    ResourcesUnits(keys)
+    ResourcesUnits(units)
 }
 
 fn collect_samples<'a>(
