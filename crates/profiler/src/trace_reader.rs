@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::ops::Add;
 
-use crate::profile_builder::perftools::profiles::ValueType;
+use crate::profile_builder::pprof;
 use crate::profile_builder::{ProfilerContext, StringId};
 use trace_data::{ContractAddress, EntryPointSelector};
 
@@ -31,12 +31,12 @@ pub struct Sample {
 }
 
 impl Sample {
-    pub fn extract_measurements(
+    pub fn extract_sample_units_values(
         &self,
-        measurement_types: &[ValueType],
+        measurement_types: &[pprof::ValueType],
         context: &ProfilerContext,
     ) -> Vec<i64> {
-        let mut measurements_map: HashMap<&str, i64> = vec![
+        let mut units_values_map: HashMap<&str, i64> = vec![
             ("calls", 1),
             (
                 "n_steps",
@@ -51,8 +51,8 @@ impl Sample {
         .collect();
 
         for (builtin, count) in &self.flat_resources.vm_resources.builtin_instance_counter {
-            assert!(measurements_map.get(&&**builtin).is_none());
-            measurements_map.insert(builtin, i64::try_from(*count).unwrap());
+            assert!(units_values_map.get(&&**builtin).is_none());
+            units_values_map.insert(builtin, i64::try_from(*count).unwrap());
         }
 
         let syscall_counter_with_string: Vec<_> = self
@@ -62,15 +62,15 @@ impl Sample {
             .map(|(syscall, count)| (format!("{syscall:?}"), *count))
             .collect();
         for (syscall, count) in &syscall_counter_with_string {
-            assert!(measurements_map.get(&&**syscall).is_none());
-            measurements_map.insert(syscall, i64::try_from(*count).unwrap());
+            assert!(units_values_map.get(&&**syscall).is_none());
+            units_values_map.insert(syscall, i64::try_from(*count).unwrap());
         }
 
         let mut measurements = vec![];
         for value_type in measurement_types {
             let value_type_str =
                 context.string_from_string_id(StringId(u64::try_from(value_type.r#type).unwrap()));
-            measurements.push(*measurements_map.get(value_type_str).unwrap_or(&0));
+            measurements.push(*units_values_map.get(value_type_str).unwrap_or(&0));
         }
 
         measurements
@@ -128,12 +128,12 @@ pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<Sample> {
 pub struct ResourcesUnits(HashSet<String>);
 
 impl ResourcesUnits {
-    pub fn measurement_types(&self, context: &mut ProfilerContext) -> Vec<ValueType> {
+    pub fn sample_units(&self, context: &mut ProfilerContext) -> Vec<pprof::ValueType> {
         let mut value_types = vec![];
 
         for key in &self.0 {
             let unit_string = " ".to_string().add(&key.replace('_', " "));
-            value_types.push(ValueType {
+            value_types.push(pprof::ValueType {
                 r#type: context.string_id(key).into(),
                 unit: context.string_id(&unit_string).into(),
             });

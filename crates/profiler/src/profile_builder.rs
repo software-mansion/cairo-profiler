@@ -1,4 +1,4 @@
-pub mod perftools {
+mod perftools {
     pub mod profiles {
         include!(concat!(env!("OUT_DIR"), "/perftools.profiles.rs"));
     }
@@ -6,7 +6,7 @@ pub mod perftools {
 
 use std::collections::HashMap;
 
-use perftools::profiles as pprof;
+pub use perftools::profiles as pprof;
 
 use crate::trace_reader::{FunctionName, ResourcesUnits, Sample, SampleType};
 
@@ -133,7 +133,7 @@ fn build_samples(
         .iter()
         .all(|x| matches!(x.sample_type, SampleType::ContractCall)));
 
-    let mut measurement_types = vec![
+    let mut sample_units = vec![
         pprof::ValueType {
             r#type: context.string_id(&String::from("calls")).into(),
             unit: context.string_id(&String::from(" calls")).into(),
@@ -147,7 +147,7 @@ fn build_samples(
             unit: context.string_id(&String::from(" memory holes")).into(),
         },
     ];
-    measurement_types.append(&mut resources_keys.measurement_types(context));
+    sample_units.append(&mut resources_keys.sample_units(context));
 
     let samples = samples
         .iter()
@@ -158,21 +158,21 @@ fn build_samples(
                 .map(|loc| context.location_id(loc).into())
                 .rev() // pprof format represents callstack from the least meaningful element
                 .collect(),
-            value: s.extract_measurements(&measurement_types, context),
+            value: s.extract_sample_units_values(&sample_units, context),
             label: vec![],
         })
         .collect();
 
-    (measurement_types, samples)
+    (sample_units, samples)
 }
 
 pub fn build_profile(samples: &[Sample], resources_keys: &ResourcesUnits) -> pprof::Profile {
     let mut context = ProfilerContext::new();
-    let (measurement_types, samples) = build_samples(&mut context, samples, resources_keys);
+    let (sample_units, samples) = build_samples(&mut context, samples, resources_keys);
     let (string_table, functions, locations) = context.context_data();
 
     pprof::Profile {
-        sample_type: measurement_types,
+        sample_type: sample_units,
         sample: samples,
         mapping: vec![],
         location: locations,
