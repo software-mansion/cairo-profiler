@@ -26,6 +26,10 @@ struct Cli {
     /// Path to the output file
     #[arg(short, long, default_value = "profile.pb.gz")]
     output_path: Utf8PathBuf,
+
+    /// Show contract address and function selector
+    #[arg(long)]
+    show_details: bool,
 }
 
 fn main() -> Result<()> {
@@ -35,7 +39,7 @@ fn main() -> Result<()> {
         .context("Failed to read call trace from a file")?;
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
-    let samples = collect_samples_from_trace(&serialized_trace);
+    let samples = collect_samples_from_trace(&serialized_trace, cli.show_details);
     let resources_keys = collect_resources_keys(&samples);
 
     let profile = build_profile(&samples, &resources_keys);
