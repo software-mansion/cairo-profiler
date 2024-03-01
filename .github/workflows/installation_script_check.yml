@@ -9,7 +9,7 @@ on:
       - scripts/install.sh
   push:
     branches:
-      - master
+      - main
     paths:
       - scripts/install.sh
 
