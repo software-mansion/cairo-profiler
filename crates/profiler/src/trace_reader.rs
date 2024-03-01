@@ -137,7 +137,7 @@ impl SampleUnits {
         Self(units)
     }
 
-    pub fn sample_units(&self, context: &mut ProfilerContext) -> Vec<pprof::ValueType> {
+    pub fn pprof_sample_units(&self, context: &mut ProfilerContext) -> Vec<pprof::ValueType> {
         let mut value_types = vec![];
 
         for unit in &self.0 {
@@ -159,7 +159,7 @@ impl SampleUnits {
     }
 }
 
-pub fn collect_samples_units(samples: &[Sample]) -> SampleUnits {
+pub fn collect_sample_units(samples: &[Sample]) -> SampleUnits {
     let mut units = HashSet::new();
     for sample in samples {
         units.extend(

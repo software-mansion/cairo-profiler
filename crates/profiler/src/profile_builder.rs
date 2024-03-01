@@ -127,13 +127,13 @@ impl ProfilerContext {
 fn build_samples(
     context: &mut ProfilerContext,
     samples: &[Sample],
-    samples_units: &SampleUnits,
+    sample_units: &SampleUnits,
 ) -> (Vec<pprof::ValueType>, Vec<pprof::Sample>) {
     assert!(samples
         .iter()
         .all(|x| matches!(x.sample_type, SampleType::ContractCall)));
 
-    let pprof_sample_units = samples_units.sample_units(context);
+    let pprof_sample_units = sample_units.pprof_sample_units(context);
 
     let samples = samples
         .iter()
@@ -152,13 +152,13 @@ fn build_samples(
     (pprof_sample_units, samples)
 }
 
-pub fn build_profile(samples: &[Sample], samples_units: &SampleUnits) -> pprof::Profile {
+pub fn build_profile(samples: &[Sample], sample_units: &SampleUnits) -> pprof::Profile {
     let mut context = ProfilerContext::new();
-    let (sample_units, samples) = build_samples(&mut context, samples, samples_units);
+    let (pprof_sample_units, samples) = build_samples(&mut context, samples, sample_units);
     let (string_table, functions, locations) = context.context_data();
 
     pprof::Profile {
-        sample_type: sample_units,
+        sample_type: pprof_sample_units,
         sample: samples,
         mapping: vec![],
         location: locations,
