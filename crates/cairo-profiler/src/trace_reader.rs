@@ -7,7 +7,7 @@ use crate::profile_builder::perftools::profiles::ValueType;
 use crate::profile_builder::{ProfilerContext, StringId};
 use trace_data::{ContractAddress, EntryPointSelector};
 
-use trace_data::{CallTrace, DeprecatedSyscallSelector, ExecutionResources};
+use trace_data::{CallTrace, DeprecatedSyscallSelector, ExecutionResources, L1Resources};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
@@ -28,6 +28,7 @@ pub struct Sample {
     pub call_stack: Vec<FunctionName>,
     pub sample_type: SampleType,
     pub flat_resources: ExecutionResources,
+    pub l1_resources: L1Resources,
 }
 
 impl Sample {
@@ -65,6 +66,13 @@ impl Sample {
             assert!(measurements_map.get(&&**syscall).is_none());
             measurements_map.insert(syscall, i64::try_from(*count).unwrap());
         }
+
+        assert!(measurements_map.get("l2_l1_message_sizes").is_none());
+        let summarized_payload: usize = self.l1_resources.l2_l1_message_sizes.iter().sum();
+        measurements_map.insert(
+            "l2_l1_message_sizes",
+            i64::try_from(summarized_payload).unwrap(),
+        );
 
         let mut measurements = vec![];
         for value_type in measurement_types {
@@ -128,6 +136,7 @@ pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<Sample> {
 pub struct ResourcesKeys {
     pub builtins: HashSet<String>,
     pub syscalls: HashSet<DeprecatedSyscallSelector>,
+    pub l1_resources: HashSet<(String, String)>,
 }
 
 impl ResourcesKeys {
@@ -150,6 +159,12 @@ impl ResourcesKeys {
                 unit: context.string_id(&unit_string).into(),
             });
         }
+        for (type_name, unit_name) in &self.l1_resources {
+            value_types.push(ValueType {
+                r#type: context.string_id(type_name).into(),
+                unit: context.string_id(unit_name).into(),
+            });
+        }
 
         value_types
     }
@@ -158,6 +173,7 @@ impl ResourcesKeys {
 pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
     let mut syscalls = HashSet::new();
     let mut builtins = HashSet::new();
+    let mut l1_resources = HashSet::new();
     for sample in samples {
         builtins.extend(
             sample
@@ -168,8 +184,20 @@ pub fn collect_resources_keys(samples: &[Sample]) -> ResourcesKeys {
                 .cloned(),
         );
         syscalls.extend(sample.flat_resources.syscall_counter.keys());
+
+        if !sample.l1_resources.l2_l1_message_sizes.is_empty() {
+            l1_resources.insert((
+                "l2_l1_message_sizes".to_string(),
+                " sent payload length".to_string(),
+            ));
+        }
     }
-    ResourcesKeys { builtins, syscalls }
+
+    ResourcesKeys {
+        builtins,
+        syscalls,
+        l1_resources,
+    }
 }
 
 fn collect_samples<'a>(
@@ -193,6 +221,7 @@ fn collect_samples<'a>(
         call_stack: current_call_stack.iter().map(FunctionName::from).collect(),
         sample_type: SampleType::ContractCall,
         flat_resources: &trace.cumulative_resources - &children_resources,
+        l1_resources: trace.used_l1_resources.clone(),
     });
 
     current_call_stack.pop();

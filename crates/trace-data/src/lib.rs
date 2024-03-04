@@ -17,6 +17,7 @@ pub struct CallTrace {
     pub entry_point: CallEntryPoint,
     #[serde(rename = "used_execution_resources")]
     pub cumulative_resources: ExecutionResources,
+    pub used_l1_resources: L1Resources,
     pub nested_calls: Vec<CallTrace>,
 }
 
@@ -173,4 +174,9 @@ impl ExecutionResources {
 
         true
     }
+}
+
+#[derive(Clone, Default, Debug, Serialize, Deserialize)]
+pub struct L1Resources {
+    pub l2_l1_message_sizes: Vec<usize>,
 }
