@@ -77,6 +77,10 @@ impl Sample {
     }
 }
 
+/// `contract_name` and `function_name` are always present (in case they are not in trace we just
+/// set `<unknown>` string)
+/// `address` and `selector` are optional and set if `--show-details` flag is enabled
+/// or names are unknown
 pub struct EntryPointId {
     address: Option<String>,
     selector: Option<String>,
