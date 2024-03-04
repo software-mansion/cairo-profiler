@@ -27,7 +27,7 @@ struct Cli {
     #[arg(short, long, default_value = "profile.pb.gz")]
     output_path: Utf8PathBuf,
 
-    /// Show contract address and function selector
+    /// Show contract addresses and function selectors in a trace tree
     #[arg(long)]
     show_details: bool,
 }
