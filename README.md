@@ -36,7 +36,7 @@ cairo-profiler --version
 ## External tools integration
 
 `cairo-profiler` is a tool-agnostic profiler which means that it accepts input from any tool. Those tools need to generate
-trace in the [expected](./crates/cairo-profiler/src/trace_reader.rs) format.
+trace in the [expected](./crates/trace-data/src/lib.rs) format.
 
 ### Integrated tools
 
