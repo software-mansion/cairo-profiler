@@ -179,5 +179,5 @@ impl ExecutionResources {
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct L1Resources {
     pub l2_l1_message_sizes: Vec<usize>,
-    pub storage_writes: usize,
+    pub storage_writes: isize,
 }
