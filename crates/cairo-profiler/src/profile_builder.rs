@@ -144,7 +144,7 @@ pub fn build_value_types(
 fn build_samples(
     context: &mut ProfilerContext,
     samples: &[ContractCallSample],
-    all_measurements_units: Vec<MeasurementUnit>,
+    all_measurements_units: &[MeasurementUnit],
 ) -> Vec<pprof::Sample> {
     let samples = samples
         .iter()
@@ -177,11 +177,8 @@ fn build_samples(
 // }
 
 fn collect_all_measurements_units(samples: &[ContractCallSample]) -> Vec<MeasurementUnit> {
-    let units_set: HashSet<&MeasurementUnit> = samples
-        .iter()
-        .map(|m| m.measurements.keys())
-        .flatten()
-        .collect();
+    let units_set: HashSet<&MeasurementUnit> =
+        samples.iter().flat_map(|m| m.measurements.keys()).collect();
     units_set.into_iter().cloned().collect()
 }
 
@@ -189,7 +186,7 @@ pub fn build_profile(samples: &[ContractCallSample]) -> pprof::Profile {
     let mut context = ProfilerContext::new();
     let all_measurements_units = collect_all_measurements_units(samples);
     let value_types = build_value_types(&all_measurements_units, &mut context);
-    let pprof_samples = build_samples(&mut context, samples, all_measurements_units);
+    let pprof_samples = build_samples(&mut context, samples, &all_measurements_units);
     let (string_table, functions, locations) = context.context_data();
 
     pprof::Profile {

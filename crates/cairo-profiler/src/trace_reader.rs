@@ -34,7 +34,11 @@ pub struct ContractCallSample {
 }
 
 impl ContractCallSample {
-    pub fn from(call_stack: Vec<FunctionName>, resources: ExecutionResources, l1_resources: L1Resources) -> Self {
+    pub fn from(
+        call_stack: Vec<FunctionName>,
+        resources: &ExecutionResources,
+        l1_resources: &L1Resources,
+    ) -> Self {
         let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
             (MeasurementUnit::from("calls"), MeasurementValue(1)),
             (
@@ -49,10 +53,8 @@ impl ContractCallSample {
         .into_iter()
         .collect();
 
-        // TODO
-
         for (builtin, count) in &resources.vm_resources.builtin_instance_counter {
-            assert!(measurements.get(&MeasurementUnit::from(builtin)).is_none());
+            assert!(!measurements.contains_key(&MeasurementUnit::from(builtin)));
             measurements.insert(
                 MeasurementUnit::from(builtin),
                 MeasurementValue(i64::try_from(*count).unwrap()),
@@ -65,15 +67,14 @@ impl ContractCallSample {
             .map(|(syscall, count)| (format!("{syscall:?}"), *count))
             .collect();
         for (syscall, count) in &syscall_counter_with_string {
-            assert!(measurements.get(&MeasurementUnit::from(syscall)).is_none());
+            assert!(!measurements.contains_key(&MeasurementUnit::from(syscall)));
             measurements.insert(
                 MeasurementUnit::from(syscall),
                 MeasurementValue(i64::try_from(*count).unwrap()),
             );
         }
 
-
-        assert!(measurements.get(&MeasurementUnit::from("l2_l1_message_sizes")).is_none());
+        assert!(!measurements.contains_key(&MeasurementUnit::from("l2_l1_message_sizes")));
         let summarized_payload: usize = l1_resources.l2_l1_message_sizes.iter().sum();
         measurements.insert(
             MeasurementUnit::from("l2_l1_message_sizes"),
@@ -146,13 +147,15 @@ impl Display for EntryPointId {
     }
 }
 
-pub fn collect_samples_from_trace(trace: &CallTrace, show_details: bool) -> Vec<ContractCallSample> {
+pub fn collect_samples_from_trace(
+    trace: &CallTrace,
+    show_details: bool,
+) -> Vec<ContractCallSample> {
     let mut samples = vec![];
     let mut current_path = vec![];
     collect_samples(&mut samples, &mut current_path, trace, show_details);
     samples
 }
-
 
 fn collect_samples<'a>(
     samples: &mut Vec<ContractCallSample>,
@@ -170,14 +173,13 @@ fn collect_samples<'a>(
 
     let mut children_resources = ExecutionResources::default();
     for sub_trace in &trace.nested_calls {
-        children_resources +=
-            &collect_samples(samples, current_call_stack, sub_trace, show_details);
+        children_resources += collect_samples(samples, current_call_stack, sub_trace, show_details);
     }
 
     samples.push(ContractCallSample::from(
         current_call_stack.iter().map(FunctionName::from).collect(),
-        &trace.cumulative_resources - &children_resources,
-        trace.used_l1_resources.clone(),
+        &(&trace.cumulative_resources - &children_resources),
+        &trace.used_l1_resources,
     ));
 
     current_call_stack.pop();
