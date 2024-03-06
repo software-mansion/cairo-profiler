@@ -1,10 +1,7 @@
 use core::fmt;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt::Display;
-use std::ops::Add;
 
-use crate::profile_builder::pprof;
-use crate::profile_builder::{ProfilerContext, StringId};
 use trace_data::{ContractAddress, EntryPointSelector};
 
 use trace_data::{CallTrace, ExecutionResources};
@@ -19,61 +16,66 @@ impl FunctionName {
     }
 }
 
-pub enum SampleType {
-    ContractCall,
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub struct MeasurementUnit(pub String);
+impl MeasurementUnit {
+    fn from(name: &str) -> Self {
+        MeasurementUnit(String::from(name))
+    }
 }
+
+#[derive(Debug, Clone)]
+pub struct MeasurementValue(pub i64);
 
 #[allow(clippy::struct_field_names)]
-pub struct Sample {
+pub struct ContractCallSample {
     pub call_stack: Vec<FunctionName>,
-    pub sample_type: SampleType,
-    pub flat_resources: ExecutionResources,
+    pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
 }
 
-impl Sample {
-    pub fn extract_sample_values(
-        &self,
-        pprof_sample_units: &[pprof::ValueType],
-        context: &ProfilerContext,
-    ) -> Vec<i64> {
-        let mut sample_values_map: HashMap<&str, i64> = vec![
-            ("calls", 1),
+impl ContractCallSample {
+    pub fn from(call_stack: Vec<FunctionName>, resources: ExecutionResources) -> Self {
+        let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
+            (MeasurementUnit::from("calls"), MeasurementValue(1)),
             (
-                "n_steps",
-                i64::try_from(self.flat_resources.vm_resources.n_steps).unwrap(),
+                MeasurementUnit::from("steps"),
+                MeasurementValue(i64::try_from(resources.vm_resources.n_steps).unwrap()),
             ),
             (
-                "n_memory_holes",
-                i64::try_from(self.flat_resources.vm_resources.n_memory_holes).unwrap(),
+                MeasurementUnit::from("memory_holes"),
+                MeasurementValue(i64::try_from(resources.vm_resources.n_memory_holes).unwrap()),
             ),
         ]
         .into_iter()
         .collect();
 
-        for (builtin, count) in &self.flat_resources.vm_resources.builtin_instance_counter {
-            assert!(sample_values_map.get(&&**builtin).is_none());
-            sample_values_map.insert(builtin, i64::try_from(*count).unwrap());
+        // TODO
+
+        for (builtin, count) in &resources.vm_resources.builtin_instance_counter {
+            assert!(measurements.get(&MeasurementUnit::from(builtin)).is_none());
+            measurements.insert(
+                MeasurementUnit::from(builtin),
+                MeasurementValue(i64::try_from(*count).unwrap()),
+            );
         }
 
-        let syscall_counter_with_string: Vec<_> = self
-            .flat_resources
+        let syscall_counter_with_string: Vec<_> = resources
             .syscall_counter
             .iter()
             .map(|(syscall, count)| (format!("{syscall:?}"), *count))
             .collect();
         for (syscall, count) in &syscall_counter_with_string {
-            assert!(sample_values_map.get(&&**syscall).is_none());
-            sample_values_map.insert(syscall, i64::try_from(*count).unwrap());
+            assert!(measurements.get(&MeasurementUnit::from(syscall)).is_none());
+            measurements.insert(
+                MeasurementUnit::from(syscall),
+                MeasurementValue(i64::try_from(*count).unwrap()),
+            );
         }
 
-        let mut sample_values = vec![];
-        for value_type in pprof_sample_units {
-            let value_type_str =
-                context.string_from_string_id(StringId(u64::try_from(value_type.r#type).unwrap()));
-            sample_values.push(*sample_values_map.get(value_type_str).unwrap_or(&0));
+        ContractCallSample {
+            call_stack,
+            measurements,
         }
-
-        sample_values
     }
 }
 
@@ -118,71 +120,15 @@ impl Display for EntryPointId {
     }
 }
 
-pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<Sample> {
+pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<ContractCallSample> {
     let mut samples = vec![];
     let mut current_path = vec![];
     collect_samples(&mut samples, &mut current_path, trace);
     samples
 }
 
-pub struct SampleUnits(HashSet<String>);
-
-impl SampleUnits {
-    pub fn new(mut units: HashSet<String>) -> Self {
-        units.extend([
-            String::from("calls"),
-            String::from("n_steps"),
-            String::from("n_memory_holes"),
-        ]);
-        Self(units)
-    }
-
-    pub fn pprof_sample_units(&self, context: &mut ProfilerContext) -> Vec<pprof::ValueType> {
-        let mut value_types = vec![];
-
-        for unit in &self.0 {
-            let unit_without_underscores = unit.replace('_', " ");
-            let unit_without_prefix = if unit_without_underscores.starts_with("n ") {
-                unit_without_underscores.strip_prefix("n ").unwrap()
-            } else {
-                &unit_without_underscores
-            };
-            let unit_string = " ".to_string().add(unit_without_prefix);
-
-            value_types.push(pprof::ValueType {
-                r#type: context.string_id(unit).into(),
-                unit: context.string_id(&unit_string).into(),
-            });
-        }
-
-        value_types
-    }
-}
-
-pub fn collect_sample_units(samples: &[Sample]) -> SampleUnits {
-    let mut units = HashSet::new();
-    for sample in samples {
-        units.extend(
-            sample
-                .flat_resources
-                .vm_resources
-                .builtin_instance_counter
-                .keys()
-                .cloned(),
-        );
-        units.extend(
-            sample
-                .flat_resources
-                .syscall_counter
-                .keys()
-                .map(|x| format!("{x:?}")),
-        );
-    }
-    SampleUnits::new(units)
-}
-
 fn collect_samples<'a>(
-    samples: &mut Vec<Sample>,
+    samples: &mut Vec<ContractCallSample>,
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
 ) -> &'a ExecutionResources {
@@ -198,11 +144,10 @@ fn collect_samples<'a>(
         children_resources += &collect_samples(samples, current_call_stack, sub_trace);
     }
 
-    samples.push(Sample {
-        call_stack: current_call_stack.iter().map(FunctionName::from).collect(),
-        sample_type: SampleType::ContractCall,
-        flat_resources: &trace.cumulative_resources - &children_resources,
-    });
+    samples.push(ContractCallSample::from(
+        current_call_stack.iter().map(FunctionName::from).collect(),
+        &trace.cumulative_resources - &children_resources,
+    ));
 
     current_call_stack.pop();
 

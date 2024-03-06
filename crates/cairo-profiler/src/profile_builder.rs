@@ -4,11 +4,11 @@ mod perftools {
     }
 }
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub use perftools::profiles as pprof;
 
-use crate::trace_reader::{FunctionName, Sample, SampleType, SampleUnits};
+use crate::trace_reader::{ContractCallSample, FunctionName, MeasurementUnit, MeasurementValue};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub struct StringId(pub u64);
@@ -52,12 +52,6 @@ impl ProfilerContext {
             functions: HashMap::new(),
             locations: HashMap::new(),
         }
-    }
-
-    pub fn string_from_string_id(&self, string_id: StringId) -> &str {
-        self.id_to_string
-            .get(&string_id)
-            .unwrap_or_else(|| panic!("String with string id {string_id:?} not found"))
     }
 
     pub fn string_id(&mut self, string: &String) -> StringId {
@@ -124,17 +118,34 @@ impl ProfilerContext {
     }
 }
 
+pub fn build_value_types(
+    measurements_units: &Vec<MeasurementUnit>,
+    context: &mut ProfilerContext,
+) -> Vec<pprof::ValueType> {
+    let mut value_types = vec![];
+
+    for unit in measurements_units {
+        let unit_without_underscores = unit.0.replace('_', " ");
+        let unit_without_prefix = if unit_without_underscores.starts_with("n ") {
+            unit_without_underscores.strip_prefix("n ").unwrap()
+        } else {
+            &unit_without_underscores
+        };
+        let unit_string = format!(" {unit_without_prefix}");
+
+        value_types.push(pprof::ValueType {
+            r#type: context.string_id(&unit.0).into(),
+            unit: context.string_id(&unit_string).into(),
+        });
+    }
+    value_types
+}
+
 fn build_samples(
     context: &mut ProfilerContext,
-    samples: &[Sample],
-    sample_units: &SampleUnits,
-) -> (Vec<pprof::ValueType>, Vec<pprof::Sample>) {
-    assert!(samples
-        .iter()
-        .all(|x| matches!(x.sample_type, SampleType::ContractCall)));
-
-    let pprof_sample_units = sample_units.pprof_sample_units(context);
-
+    samples: &[ContractCallSample],
+    all_measurements_units: Vec<MeasurementUnit>,
+) -> Vec<pprof::Sample> {
     let samples = samples
         .iter()
         .map(|s| pprof::Sample {
@@ -144,22 +155,46 @@ fn build_samples(
                 .map(|loc| context.location_id(loc).into())
                 .rev() // pprof format represents callstack from the least meaningful element
                 .collect(),
-            value: s.extract_sample_values(&pprof_sample_units, context),
+            value: all_measurements_units
+                .iter()
+                .map(|un| {
+                    s.measurements
+                        .get(un)
+                        .cloned()
+                        .unwrap_or(MeasurementValue(0))
+                        .0
+                })
+                .collect(),
             label: vec![],
         })
         .collect();
 
-    (pprof_sample_units, samples)
+    samples
 }
 
-pub fn build_profile(samples: &[Sample], sample_units: &SampleUnits) -> pprof::Profile {
+// fn (measurements_units: ) {
+
+// }
+
+fn collect_all_measurements_units(samples: &[ContractCallSample]) -> Vec<MeasurementUnit> {
+    let units_set: HashSet<&MeasurementUnit> = samples
+        .iter()
+        .map(|m| m.measurements.keys())
+        .flatten()
+        .collect();
+    units_set.into_iter().cloned().collect()
+}
+
+pub fn build_profile(samples: &[ContractCallSample]) -> pprof::Profile {
     let mut context = ProfilerContext::new();
-    let (pprof_sample_units, samples) = build_samples(&mut context, samples, sample_units);
+    let all_measurements_units = collect_all_measurements_units(samples);
+    let value_types = build_value_types(&all_measurements_units, &mut context);
+    let pprof_samples = build_samples(&mut context, samples, all_measurements_units);
     let (string_table, functions, locations) = context.context_data();
 
     pprof::Profile {
-        sample_type: pprof_sample_units,
-        sample: samples,
+        sample_type: value_types,
+        sample: pprof_samples,
         mapping: vec![],
         location: locations,
         function: functions,
