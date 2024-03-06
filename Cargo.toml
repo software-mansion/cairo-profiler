@@ -22,3 +22,4 @@ assert_fs = "1.1.1"
 project-root = "0.2.2"
 snapbox = "0.4.16"
 prost-build = { version = "0.12" }
+test-case = "3.3.1"

@@ -36,7 +36,7 @@ cairo-profiler --version
 ## External tools integration
 
 `cairo-profiler` is a tool-agnostic profiler which means that it accepts input from any tool. Those tools need to generate
-trace in the [expected](https://github.com/software-mansion/cairo-profiler/blob/main/src/trace_data.rs) format.
+trace in the [expected](./crates/trace-data/src/lib.rs) format.
 
 ### Integrated tools
 
@@ -53,7 +53,7 @@ Usage flow consists of two steps:
 
 To generate the file run `cairo-profiler` with the `<PATH_TO_TRACE_DATA>` argument containing
 the path to the json file with the trace to be profiled. You can also specify the `--output-path <OUTPUT_PATH>` -
-by default the output file will be saved as `profile.pb.gz`
+if not specified, the output file will be saved as `profile.pb.gz`.
 
 #### Example
 
@@ -63,7 +63,7 @@ cairo-profiler path/to/trace.json
 
 > 📝 **Note**
 >
-> Trace needs to be in the correct format. See [trace.json](./tests/data/trace.json) as an example.
+> Trace needs to be in the correct format. See [trace.json](./crates/cairo-profiler/tests/data/trace.json) as an example.
 
 ### Running pprof
 

@@ -4,7 +4,7 @@ use std::fmt::Display;
 
 use trace_data::{ContractAddress, EntryPointSelector};
 
-use trace_data::{CallTrace, ExecutionResources};
+use trace_data::{CallTrace, ExecutionResources, L1Resources};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
@@ -34,7 +34,7 @@ pub struct ContractCallSample {
 }
 
 impl ContractCallSample {
-    pub fn from(call_stack: Vec<FunctionName>, resources: ExecutionResources) -> Self {
+    pub fn from(call_stack: Vec<FunctionName>, resources: ExecutionResources, l1_resources: L1Resources) -> Self {
         let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
             (MeasurementUnit::from("calls"), MeasurementValue(1)),
             (
@@ -72,6 +72,14 @@ impl ContractCallSample {
             );
         }
 
+
+        assert!(measurements.get(&MeasurementUnit::from("l2_l1_message_sizes")).is_none());
+        let summarized_payload: usize = l1_resources.l2_l1_message_sizes.iter().sum();
+        measurements.insert(
+            MeasurementUnit::from("l2_l1_message_sizes"),
+            MeasurementValue(i64::try_from(summarized_payload).unwrap()),
+        );
+
         ContractCallSample {
             call_stack,
             measurements,
@@ -79,11 +87,15 @@ impl ContractCallSample {
     }
 }
 
+/// `contract_name` and `function_name` are always present (in case they are not in trace we just
+/// set `<unknown>` string)
+/// `address` and `selector` are optional and set if `--show-details` flag is enabled
+/// or names are unknown
 pub struct EntryPointId {
-    address: String,
-    selector: String,
-    contract_name: Option<String>,
-    function_name: Option<String>,
+    address: Option<String>,
+    selector: Option<String>,
+    contract_name: String,
+    function_name: String,
 }
 
 impl EntryPointId {
@@ -91,11 +103,24 @@ impl EntryPointId {
         contract_name: Option<String>,
         function_name: Option<String>,
         contract_address: ContractAddress,
-        selector: EntryPointSelector,
+        function_selector: EntryPointSelector,
+        show_details: bool,
     ) -> Self {
+        let (contract_name, address) = match contract_name {
+            Some(name) if show_details => (name, Some(contract_address.0)),
+            Some(name) => (name, None),
+            None => (String::from("<unknown>"), Some(contract_address.0)),
+        };
+
+        let (function_name, selector) = match function_name {
+            Some(name) if show_details => (name, Some(function_selector.0)),
+            Some(name) => (name, None),
+            None => (String::from("<unknown>"), Some(function_selector.0)),
+        };
+
         EntryPointId {
-            address: contract_address.0,
-            selector: selector.0,
+            address,
+            selector,
             contract_name,
             function_name,
         }
@@ -104,49 +129,55 @@ impl EntryPointId {
 
 impl Display for EntryPointId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let contract_name = self
-            .contract_name
-            .clone()
-            .unwrap_or(String::from("<unknown>"));
-        let function_name = self
-            .function_name
-            .clone()
-            .unwrap_or(String::from("<unknown>"));
+        let contract_address = match &self.address {
+            None => String::new(),
+            Some(address) => format!("Address: {address}\n"),
+        };
+        let selector = match &self.selector {
+            None => String::new(),
+            Some(selector) => format!("Selector: {selector}\n"),
+        };
+
         write!(
             f,
-            "Contract address: {}\n Selector: {}\nContract name: {}\nFunction name: {}\n",
-            self.address, self.selector, contract_name, function_name
+            "Contract: {}\n{contract_address}Function: {}\n{selector}",
+            self.contract_name, self.function_name
         )
     }
 }
 
-pub fn collect_samples_from_trace(trace: &CallTrace) -> Vec<ContractCallSample> {
+pub fn collect_samples_from_trace(trace: &CallTrace, show_details: bool) -> Vec<ContractCallSample> {
     let mut samples = vec![];
     let mut current_path = vec![];
-    collect_samples(&mut samples, &mut current_path, trace);
+    collect_samples(&mut samples, &mut current_path, trace, show_details);
     samples
 }
+
 
 fn collect_samples<'a>(
     samples: &mut Vec<ContractCallSample>,
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
+    show_details: bool,
 ) -> &'a ExecutionResources {
     current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
         trace.entry_point.contract_address.clone(),
         trace.entry_point.entry_point_selector.clone(),
+        show_details,
     ));
 
     let mut children_resources = ExecutionResources::default();
     for sub_trace in &trace.nested_calls {
-        children_resources += &collect_samples(samples, current_call_stack, sub_trace);
+        children_resources +=
+            &collect_samples(samples, current_call_stack, sub_trace, show_details);
     }
 
     samples.push(ContractCallSample::from(
         current_call_stack.iter().map(FunctionName::from).collect(),
         &trace.cumulative_resources - &children_resources,
+        trace.used_l1_resources.clone(),
     ));
 
     current_call_stack.pop();
