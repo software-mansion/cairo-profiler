@@ -39,7 +39,6 @@ impl From<FunctionId> for u64 {
 
 pub struct ProfilerContext {
     strings: HashMap<String, StringId>,
-    id_to_string: HashMap<StringId, String>,
     functions: HashMap<FunctionName, pprof::Function>,
     locations: HashMap<FunctionName, pprof::Location>,
 }
@@ -48,7 +47,6 @@ impl ProfilerContext {
     fn new() -> Self {
         ProfilerContext {
             strings: vec![(String::new(), StringId(0))].into_iter().collect(),
-            id_to_string: vec![(StringId(0), String::new())].into_iter().collect(),
             functions: HashMap::new(),
             locations: HashMap::new(),
         }
@@ -61,8 +59,6 @@ impl ProfilerContext {
             let string_id = StringId(self.strings.len() as u64);
 
             self.strings.insert(string.clone(), string_id);
-            self.id_to_string.insert(string_id, string.clone());
-
             string_id
         }
     }
@@ -171,10 +167,6 @@ fn build_samples(
 
     samples
 }
-
-// fn (measurements_units: ) {
-
-// }
 
 fn collect_all_measurements_units(samples: &[ContractCallSample]) -> Vec<MeasurementUnit> {
     let units_set: HashSet<&MeasurementUnit> =

@@ -27,7 +27,6 @@ impl MeasurementUnit {
 #[derive(Debug, Clone)]
 pub struct MeasurementValue(pub i64);
 
-#[allow(clippy::struct_field_names)]
 pub struct ContractCallSample {
     pub call_stack: Vec<FunctionName>,
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
