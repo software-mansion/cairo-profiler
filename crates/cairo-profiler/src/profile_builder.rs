@@ -1,14 +1,14 @@
-pub mod perftools {
+mod perftools {
     pub mod profiles {
         include!(concat!(env!("OUT_DIR"), "/perftools.profiles.rs"));
     }
 }
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use perftools::profiles as pprof;
+pub use perftools::profiles as pprof;
 
-use crate::trace_reader::{FunctionName, ResourcesKeys, Sample, SampleType};
+use crate::trace_reader::{ContractCallSample, FunctionName, MeasurementUnit, MeasurementValue};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub struct StringId(pub u64);
@@ -39,7 +39,6 @@ impl From<FunctionId> for u64 {
 
 pub struct ProfilerContext {
     strings: HashMap<String, StringId>,
-    id_to_string: HashMap<StringId, String>,
     functions: HashMap<FunctionName, pprof::Function>,
     locations: HashMap<FunctionName, pprof::Location>,
 }
@@ -48,16 +47,9 @@ impl ProfilerContext {
     fn new() -> Self {
         ProfilerContext {
             strings: vec![(String::new(), StringId(0))].into_iter().collect(),
-            id_to_string: vec![(StringId(0), String::new())].into_iter().collect(),
             functions: HashMap::new(),
             locations: HashMap::new(),
         }
-    }
-
-    pub fn string_from_string_id(&self, string_id: StringId) -> &str {
-        self.id_to_string
-            .get(&string_id)
-            .unwrap_or_else(|| panic!("String with string id {string_id:?} not found"))
     }
 
     pub fn string_id(&mut self, string: &String) -> StringId {
@@ -67,8 +59,6 @@ impl ProfilerContext {
             let string_id = StringId(self.strings.len() as u64);
 
             self.strings.insert(string.clone(), string_id);
-            self.id_to_string.insert(string_id, string.clone());
-
             string_id
         }
     }
@@ -124,31 +114,34 @@ impl ProfilerContext {
     }
 }
 
+pub fn build_value_types(
+    measurements_units: &Vec<MeasurementUnit>,
+    context: &mut ProfilerContext,
+) -> Vec<pprof::ValueType> {
+    let mut value_types = vec![];
+
+    for unit in measurements_units {
+        let unit_without_underscores = unit.0.replace('_', " ");
+        let unit_without_prefix = if unit_without_underscores.starts_with("n ") {
+            unit_without_underscores.strip_prefix("n ").unwrap()
+        } else {
+            &unit_without_underscores
+        };
+        let unit_string = format!(" {unit_without_prefix}");
+
+        value_types.push(pprof::ValueType {
+            r#type: context.string_id(&unit.0).into(),
+            unit: context.string_id(&unit_string).into(),
+        });
+    }
+    value_types
+}
+
 fn build_samples(
     context: &mut ProfilerContext,
-    samples: &[Sample],
-    resources_keys: &ResourcesKeys,
-) -> (Vec<pprof::ValueType>, Vec<pprof::Sample>) {
-    assert!(samples
-        .iter()
-        .all(|x| matches!(x.sample_type, SampleType::ContractCall)));
-
-    let mut measurement_types = vec![
-        pprof::ValueType {
-            r#type: context.string_id(&String::from("calls")).into(),
-            unit: context.string_id(&String::from(" calls")).into(),
-        },
-        pprof::ValueType {
-            r#type: context.string_id(&String::from("n_steps")).into(),
-            unit: context.string_id(&String::from(" steps")).into(),
-        },
-        pprof::ValueType {
-            r#type: context.string_id(&String::from("n_memory_holes")).into(),
-            unit: context.string_id(&String::from(" memory holes")).into(),
-        },
-    ];
-    measurement_types.append(&mut resources_keys.measurement_types(context));
-
+    samples: &[ContractCallSample],
+    all_measurements_units: &[MeasurementUnit],
+) -> Vec<pprof::Sample> {
     let samples = samples
         .iter()
         .map(|s| pprof::Sample {
@@ -158,22 +151,39 @@ fn build_samples(
                 .map(|loc| context.location_id(loc).into())
                 .rev() // pprof format represents callstack from the least meaningful element
                 .collect(),
-            value: s.extract_measurements(&measurement_types, context),
+            value: all_measurements_units
+                .iter()
+                .map(|un| {
+                    s.measurements
+                        .get(un)
+                        .cloned()
+                        .unwrap_or(MeasurementValue(0))
+                        .0
+                })
+                .collect(),
             label: vec![],
         })
         .collect();
 
-    (measurement_types, samples)
+    samples
 }
 
-pub fn build_profile(samples: &[Sample], resources_keys: &ResourcesKeys) -> pprof::Profile {
+fn collect_all_measurements_units(samples: &[ContractCallSample]) -> Vec<MeasurementUnit> {
+    let units_set: HashSet<&MeasurementUnit> =
+        samples.iter().flat_map(|m| m.measurements.keys()).collect();
+    units_set.into_iter().cloned().collect()
+}
+
+pub fn build_profile(samples: &[ContractCallSample]) -> pprof::Profile {
     let mut context = ProfilerContext::new();
-    let (measurement_types, samples) = build_samples(&mut context, samples, resources_keys);
+    let all_measurements_units = collect_all_measurements_units(samples);
+    let value_types = build_value_types(&all_measurements_units, &mut context);
+    let pprof_samples = build_samples(&mut context, samples, &all_measurements_units);
     let (string_table, functions, locations) = context.context_data();
 
     pprof::Profile {
-        sample_type: measurement_types,
-        sample: samples,
+        sample_type: value_types,
+        sample: pprof_samples,
         mapping: vec![],
         location: locations,
         function: functions,
