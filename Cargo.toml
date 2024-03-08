@@ -5,6 +5,10 @@ members = [
     "crates/cairo-profiler",
 ]
 
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+
 
 [workspace.dependencies]
 prost = "0.12"
