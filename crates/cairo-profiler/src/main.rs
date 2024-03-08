@@ -3,7 +3,7 @@ use std::{
     io::{Read, Write},
 };
 
-use crate::trace_reader::{collect_resources_keys, collect_samples_from_trace};
+use crate::trace_reader::collect_samples_from_trace;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
@@ -26,6 +26,10 @@ struct Cli {
     /// Path to the output file
     #[arg(short, long, default_value = "profile.pb.gz")]
     output_path: Utf8PathBuf,
+
+    /// Show contract addresses and function selectors in a trace tree
+    #[arg(long)]
+    show_details: bool,
 }
 
 fn main() -> Result<()> {
@@ -35,10 +39,9 @@ fn main() -> Result<()> {
         .context("Failed to read call trace from a file")?;
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
-    let samples = collect_samples_from_trace(&serialized_trace);
-    let resources_keys = collect_resources_keys(&samples);
+    let samples = collect_samples_from_trace(&serialized_trace, cli.show_details);
 
-    let profile = build_profile(&samples, &resources_keys);
+    let profile = build_profile(&samples);
 
     if let Some(parent) = cli.output_path.parent() {
         fs::create_dir_all(parent)

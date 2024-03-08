@@ -23,6 +23,7 @@ trace-data = { path="../trace-data" }
 assert_fs.workspace = true
 project-root.workspace = true
 snapbox.workspace = true
+test-case.workspace = true
 
 [build-dependencies]
 prost-build.workspace = true
