@@ -1,6 +1,5 @@
 {
   "entry_point": {
-    "class_hash": "",
     "entry_point_type": "EXTERNAL",
     "entry_point_selector": "0x017340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
     "contract_address": "0x0000000000000000000000000000000000001724987234973219347210837402",
@@ -41,7 +40,6 @@
   "nested_calls": [
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "CONSTRUCTOR",
         "entry_point_selector": "0x028ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
         "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
@@ -81,7 +79,6 @@
       "nested_calls": [
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -126,7 +123,6 @@
     },
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "EXTERNAL",
         "entry_point_selector": "0x014d7bff2015b0a213b958b57be5d1588a9720baebac310a441c990bae986710",
         "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
@@ -166,7 +162,6 @@
       "nested_calls": [
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -211,7 +206,6 @@
     },
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "EXTERNAL",
         "entry_point_selector": "0x004bdc46cbf005c1cd386c527a40ebef01d1a9ea4c226b74b6495539b8f16a7a",
         "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
@@ -251,7 +245,6 @@
       "nested_calls": [
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
@@ -296,7 +289,6 @@
     },
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "EXTERNAL",
         "entry_point_selector": "0x03f55930393ea07087c654a727a871299cabe3617a1330514cdc490470be9aa0",
         "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
@@ -336,7 +328,6 @@
       "nested_calls": [
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -378,7 +369,6 @@
         },
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x010d869dd492a59760ea0fa8b9f9ac52808445c51200f97727af69506e959b7f",
             "contract_address": "0x0644932b4d54c062ffa3bf22500b314e154de99854df7245d64c8e2238e39742",
@@ -423,7 +413,6 @@
     },
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "EXTERNAL",
         "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
         "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",

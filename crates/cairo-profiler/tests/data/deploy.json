@@ -1,6 +1,5 @@
 {
   "entry_point": {
-    "class_hash": "",
     "entry_point_type": "EXTERNAL",
     "entry_point_selector": "0x017340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
     "contract_address": "0x0000000000000000000000000000000000001724987234973219347210837402",
@@ -40,7 +39,6 @@
   "nested_calls": [
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "CONSTRUCTOR",
         "entry_point_selector": "0x028ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
         "contract_address": "0x00cf5578e374fe3d4125ec101d93f211b9d9604440904da7683b0ad2a2b69489",
@@ -80,7 +78,6 @@
       "nested_calls": [
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -125,7 +122,6 @@
     },
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "CONSTRUCTOR",
         "entry_point_selector": "0x028ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
         "contract_address": "0x04eddabccd939955073921d1d86c8b54b6c18d746b2147a0d0a18f73199538b7",
@@ -165,7 +161,6 @@
       "nested_calls": [
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -210,7 +205,6 @@
     },
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "CONSTRUCTOR",
         "entry_point_selector": "0x028ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
         "contract_address": "0x000000000000000000000000000000000000000000000000000000000000007b",
@@ -250,7 +244,6 @@
       "nested_calls": [
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -295,7 +288,6 @@
     },
     {
       "entry_point": {
-        "class_hash": "",
         "entry_point_type": "CONSTRUCTOR",
         "entry_point_selector": "0x028ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
         "contract_address": "0x00f586ed97c4cc13396677dd46f8fad23cfb7ff4d847430daf0102bb4164fc42",
@@ -335,7 +327,6 @@
       "nested_calls": [
         {
           "entry_point": {
-            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
