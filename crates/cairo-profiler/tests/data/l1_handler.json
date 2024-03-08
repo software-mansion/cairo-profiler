@@ -1,5 +1,6 @@
 {
   "entry_point": {
+    "class_hash": "",
     "entry_point_type": "EXTERNAL",
     "entry_point_selector": "0x017340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b",
     "contract_address": "0x0000000000000000000000000000000000001724987234973219347210837402",
@@ -39,6 +40,7 @@
   "nested_calls": [
     {
       "entry_point": {
+        "class_hash": "",
         "entry_point_type": "CONSTRUCTOR",
         "entry_point_selector": "0x028ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
         "contract_address": "0x00cf5578e374fe3d4125ec101d93f211b9d9604440904da7683b0ad2a2b69489",
@@ -78,6 +80,7 @@
       "nested_calls": [
         {
           "entry_point": {
+            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
             "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -114,12 +117,15 @@
             ]
           },
           "nested_calls": [
-          ]
+          ],
+          "vm_trace": []
         }
-      ]
+      ],
+      "vm_trace": []
     },
     {
       "entry_point": {
+        "class_hash": "",
         "entry_point_type": "L1_HANDLER",
         "entry_point_selector": "0x0084f38c3647f1eb0529feafe11451196f6f0413184d82a1660f32ea9b5da952",
         "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -159,6 +165,7 @@
       "nested_calls": [
         {
           "entry_point": {
+            "class_hash": "",
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x014d7bff2015b0a213b958b57be5d1588a9720baebac310a441c990bae986710",
             "contract_address": "0x00cf5578e374fe3d4125ec101d93f211b9d9604440904da7683b0ad2a2b69489",
@@ -198,6 +205,7 @@
           "nested_calls": [
             {
               "entry_point": {
+                "class_hash": "",
                 "entry_point_type": "EXTERNAL",
                 "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
                 "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
@@ -234,11 +242,15 @@
                 ]
               },
               "nested_calls": [
-              ]
+              ],
+              "vm_trace": []
             }
-          ]
+          ],
+          "vm_trace": []
         }
-      ]
+      ],
+      "vm_trace": []
     }
-  ]
+  ],
+  "vm_trace": []
 }
