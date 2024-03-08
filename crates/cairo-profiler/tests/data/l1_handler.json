@@ -114,11 +114,9 @@
             ]
           },
           "nested_calls": [
-          ],
-          "vm_trace": []
+          ]
         }
-      ],
-      "vm_trace": []
+      ]
     },
     {
       "entry_point": {
@@ -236,15 +234,11 @@
                 ]
               },
               "nested_calls": [
-              ],
-              "vm_trace": []
+              ]
             }
-          ],
-          "vm_trace": []
+          ]
         }
-      ],
-      "vm_trace": []
+      ]
     }
-  ],
-  "vm_trace": []
+  ]
 }
