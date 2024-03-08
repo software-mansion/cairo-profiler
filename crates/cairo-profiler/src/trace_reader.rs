@@ -80,6 +80,13 @@ impl ContractCallSample {
             MeasurementValue(i64::try_from(summarized_payload).unwrap()),
         );
 
+        assert!(!measurements.contains_key(&MeasurementUnit::from("storage_values_updated")));
+        let summarized_payload = l1_resources.storage_values_updated;
+        measurements.insert(
+            MeasurementUnit::from("storage_values_updated"),
+            MeasurementValue(i64::try_from(summarized_payload).unwrap()),
+        );
+
         ContractCallSample {
             call_stack,
             measurements,
@@ -161,7 +168,7 @@ fn collect_samples<'a>(
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
     show_details: bool,
-) -> &'a ExecutionResources {
+) -> (&'a ExecutionResources, isize) {
     current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
@@ -171,17 +178,28 @@ fn collect_samples<'a>(
     ));
 
     let mut children_resources = ExecutionResources::default();
+    let mut children_storage_updates = 0;
     for sub_trace in &trace.nested_calls {
-        children_resources += collect_samples(samples, current_call_stack, sub_trace, show_details);
+        let (child_resources, child_storage_updates) =
+            &collect_samples(samples, current_call_stack, sub_trace, show_details);
+        children_resources += child_resources;
+        children_storage_updates += child_storage_updates;
     }
 
     samples.push(ContractCallSample::from(
         current_call_stack.iter().map(FunctionName::from).collect(),
         &(&trace.cumulative_resources - &children_resources),
-        &trace.used_l1_resources,
+        &L1Resources {
+            l2_l1_message_sizes: trace.used_l1_resources.l2_l1_message_sizes.clone(),
+            storage_values_updated: trace.used_l1_resources.storage_values_updated
+                - children_storage_updates,
+        },
     ));
 
     current_call_stack.pop();
 
-    &trace.cumulative_resources
+    (
+        &trace.cumulative_resources,
+        trace.used_l1_resources.storage_values_updated,
+    )
 }

@@ -9,113 +9,115 @@
   },
   "used_execution_resources": {
     "vm_resources": {
-      "n_steps": 17157,
+      "n_steps": 17168,
       "n_memory_holes": 950,
       "builtin_instance_counter": {
-        "range_check_builtin": 699,
-        "bitwise_builtin": 11,
         "ec_op_builtin": 11,
+        "range_check_builtin": 699,
         "pedersen_builtin": 11,
+        "bitwise_builtin": 11,
         "poseidon_builtin": 11
       }
     },
     "syscall_counter": {
-      "GetBlockHash": 11,
-      "Keccak": 11,
       "StorageWrite": 11,
-      "StorageRead": 11,
       "GetExecutionInfo": 11,
-      "SendMessageToL1": 11,
-      "LibraryCall": 1,
       "EmitEvent": 11,
       "Deploy": 14,
-      "CallContract": 8
+      "GetBlockHash": 11,
+      "Keccak": 11,
+      "SendMessageToL1": 11,
+      "StorageRead": 11,
+      "CallContract": 8,
+      "LibraryCall": 1
     }
   },
   "used_l1_resources": {
     "l2_l1_message_sizes": [
       2
-    ]
+    ],
+    "storage_values_updated": 4
   },
   "nested_calls": [
     {
       "entry_point": {
         "entry_point_type": "CONSTRUCTOR",
         "entry_point_selector": "0x028ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
-        "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
+        "contract_address": "0x00dec2ddb908870562cc7b50e90e7aa4fab6c43351b310c3326ee55b21d4d694",
         "call_type": "Call",
         "contract_name": "TraceInfoProxy",
         "function_name": "constructor"
       },
       "used_execution_resources": {
         "vm_resources": {
-          "n_steps": 2853,
+          "n_steps": 2855,
           "n_memory_holes": 167,
           "builtin_instance_counter": {
-            "range_check_builtin": 119,
-            "bitwise_builtin": 2,
             "ec_op_builtin": 2,
+            "range_check_builtin": 119,
             "pedersen_builtin": 2,
+            "bitwise_builtin": 2,
             "poseidon_builtin": 2
           }
         },
         "syscall_counter": {
           "EmitEvent": 2,
-          "StorageRead": 2,
           "Keccak": 2,
-          "SendMessageToL1": 2,
-          "Deploy": 2,
-          "CallContract": 1,
+          "StorageWrite": 2,
           "GetBlockHash": 2,
           "GetExecutionInfo": 2,
-          "StorageWrite": 2
+          "SendMessageToL1": 2,
+          "StorageRead": 2,
+          "Deploy": 2,
+          "CallContract": 1
         }
       },
       "used_l1_resources": {
         "l2_l1_message_sizes": [
           2
-        ]
+        ],
+        "storage_values_updated": 2
       },
       "nested_calls": [
         {
           "entry_point": {
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-            "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
+            "contract_address": "0x003c35b3951a2ec2a1905738446063ad80bdcee40a18939b0bdcb71921b8929c",
             "call_type": "Call",
             "contract_name": "TraceInfoChecker",
             "function_name": "from_proxy"
           },
           "used_execution_resources": {
             "vm_resources": {
-              "n_steps": 1377,
+              "n_steps": 1378,
               "n_memory_holes": 82,
               "builtin_instance_counter": {
-                "range_check_builtin": 58,
-                "bitwise_builtin": 1,
                 "ec_op_builtin": 1,
+                "range_check_builtin": 58,
                 "pedersen_builtin": 1,
+                "bitwise_builtin": 1,
                 "poseidon_builtin": 1
               }
             },
             "syscall_counter": {
+              "StorageRead": 1,
+              "GetBlockHash": 1,
               "Deploy": 1,
+              "StorageWrite": 1,
               "GetExecutionInfo": 1,
               "SendMessageToL1": 1,
-              "StorageWrite": 1,
               "Keccak": 1,
-              "EmitEvent": 1,
-              "GetBlockHash": 1,
-              "StorageRead": 1
+              "EmitEvent": 1
             }
           },
           "used_l1_resources": {
             "l2_l1_message_sizes": [
               2
-            ]
+            ],
+            "storage_values_updated": 1
           },
-          "nested_calls": [
-          ],
+          "nested_calls": [],
           "vm_trace": []
         }
       ],
@@ -125,80 +127,81 @@
       "entry_point": {
         "entry_point_type": "EXTERNAL",
         "entry_point_selector": "0x014d7bff2015b0a213b958b57be5d1588a9720baebac310a441c990bae986710",
-        "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
+        "contract_address": "0x00dec2ddb908870562cc7b50e90e7aa4fab6c43351b310c3326ee55b21d4d694",
         "call_type": "Call",
         "contract_name": "TraceInfoProxy",
         "function_name": "regular_call"
       },
       "used_execution_resources": {
         "vm_resources": {
-          "n_steps": 2861,
+          "n_steps": 2863,
           "n_memory_holes": 167,
           "builtin_instance_counter": {
-            "range_check_builtin": 119,
-            "bitwise_builtin": 2,
             "ec_op_builtin": 2,
+            "range_check_builtin": 119,
             "pedersen_builtin": 2,
+            "bitwise_builtin": 2,
             "poseidon_builtin": 2
           }
         },
         "syscall_counter": {
-          "StorageRead": 2,
           "CallContract": 1,
-          "StorageWrite": 2,
-          "EmitEvent": 2,
-          "GetExecutionInfo": 2,
           "GetBlockHash": 2,
           "SendMessageToL1": 2,
+          "EmitEvent": 2,
+          "Keccak": 2,
+          "StorageWrite": 2,
+          "GetExecutionInfo": 2,
           "Deploy": 2,
-          "Keccak": 2
+          "StorageRead": 2
         }
       },
       "used_l1_resources": {
         "l2_l1_message_sizes": [
           2
-        ]
+        ],
+        "storage_values_updated": 0
       },
       "nested_calls": [
         {
           "entry_point": {
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-            "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
+            "contract_address": "0x003c35b3951a2ec2a1905738446063ad80bdcee40a18939b0bdcb71921b8929c",
             "call_type": "Call",
             "contract_name": "TraceInfoChecker",
             "function_name": "from_proxy"
           },
           "used_execution_resources": {
             "vm_resources": {
-              "n_steps": 1377,
+              "n_steps": 1378,
               "n_memory_holes": 82,
               "builtin_instance_counter": {
-                "range_check_builtin": 58,
-                "bitwise_builtin": 1,
                 "ec_op_builtin": 1,
+                "range_check_builtin": 58,
                 "pedersen_builtin": 1,
+                "bitwise_builtin": 1,
                 "poseidon_builtin": 1
               }
             },
             "syscall_counter": {
               "GetExecutionInfo": 1,
-              "GetBlockHash": 1,
-              "StorageWrite": 1,
-              "SendMessageToL1": 1,
               "Keccak": 1,
+              "EmitEvent": 1,
+              "StorageWrite": 1,
+              "GetBlockHash": 1,
+              "SendMessageToL1": 1,
               "StorageRead": 1,
-              "Deploy": 1,
-              "EmitEvent": 1
+              "Deploy": 1
             }
           },
           "used_l1_resources": {
             "l2_l1_message_sizes": [
               2
-            ]
+            ],
+            "storage_values_updated": 0
           },
-          "nested_calls": [
-          ],
+          "nested_calls": [],
           "vm_trace": []
         }
       ],
@@ -208,80 +211,81 @@
       "entry_point": {
         "entry_point_type": "EXTERNAL",
         "entry_point_selector": "0x004bdc46cbf005c1cd386c527a40ebef01d1a9ea4c226b74b6495539b8f16a7a",
-        "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
+        "contract_address": "0x00dec2ddb908870562cc7b50e90e7aa4fab6c43351b310c3326ee55b21d4d694",
         "call_type": "Call",
         "contract_name": "TraceInfoProxy",
         "function_name": "with_libcall"
       },
       "used_execution_resources": {
         "vm_resources": {
-          "n_steps": 2861,
+          "n_steps": 2863,
           "n_memory_holes": 167,
           "builtin_instance_counter": {
-            "range_check_builtin": 119,
-            "bitwise_builtin": 2,
             "ec_op_builtin": 2,
+            "range_check_builtin": 119,
             "pedersen_builtin": 2,
+            "bitwise_builtin": 2,
             "poseidon_builtin": 2
           }
         },
         "syscall_counter": {
-          "GetBlockHash": 2,
-          "GetExecutionInfo": 2,
-          "StorageWrite": 2,
-          "Deploy": 2,
-          "SendMessageToL1": 2,
           "StorageRead": 2,
+          "Keccak": 2,
+          "GetExecutionInfo": 2,
           "LibraryCall": 1,
-          "EmitEvent": 2,
-          "Keccak": 2
+          "SendMessageToL1": 2,
+          "GetBlockHash": 2,
+          "Deploy": 2,
+          "StorageWrite": 2,
+          "EmitEvent": 2
         }
       },
       "used_l1_resources": {
         "l2_l1_message_sizes": [
           2
-        ]
+        ],
+        "storage_values_updated": 0
       },
       "nested_calls": [
         {
           "entry_point": {
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-            "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
+            "contract_address": "0x00dec2ddb908870562cc7b50e90e7aa4fab6c43351b310c3326ee55b21d4d694",
             "call_type": "Delegate",
             "contract_name": "TraceInfoChecker",
             "function_name": "from_proxy"
           },
           "used_execution_resources": {
             "vm_resources": {
-              "n_steps": 1377,
+              "n_steps": 1378,
               "n_memory_holes": 82,
               "builtin_instance_counter": {
-                "range_check_builtin": 58,
-                "bitwise_builtin": 1,
                 "ec_op_builtin": 1,
+                "range_check_builtin": 58,
                 "pedersen_builtin": 1,
+                "bitwise_builtin": 1,
                 "poseidon_builtin": 1
               }
             },
             "syscall_counter": {
-              "EmitEvent": 1,
-              "Deploy": 1,
-              "StorageWrite": 1,
               "GetExecutionInfo": 1,
+              "StorageWrite": 1,
               "Keccak": 1,
-              "StorageRead": 1,
+              "EmitEvent": 1,
+              "SendMessageToL1": 1,
               "GetBlockHash": 1,
-              "SendMessageToL1": 1
+              "StorageRead": 1,
+              "Deploy": 1
             }
           },
           "used_l1_resources": {
             "l2_l1_message_sizes": [
               2
-            ]
+            ],
+            "storage_values_updated": 0
           },
-          "nested_calls": [
-          ],
+          "nested_calls": [],
           "vm_trace": []
         }
       ],
@@ -291,121 +295,122 @@
       "entry_point": {
         "entry_point_type": "EXTERNAL",
         "entry_point_selector": "0x03f55930393ea07087c654a727a871299cabe3617a1330514cdc490470be9aa0",
-        "contract_address": "0x06a72e95d9d261d01d7e41e79a49c751508c74a1fd4689f56d21d749ca6e17a0",
+        "contract_address": "0x00dec2ddb908870562cc7b50e90e7aa4fab6c43351b310c3326ee55b21d4d694",
         "call_type": "Call",
         "contract_name": "TraceInfoProxy",
         "function_name": "call_two"
       },
       "used_execution_resources": {
         "vm_resources": {
-          "n_steps": 4300,
+          "n_steps": 4303,
           "n_memory_holes": 250,
           "builtin_instance_counter": {
-            "range_check_builtin": 180,
-            "bitwise_builtin": 3,
             "ec_op_builtin": 3,
+            "range_check_builtin": 180,
             "pedersen_builtin": 3,
+            "bitwise_builtin": 3,
             "poseidon_builtin": 3
           }
         },
         "syscall_counter": {
-          "GetBlockHash": 3,
-          "SendMessageToL1": 3,
-          "GetExecutionInfo": 3,
-          "EmitEvent": 3,
-          "StorageWrite": 3,
+          "Deploy": 3,
           "Keccak": 3,
+          "StorageWrite": 3,
+          "GetBlockHash": 3,
+          "GetExecutionInfo": 3,
           "StorageRead": 3,
           "CallContract": 2,
-          "Deploy": 3
+          "SendMessageToL1": 3,
+          "EmitEvent": 3
         }
       },
       "used_l1_resources": {
         "l2_l1_message_sizes": [
           2
-        ]
+        ],
+        "storage_values_updated": 1
       },
       "nested_calls": [
         {
           "entry_point": {
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-            "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
+            "contract_address": "0x003c35b3951a2ec2a1905738446063ad80bdcee40a18939b0bdcb71921b8929c",
             "call_type": "Call",
             "contract_name": "TraceInfoChecker",
             "function_name": "from_proxy"
           },
           "used_execution_resources": {
             "vm_resources": {
-              "n_steps": 1377,
+              "n_steps": 1378,
               "n_memory_holes": 82,
               "builtin_instance_counter": {
-                "range_check_builtin": 58,
-                "bitwise_builtin": 1,
                 "ec_op_builtin": 1,
+                "range_check_builtin": 58,
                 "pedersen_builtin": 1,
+                "bitwise_builtin": 1,
                 "poseidon_builtin": 1
               }
             },
             "syscall_counter": {
-              "GetBlockHash": 1,
-              "Deploy": 1,
-              "StorageRead": 1,
-              "GetExecutionInfo": 1,
-              "StorageWrite": 1,
               "Keccak": 1,
+              "StorageWrite": 1,
               "SendMessageToL1": 1,
-              "EmitEvent": 1
+              "GetBlockHash": 1,
+              "GetExecutionInfo": 1,
+              "EmitEvent": 1,
+              "Deploy": 1,
+              "StorageRead": 1
             }
           },
           "used_l1_resources": {
             "l2_l1_message_sizes": [
               2
-            ]
+            ],
+            "storage_values_updated": 0
           },
-          "nested_calls": [
-          ],
+          "nested_calls": [],
           "vm_trace": []
         },
         {
           "entry_point": {
             "entry_point_type": "EXTERNAL",
             "entry_point_selector": "0x010d869dd492a59760ea0fa8b9f9ac52808445c51200f97727af69506e959b7f",
-            "contract_address": "0x0644932b4d54c062ffa3bf22500b314e154de99854df7245d64c8e2238e39742",
+            "contract_address": "0x0781584d505e446d4f687e65660b2473a105b4ce4f60244251cba21508cf3c6c",
             "call_type": "Call",
             "contract_name": "TraceDummy",
             "function_name": "from_proxy_dummy"
           },
           "used_execution_resources": {
             "vm_resources": {
-              "n_steps": 1347,
+              "n_steps": 1348,
               "n_memory_holes": 82,
               "builtin_instance_counter": {
-                "range_check_builtin": 58,
-                "bitwise_builtin": 1,
                 "ec_op_builtin": 1,
+                "range_check_builtin": 58,
                 "pedersen_builtin": 1,
+                "bitwise_builtin": 1,
                 "poseidon_builtin": 1
               }
             },
             "syscall_counter": {
+              "GetExecutionInfo": 1,
+              "Deploy": 1,
+              "SendMessageToL1": 1,
               "StorageWrite": 1,
+              "GetBlockHash": 1,
               "StorageRead": 1,
               "Keccak": 1,
-              "GetBlockHash": 1,
-              "EmitEvent": 1,
-              "GetExecutionInfo": 1,
-              "SendMessageToL1": 1,
-              "Deploy": 1
+              "EmitEvent": 1
             }
           },
           "used_l1_resources": {
             "l2_l1_message_sizes": [
               2
-            ]
+            ],
+            "storage_values_updated": 1
           },
-          "nested_calls": [
-          ],
+          "nested_calls": [],
           "vm_trace": []
         }
       ],
@@ -415,41 +420,41 @@
       "entry_point": {
         "entry_point_type": "EXTERNAL",
         "entry_point_selector": "0x02eaa67a25fa536ec4c6f60d78307c722e85f57dafc8165de6b528b7b9a588e4",
-        "contract_address": "0x0712b80bc52e8ffba912d8827e0bcaaba0bc6242a8562f1235a66d6bea7aba1b",
+        "contract_address": "0x003c35b3951a2ec2a1905738446063ad80bdcee40a18939b0bdcb71921b8929c",
         "call_type": "Call",
         "contract_name": "TraceInfoChecker",
         "function_name": "from_proxy"
       },
       "used_execution_resources": {
         "vm_resources": {
-          "n_steps": 1377,
+          "n_steps": 1378,
           "n_memory_holes": 82,
           "builtin_instance_counter": {
-            "range_check_builtin": 58,
-            "bitwise_builtin": 1,
             "ec_op_builtin": 1,
+            "range_check_builtin": 58,
             "pedersen_builtin": 1,
+            "bitwise_builtin": 1,
             "poseidon_builtin": 1
           }
         },
         "syscall_counter": {
-          "Keccak": 1,
-          "StorageWrite": 1,
-          "EmitEvent": 1,
+          "SendMessageToL1": 1,
           "GetBlockHash": 1,
           "GetExecutionInfo": 1,
+          "Keccak": 1,
+          "StorageWrite": 1,
           "Deploy": 1,
-          "SendMessageToL1": 1,
+          "EmitEvent": 1,
           "StorageRead": 1
         }
       },
       "used_l1_resources": {
         "l2_l1_message_sizes": [
           2
-        ]
+        ],
+        "storage_values_updated": 0
       },
-      "nested_calls": [
-      ],
+      "nested_calls": [],
       "vm_trace": []
     }
   ],
