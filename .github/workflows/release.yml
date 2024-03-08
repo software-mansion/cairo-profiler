@@ -20,7 +20,7 @@ jobs:
         id: lookupVersion
         uses: mikefarah/yq@dd648994340a5d03225d97abf19c9bf1086c3f07
         with:
-          cmd: yq -oy '"v" + .package.version' 'Cargo.toml'
+          cmd: yq -oy '"v" + .workspace.package.version' 'Cargo.toml'
 
       - name: Print version
         id: version
