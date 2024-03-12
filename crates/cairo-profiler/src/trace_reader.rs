@@ -1,10 +1,21 @@
+use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program_registry::ProgramRegistry;
+use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraStatementDebugInfo};
 use core::fmt;
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::io::Write;
+use tempfile::Builder;
+use universal_sierra_compiler_api::{
+    AssembledProgramWithDebugInfo, UniversalSierraCompilerCommand,
+};
 
+use crate::trace_reader::function_trace_builder::collect_profiling_info;
 use trace_data::{
     CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
 };
+
+mod function_trace_builder;
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
@@ -149,19 +160,31 @@ impl Display for EntryPointId {
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
     show_details: bool,
+    sierra_code: &Program,
+    sierra_contracts: &[Program],
 ) -> Vec<ContractCallSample> {
     let mut samples = vec![];
     let mut current_path = vec![];
 
-    collect_samples(&mut samples, &mut current_path, trace, show_details);
+    collect_samples(
+        &mut samples,
+        &mut current_path,
+        trace,
+        show_details,
+        sierra_code,
+        sierra_contracts,
+    );
     samples
 }
 
 fn collect_samples<'a>(
+    // TODO
     samples: &mut Vec<ContractCallSample>,
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
     show_details: bool,
+    sierra_code: &Program,
+    sierra_contracts: &[Program],
 ) -> &'a ExecutionResources {
     current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
@@ -171,12 +194,63 @@ fn collect_samples<'a>(
         show_details,
     ));
 
+    if trace.entry_point.contract_name == Some("SNFORGE_TEST_CODE".to_string()) {
+        let sierra_string_as_bytes = serde_json::to_string(sierra_code).unwrap().into_bytes();
+        let mut temp_sierra_file = Builder::new().tempfile().unwrap();
+        let _ = temp_sierra_file.write(&sierra_string_as_bytes).unwrap();
+
+        let assembled_with_info_raw = String::from_utf8(
+            UniversalSierraCompilerCommand::new()
+                .inherit_stderr()
+                .args(vec![
+                    "compile-raw",
+                    "--sierra-path",
+                    temp_sierra_file.path().to_str().unwrap(),
+                ])
+                .command()
+                .output()
+                .unwrap()
+                .stdout,
+        )
+        .unwrap();
+        let casm_program: AssembledProgramWithDebugInfo =
+            serde_json::from_str(&assembled_with_info_raw).unwrap();
+
+        let casm_debug_info = CairoProgramDebugInfo {
+            sierra_statement_info: casm_program
+                .debug_info
+                .iter()
+                .map(|(offset, idx)| SierraStatementDebugInfo {
+                    code_offset: *offset,
+                    instruction_idx: *idx,
+                })
+                .collect(),
+        };
+
+        let profiling_info = collect_profiling_info(
+            &trace.cairo_execution_info.as_ref().unwrap().vm_trace,
+            &casm_debug_info,
+            sierra_code,
+            &ProgramRegistry::new(sierra_code).unwrap(),
+        );
+
+        for (trace, weight) in profiling_info {
+            println!("{trace:?} {weight:?}");
+        }
+    }
+
     let mut children_resources = ExecutionResources::default();
 
     for sub_trace_node in &trace.nested_calls {
         if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
-            children_resources +=
-                collect_samples(samples, current_call_stack, sub_trace, show_details);
+            children_resources += collect_samples(
+                samples,
+                current_call_stack,
+                sub_trace,
+                show_details,
+                sierra_code,
+                sierra_contracts,
+            );
         }
     }
 
