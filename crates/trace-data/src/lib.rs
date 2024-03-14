@@ -19,7 +19,7 @@ pub struct CallTrace {
     pub cumulative_resources: ExecutionResources,
     pub used_l1_resources: L1Resources,
     pub nested_calls: Vec<CallTrace>,
-    pub vm_trace: Vec<TraceEntry>,
+    pub vm_trace: Option<Vec<TraceEntry>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
