@@ -20,6 +20,13 @@ pub struct CallTrace {
     pub used_l1_resources: L1Resources,
     pub nested_calls: Vec<CallTrace>,
     pub vm_trace: Option<Vec<TraceEntry>>,
+    pub node_type: NodeType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum NodeType {
+    Regular,
+    Phantom,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -119,10 +119,12 @@
           },
           "nested_calls": [
           ],
-          "vm_trace": []
+          "vm_trace": [],
+          "node_type": "Regular"
         }
       ],
-      "vm_trace": []
+      "vm_trace": [],
+      "node_type": "Regular"
     },
     {
       "entry_point": {
@@ -204,10 +206,12 @@
           },
           "nested_calls": [
           ],
-          "vm_trace": []
+          "vm_trace": [],
+          "node_type": "Regular"
         }
       ],
-      "vm_trace": []
+      "vm_trace": [],
+      "node_type": "Regular"
     },
     {
       "entry_point": {
@@ -289,10 +293,12 @@
           },
           "nested_calls": [
           ],
-          "vm_trace": []
+          "vm_trace": [],
+          "node_type": "Regular"
         }
       ],
-      "vm_trace": []
+      "vm_trace": [],
+      "node_type": "Regular"
     },
     {
       "entry_point": {
@@ -374,7 +380,8 @@
           },
           "nested_calls": [
           ],
-          "vm_trace": []
+          "vm_trace": [],
+          "node_type": "Regular"
         },
         {
           "entry_point": {
@@ -416,10 +423,12 @@
           },
           "nested_calls": [
           ],
-          "vm_trace": []
+          "vm_trace": [],
+          "node_type": "Regular"
         }
       ],
-      "vm_trace": []
+      "vm_trace": [],
+      "node_type": "Regular"
     },
     {
       "entry_point": {
@@ -461,8 +470,10 @@
       },
       "nested_calls": [
       ],
-      "vm_trace": []
+      "vm_trace": [],
+      "node_type": "Regular"
     }
   ],
-  "vm_trace": []
+  "vm_trace": [],
+  "node_type": "Regular"
 }
