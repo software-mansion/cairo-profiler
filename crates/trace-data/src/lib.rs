@@ -14,6 +14,7 @@ pub struct EntryPointSelector(pub String);
 /// Enum representing node of a trace of a call.
 /// A trace root should always be of variant [`CallTraceNode::Regular`].
 /// This struct should be serialized and used as an input to cairo-profiler.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CallTraceNode {
     Regular(CallTrace),
     DeployWithoutConstructor,

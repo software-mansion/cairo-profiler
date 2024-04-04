@@ -11,7 +11,7 @@ use clap::Parser;
 use flate2::{bufread::GzEncoder, Compression};
 use profile_builder::build_profile;
 use prost::Message;
-use trace_data::CallTrace;
+use trace_data::CallTraceNode;
 
 mod profile_builder;
 mod trace_reader;
@@ -37,9 +37,10 @@ fn main() -> Result<()> {
 
     let data = fs::read_to_string(cli.path_to_trace_data)
         .context("Failed to read call trace from a file")?;
-    let serialized_trace: CallTrace =
+    let serialized_trace: CallTraceNode =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
-    let samples = collect_samples_from_trace(&serialized_trace, cli.show_details);
+
+    let samples = collect_samples_from_trace(&serialized_trace, cli.show_details)?;
 
     let profile = build_profile(&samples);
 
