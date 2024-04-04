@@ -11,6 +11,14 @@ pub struct ContractAddress(pub String);
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EntryPointSelector(pub String);
 
+/// Enum representing node of a trace of a call.
+/// A trace root should always be of variant [`CallTraceNode::Regular`].
+/// This struct should be serialized and used as an input to cairo-profiler.
+pub enum CallTraceNode {
+    Regular(CallTrace),
+    DeployWithoutConstructor,
+}
+
 /// Tree structure representing trace of a call.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallTrace {
@@ -18,15 +26,8 @@ pub struct CallTrace {
     #[serde(rename = "used_execution_resources")]
     pub cumulative_resources: ExecutionResources,
     pub used_l1_resources: L1Resources,
-    pub nested_calls: Vec<CallTrace>,
+    pub nested_calls: Vec<CallTraceNode>,
     pub vm_trace: Option<Vec<TraceEntry>>,
-    pub node_type: NodeType,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NodeType {
-    Regular,
-    Phantom,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
