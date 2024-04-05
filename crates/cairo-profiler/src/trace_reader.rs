@@ -155,7 +155,7 @@ pub fn collect_samples_from_trace(
     let mut samples = vec![];
     let mut current_path = vec![];
 
-    if let CallTraceNode::Regular(call_trace) = trace {
+    if let CallTraceNode::EntryPointCall(call_trace) = trace {
         collect_samples(&mut samples, &mut current_path, call_trace, show_details);
         Ok(samples)
     } else {
@@ -182,7 +182,7 @@ fn collect_samples<'a>(
     let mut children_resources = ExecutionResources::default();
 
     for sub_trace_node in &trace.nested_calls {
-        if let CallTraceNode::Regular(sub_trace) = sub_trace_node {
+        if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
             children_resources +=
                 collect_samples(samples, current_call_stack, sub_trace, show_details);
         }

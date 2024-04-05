@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - optional fields `CallTrace.vm_trace` and `CallEntryPoint.class_hash` to input structs
-- `CallTraceNode` enum as an input struct instead of `CallTrace`
+- `CallTrace.nested_calls` type changed from `Vec<CallTrace>` to `Vec<CallTraceNode>`
 
 ## [0.2.0] - 2024-03-08
 
