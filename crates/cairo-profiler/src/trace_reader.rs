@@ -2,8 +2,6 @@ use core::fmt;
 use std::collections::HashMap;
 use std::fmt::Display;
 
-use anyhow::{anyhow, Result};
-
 use trace_data::{
     CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
 };
@@ -149,20 +147,14 @@ impl Display for EntryPointId {
 }
 
 pub fn collect_samples_from_trace(
-    trace: &CallTraceNode,
+    trace: &CallTrace,
     show_details: bool,
-) -> Result<Vec<ContractCallSample>> {
+) -> Vec<ContractCallSample> {
     let mut samples = vec![];
     let mut current_path = vec![];
 
-    if let CallTraceNode::EntryPointCall(call_trace) = trace {
-        collect_samples(&mut samples, &mut current_path, call_trace, show_details);
-        Ok(samples)
-    } else {
-        Err(anyhow!(
-            "Incorrect input: a trace should always start with a regular node"
-        ))
-    }
+    collect_samples(&mut samples, &mut current_path, trace, show_details);
+    samples
 }
 
 fn collect_samples<'a>(
