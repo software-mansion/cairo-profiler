@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - optional fields `CallTrace.vm_trace` and `CallEntryPoint.class_hash` to input structs
+- `CallTrace.nested_calls` type changed from `Vec<CallTrace>` to `Vec<CallTraceNode>`
 
 ## [0.2.0] - 2024-03-08
 
@@ -28,6 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - Starknet calls profiling:
-  - L2 resources: steps, memory holes, builtins, syscalls
-  - support for human-readable contract and function names
+    - L2 resources: steps, memory holes, builtins, syscalls
+    - support for human-readable contract and function names
 - custom output path support

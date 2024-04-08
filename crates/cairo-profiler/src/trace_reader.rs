@@ -2,9 +2,9 @@ use core::fmt;
 use std::collections::HashMap;
 use std::fmt::Display;
 
-use trace_data::{ContractAddress, EntryPointSelector};
-
-use trace_data::{CallTrace, ExecutionResources, L1Resources};
+use trace_data::{
+    CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
+};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
@@ -152,6 +152,7 @@ pub fn collect_samples_from_trace(
 ) -> Vec<ContractCallSample> {
     let mut samples = vec![];
     let mut current_path = vec![];
+
     collect_samples(&mut samples, &mut current_path, trace, show_details);
     samples
 }
@@ -171,8 +172,12 @@ fn collect_samples<'a>(
     ));
 
     let mut children_resources = ExecutionResources::default();
-    for sub_trace in &trace.nested_calls {
-        children_resources += collect_samples(samples, current_call_stack, sub_trace, show_details);
+
+    for sub_trace_node in &trace.nested_calls {
+        if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
+            children_resources +=
+                collect_samples(samples, current_call_stack, sub_trace, show_details);
+        }
     }
 
     samples.push(ContractCallSample::from(

@@ -39,6 +39,7 @@ fn main() -> Result<()> {
         .context("Failed to read call trace from a file")?;
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
+
     let samples = collect_samples_from_trace(&serialized_trace, cli.show_details);
 
     let profile = build_profile(&samples);

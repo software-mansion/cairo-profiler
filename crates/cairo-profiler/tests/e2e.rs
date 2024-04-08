@@ -9,13 +9,13 @@ fn output_path() {
     temp_dir
         .copy_from(
             project_root.join("crates/cairo-profiler/tests/data/"),
-            &["trace.json"],
+            &["call.json"],
         )
         .unwrap();
 
     SnapboxCommand::new(cargo_bin!("cairo-profiler"))
         .current_dir(&temp_dir)
-        .arg("./trace.json")
+        .arg("./call.json")
         .args(["-o", "my/output/dir/my_file.pb.gz"])
         .assert()
         .success();
@@ -23,15 +23,15 @@ fn output_path() {
     assert!(temp_dir.join("my/output/dir/my_file.pb.gz").exists());
 }
 
-#[test_case(&["trace.json", "--show-details"]; "with details")]
-#[test_case(&["trace.json"]; "without details")]
+#[test_case(&["call.json", "--show-details"]; "with details")]
+#[test_case(&["call.json"]; "without details")]
 fn simple_package(args: &[&str]) {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
             project_root.join("crates/cairo-profiler/tests/data/"),
-            &["trace.json"],
+            &["call.json"],
         )
         .unwrap();
 
