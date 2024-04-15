@@ -21,15 +21,15 @@ pub struct CallTrace {
     pub cumulative_resources: ExecutionResources,
     pub used_l1_resources: L1Resources,
     pub nested_calls: Vec<CallTraceNode>,
-    pub function_level_info: Option<FunctionLevelInfo>,
+    pub cairo_execution_info: Option<CairoExecutionInfo>,
 }
 
 /// Struct needed for function level profiling.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FunctionLevelInfo {
+pub struct CairoExecutionInfo {
     pub vm_trace: Vec<TraceEntry>,
     /// Path to a file with serialized `ContractClass` or `VersionedProgram`.
-    pub sierra_path: Utf8PathBuf,
+    pub source_sierra_path: Utf8PathBuf,
 }
 
 /// Enum representing node of a trace of a call.

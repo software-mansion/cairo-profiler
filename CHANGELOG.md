@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - optional field and `CallEntryPoint.class_hash` to input structs
-- optional field `CallEntryPoint.function_level_info` to input structs. The struct contains vm trace and path to a
+- optional field `CallEntryPoint.cairo_execution_info` to input structs. The struct contains vm trace and path to a
   relevant sierra file. It will enable function level profiling soon
 
 ### Changed
