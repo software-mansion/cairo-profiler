@@ -1,3 +1,4 @@
+use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::{AddAssign, Sub, SubAssign};
@@ -20,7 +21,15 @@ pub struct CallTrace {
     pub cumulative_resources: ExecutionResources,
     pub used_l1_resources: L1Resources,
     pub nested_calls: Vec<CallTraceNode>,
-    pub vm_trace: Option<Vec<TraceEntry>>,
+    pub function_level_info: Option<FunctionLevelInfo>,
+}
+
+/// Struct needed for function level profiling.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionLevelInfo {
+    pub vm_trace: Vec<TraceEntry>,
+    /// Path to a file with serialized `ContractClass` or `VersionedProgram`.
+    pub sierra_path: Utf8PathBuf,
 }
 
 /// Enum representing node of a trace of a call.
