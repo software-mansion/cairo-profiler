@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0-dev.0] - 2024-04-17
+
 ### Added
 
 - optional fields `CallTrace.vm_trace` and `CallEntryPoint.class_hash` to input structs
