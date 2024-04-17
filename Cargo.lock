@@ -110,7 +110,7 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "cairo-profiler"
-version = "0.2.0"
+version = "0.3.0-dev.0"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -735,7 +735,7 @@ dependencies = [
 
 [[package]]
 name = "trace-data"
-version = "0.2.0"
+version = "0.3.0-dev.0"
 dependencies = [
  "serde",
 ]
