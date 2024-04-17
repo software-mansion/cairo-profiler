@@ -6,7 +6,7 @@ Profiler for Cairo programming language &amp; Starknet.
 
 ## Installation
 
-To install the latest version of `cairo-profiler`, run:
+To install the latest stable version of `cairo-profiler`, run:
 
 ```shell
 curl -L https://raw.githubusercontent.com/software-mansion/cairo-profiler/main/scripts/install.sh | sh
