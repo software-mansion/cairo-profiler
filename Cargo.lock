@@ -737,6 +737,7 @@ dependencies = [
 name = "trace-data"
 version = "0.3.0-dev.0"
 dependencies = [
+ "camino",
  "serde",
 ]
 

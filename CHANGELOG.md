@@ -11,7 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- optional fields `CallTrace.vm_trace` and `CallEntryPoint.class_hash` to input structs
+- optional field and `CallEntryPoint.class_hash` to input structs
+- optional field `CallEntryPoint.cairo_execution_info` to input structs. The struct contains vm trace and path to a
+  relevant sierra file. It will enable function level profiling soon
+
+### Changed
+
 - `CallTrace.nested_calls` type changed from `Vec<CallTrace>` to `Vec<CallTraceNode>`
 
 ## [0.2.0] - 2024-03-08
