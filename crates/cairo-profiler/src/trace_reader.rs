@@ -1,7 +1,8 @@
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraStatementDebugInfo};
 use core::fmt;
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::io::Write;
@@ -17,7 +18,7 @@ use trace_data::{
 
 mod function_trace_builder;
 
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub struct FunctionName(pub String);
 
 impl FunctionName {
@@ -160,7 +161,7 @@ impl Display for EntryPointId {
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
     show_details: bool,
-    sierra_code: &Program,
+    sierra_code: &ProgramArtifact,
     sierra_contracts: &[Program],
 ) -> Vec<ContractCallSample> {
     let mut samples = vec![];
@@ -183,7 +184,7 @@ fn collect_samples<'a>(
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
     show_details: bool,
-    sierra_code: &Program,
+    sierra_code: &ProgramArtifact,
     sierra_contracts: &[Program],
 ) -> &'a ExecutionResources {
     current_call_stack.push(EntryPointId::from(
@@ -194,7 +195,13 @@ fn collect_samples<'a>(
         show_details,
     ));
 
-    if trace.entry_point.contract_name == Some("SNFORGE_TEST_CODE".to_string()) {
+    let mut used_vm_trace = false;
+
+    if trace.entry_point.contract_name == Some("SNFORGE_TEST_CODE".to_string())
+        && trace.cairo_execution_info.is_some()
+    {
+        used_vm_trace = true;
+        let cairo_execution_info = trace.cairo_execution_info.as_ref().unwrap();
         let sierra_string_as_bytes = serde_json::to_string(sierra_code).unwrap().into_bytes();
         let mut temp_sierra_file = Builder::new().tempfile().unwrap();
         let _ = temp_sierra_file.write(&sierra_string_as_bytes).unwrap();
@@ -228,14 +235,26 @@ fn collect_samples<'a>(
         };
 
         let profiling_info = collect_profiling_info(
-            &trace.cairo_execution_info.as_ref().unwrap().vm_trace,
+            &cairo_execution_info.vm_trace,
             &casm_debug_info,
-            sierra_code,
-            &ProgramRegistry::new(sierra_code).unwrap(),
+            &sierra_code.program,
+            &ProgramRegistry::new(&sierra_code.program).unwrap(),
         );
 
-        for (trace, weight) in profiling_info {
-            println!("{trace:?} {weight:?}");
+        for (trace, weight) in &profiling_info {
+            let mut function_trace = current_call_stack
+                .iter()
+                .map(FunctionName::from)
+                .collect_vec();
+            function_trace.extend(trace.iter().map(|x| FunctionName(x.to_string())));
+
+            samples.push(ContractCallSample {
+                call_stack: function_trace,
+                measurements: HashMap::from([(
+                    MeasurementUnit::from("steps"),
+                    MeasurementValue(i64::try_from(*weight).unwrap()),
+                )]),
+            });
         }
     }
 
@@ -243,6 +262,7 @@ fn collect_samples<'a>(
 
     for sub_trace_node in &trace.nested_calls {
         if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
+            // TODO append to callstack based on function traces
             children_resources += collect_samples(
                 samples,
                 current_call_stack,
@@ -254,9 +274,14 @@ fn collect_samples<'a>(
         }
     }
 
+    let mut call_resources = &trace.cumulative_resources - &children_resources;
+    if used_vm_trace {
+        call_resources.vm_resources.n_steps = 0;
+    }
+
     samples.push(ContractCallSample::from(
         current_call_stack.iter().map(FunctionName::from).collect(),
-        &(&trace.cumulative_resources - &children_resources),
+        &call_resources,
         &trace.used_l1_resources,
     ));
 

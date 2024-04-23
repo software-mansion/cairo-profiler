@@ -6,14 +6,17 @@ use itertools::chain;
 use std::collections::HashMap;
 use trace_data::TraceEntry;
 
+const MAX_TRACE_DEPTH: u8 = 100;
+const MIN_WEIGHT: u8 = 1;
+
+/// Collects profiling info of the current run using the trace.
 pub fn collect_profiling_info(
     trace: &[TraceEntry],
     casm_debug_info: &CairoProgramDebugInfo,
     sierra_program: &Program,
     sierra_program_registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> Vec<(Vec<String>, usize)> {
-    let max_stack_trace_depth = 100;
-
+    let sierra_len = casm_debug_info.sierra_statement_info.len() - 1;
     let bytecode_len = casm_debug_info
         .sierra_statement_info
         .last()
@@ -50,6 +53,8 @@ pub fn collect_profiling_info(
     // Note the header and footer (CASM instructions added for running the program by the
     // runner). The header is not counted, and the footer is, but then the relevant
     // entry is removed.
+    let mut sierra_statement_weights = HashMap::<StatementIdx, usize>::new();
+
     let mut header_footer_steps = 0;
 
     for step in trace {
@@ -71,9 +76,6 @@ pub fn collect_profiling_info(
 
         cur_weight += 1;
 
-        // trace + Sierra / (USC) -> CASM
-        // trace + CASM + mapping Cairo func name -> Sierra idx + mapping sierra -> CASM (sierra_idx -> pc)
-
         // TODO(yuval): Maintain a map of pc to sierra statement index (only for PCs we saw), to
         // save lookups.
         let sierra_statement_idx = StatementIdx(
@@ -84,6 +86,10 @@ pub fn collect_profiling_info(
         );
         let user_function_idx =
             user_function_idx_by_sierra_statement_idx(sierra_program, sierra_statement_idx);
+
+        *sierra_statement_weights
+            .entry(sierra_statement_idx)
+            .or_insert(0) += 1;
 
         let Some(gen_statement) = sierra_program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
@@ -96,7 +102,7 @@ pub fn collect_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     // Push to the stack.
-                    if function_stack_depth < max_stack_trace_depth {
+                    if function_stack_depth < MAX_TRACE_DEPTH {
                         function_stack.push((user_function_idx, cur_weight));
                         cur_weight = 0;
                     }
@@ -105,7 +111,7 @@ pub fn collect_profiling_info(
             }
             GenStatement::Return(_) => {
                 // Pop from the stack.
-                if function_stack_depth <= max_stack_trace_depth {
+                if function_stack_depth <= MAX_TRACE_DEPTH {
                     // The current stack trace, including the current function.
                     let cur_stack: Vec<_> =
                         chain!(function_stack.iter().map(|f| f.0), [user_function_idx]).collect();
@@ -116,13 +122,14 @@ pub fn collect_profiling_info(
                         end_of_program_reached = true;
                         continue;
                     };
-                    cur_weight += popped.1;
+                    cur_weight = popped.1;
                 }
                 function_stack_depth -= 1;
             }
         }
     }
 
+    // region: my code
     *stack_trace_weights
         .iter_mut()
         .find(|(trace, _)| trace.len() == 1)
@@ -138,6 +145,15 @@ pub fn collect_profiling_info(
             )
         })
         .collect();
+    // endregion
+
+    // Remove the footer.
+    sierra_statement_weights.remove(&StatementIdx(sierra_len));
+
+    // region: my code
+    // let cairo_function_weights =
+    //     process_cairo_function_weights(locations_map, &sierra_statement_weights);
+    // endregion
 
     stack_trace_weights
 }
@@ -164,4 +180,25 @@ fn user_function_idx_by_sierra_statement_idx(
         .funcs
         .partition_point(|f| f.entry_point.0 <= statement_idx.0)
         - 1
+}
+
+fn process_cairo_function_weights(
+    locations_map: &HashMap<StatementIdx, String>,
+    sierra_statement_weights: &HashMap<StatementIdx, usize>,
+) -> HashMap<String, usize> {
+    let mut cairo_functions = HashMap::new();
+    for (statement_idx, weight) in sierra_statement_weights {
+        // TODO(Gil): Fill all the `Unknown functions` in the cairo functions profiling.
+        let function_identifier = locations_map
+            .get(statement_idx)
+            .unwrap_or(&"unknown".to_string())
+            .clone();
+        *(cairo_functions.entry(function_identifier).or_insert(0)) += *weight;
+    }
+
+    cairo_functions
+        .into_iter()
+        .filter(|(_, weight)| *weight >= MIN_WEIGHT as usize)
+        .map(|(function_identifier, weight)| (function_identifier.clone(), weight))
+        .collect()
 }

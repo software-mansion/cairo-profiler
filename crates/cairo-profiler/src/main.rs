@@ -6,7 +6,7 @@ use std::{
 use crate::trace_reader::collect_samples_from_trace;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program::ProgramArtifact;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::Utf8PathBuf;
 use clap::Parser;
@@ -46,8 +46,10 @@ fn main() -> Result<()> {
     let raw_sierra_code: Value = serde_json::from_str(&fs::read_to_string(
         "target/dev/snforge/uwu.snforge_sierra.json",
     )?)?;
+
     let sierra_code =
-        serde_json::from_str::<Program>(&raw_sierra_code[1]["sierra_program"].to_string())?;
+        serde_json::from_str::<ProgramArtifact>(&raw_sierra_code[1]["sierra_program"].to_string())?;
+
     let mut sierra_contracts = vec![];
 
     for entry in fs::read_dir("target/dev")? {
