@@ -3,20 +3,19 @@ use std::{
     io::{Read, Write},
 };
 
+use crate::sierra_loader::CompiledArtifactsPathMap;
 use crate::trace_reader::collect_samples_from_trace;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
-use cairo_lang_sierra::program::ProgramArtifact;
-use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::Utf8PathBuf;
 use clap::Parser;
 use flate2::{bufread::GzEncoder, Compression};
 use profile_builder::build_profile;
 use prost::Message;
-use serde_json::Value;
 use trace_data::CallTrace;
 
 mod profile_builder;
+mod sierra_loader;
 mod trace_reader;
 
 #[derive(Parser, Debug)]
@@ -43,33 +42,11 @@ fn main() -> Result<()> {
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
-    let raw_sierra_code: Value = serde_json::from_str(&fs::read_to_string(
-        "target/dev/snforge/uwu.snforge_sierra.json",
-    )?)?;
-
-    let sierra_code =
-        serde_json::from_str::<ProgramArtifact>(&raw_sierra_code[1]["sierra_program"].to_string())?;
-
-    let mut sierra_contracts = vec![];
-
-    for entry in fs::read_dir("target/dev")? {
-        let entry = entry?;
-        let entry_path = entry.path();
-        if entry_path.is_file() && entry_path.ends_with(".contract_class.json") {
-            let raw_sierra = fs::read_to_string(entry_path)?;
-            let parsed_sierra = serde_json::from_str::<ContractClass>(&raw_sierra)
-                .expect("Failed to parse sierra contract code");
-            let sierra_program = parsed_sierra.extract_sierra_program().unwrap();
-            sierra_contracts.push(sierra_program);
-        }
-    }
-
     let samples = collect_samples_from_trace(
         &serialized_trace,
         cli.show_details,
-        &sierra_code,
-        &sierra_contracts,
-    );
+        &mut CompiledArtifactsPathMap::new(),
+    )?;
 
     let profile = build_profile(&samples);
 

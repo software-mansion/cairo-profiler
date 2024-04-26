@@ -1,17 +1,12 @@
-use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
-use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraStatementDebugInfo};
 use core::fmt;
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::io::Write;
-use tempfile::Builder;
-use universal_sierra_compiler_api::{
-    AssembledProgramWithDebugInfo, UniversalSierraCompilerCommand,
-};
 
+use crate::sierra_loader::CompiledArtifactsPathMap;
 use crate::trace_reader::function_trace_builder::collect_profiling_info;
+use anyhow::Result;
 use trace_data::{
     CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
 };
@@ -161,9 +156,8 @@ impl Display for EntryPointId {
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
     show_details: bool,
-    sierra_code: &ProgramArtifact,
-    sierra_contracts: &[Program],
-) -> Vec<ContractCallSample> {
+    compiled_artifacts_path_map: &mut CompiledArtifactsPathMap,
+) -> Result<Vec<ContractCallSample>> {
     let mut samples = vec![];
     let mut current_path = vec![];
 
@@ -172,10 +166,9 @@ pub fn collect_samples_from_trace(
         &mut current_path,
         trace,
         show_details,
-        sierra_code,
-        sierra_contracts,
-    );
-    samples
+        compiled_artifacts_path_map,
+    )?;
+    Ok(samples)
 }
 
 fn collect_samples<'a>(
@@ -184,9 +177,8 @@ fn collect_samples<'a>(
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
     show_details: bool,
-    sierra_code: &ProgramArtifact,
-    sierra_contracts: &[Program],
-) -> &'a ExecutionResources {
+    compiled_artifacts_path_map: &mut CompiledArtifactsPathMap,
+) -> Result<&'a ExecutionResources> {
     current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
@@ -195,50 +187,17 @@ fn collect_samples<'a>(
         show_details,
     ));
 
-    let mut used_vm_trace = false;
-
-    if trace.entry_point.contract_name == Some("SNFORGE_TEST_CODE".to_string())
-        && trace.cairo_execution_info.is_some()
-    {
-        used_vm_trace = true;
-        let cairo_execution_info = trace.cairo_execution_info.as_ref().unwrap();
-        let sierra_string_as_bytes = serde_json::to_string(sierra_code).unwrap().into_bytes();
-        let mut temp_sierra_file = Builder::new().tempfile().unwrap();
-        let _ = temp_sierra_file.write(&sierra_string_as_bytes).unwrap();
-
-        let assembled_with_info_raw = String::from_utf8(
-            UniversalSierraCompilerCommand::new()
-                .inherit_stderr()
-                .args(vec![
-                    "compile-raw",
-                    "--sierra-path",
-                    temp_sierra_file.path().to_str().unwrap(),
-                ])
-                .command()
-                .output()
-                .unwrap()
-                .stdout,
-        )
-        .unwrap();
-        let casm_program: AssembledProgramWithDebugInfo =
-            serde_json::from_str(&assembled_with_info_raw).unwrap();
-
-        let casm_debug_info = CairoProgramDebugInfo {
-            sierra_statement_info: casm_program
-                .debug_info
-                .iter()
-                .map(|(offset, idx)| SierraStatementDebugInfo {
-                    code_offset: *offset,
-                    instruction_idx: *idx,
-                })
-                .collect(),
-        };
+    if let Some(cairo_execution_info) = &trace.cairo_execution_info {
+        compiled_artifacts_path_map
+            .try_create_compiled_artifacts(&cairo_execution_info.source_sierra_path)?;
+        let compiled_artifacts = compiled_artifacts_path_map
+            .get_sierra_casm_artifacts_for_path(&cairo_execution_info.source_sierra_path);
 
         let profiling_info = collect_profiling_info(
             &cairo_execution_info.vm_trace,
-            &casm_debug_info,
-            &sierra_code.program,
-            &ProgramRegistry::new(&sierra_code.program).unwrap(),
+            &compiled_artifacts.casm_debug_info,
+            &compiled_artifacts.sierra,
+            &ProgramRegistry::new(&compiled_artifacts.sierra.program).unwrap(),
         );
 
         for (trace, weight) in &profiling_info {
@@ -268,14 +227,13 @@ fn collect_samples<'a>(
                 current_call_stack,
                 sub_trace,
                 show_details,
-                sierra_code,
-                sierra_contracts,
-            );
+                compiled_artifacts_path_map,
+            )?;
         }
     }
 
     let mut call_resources = &trace.cumulative_resources - &children_resources;
-    if used_vm_trace {
+    if trace.cairo_execution_info.is_some() {
         call_resources.vm_resources.n_steps = 0;
     }
 
@@ -287,5 +245,5 @@ fn collect_samples<'a>(
 
     current_call_stack.pop();
 
-    &trace.cumulative_resources
+    Ok(&trace.cumulative_resources)
 }
