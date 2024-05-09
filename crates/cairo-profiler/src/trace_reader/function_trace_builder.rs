@@ -51,7 +51,7 @@ pub fn collect_profiling_info(
     // Tracks the depth of the function stack, without limit. This is usually equal to
     // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
     // this remains reliable while `function_stack` does not.
-    let mut function_stack_depth = 0;
+    let mut function_stack_depth: usize = 0;
     let mut cur_weight = 0;
     // The key is a function stack trace (see `function_stack`, but including the current
     // function).
@@ -80,9 +80,9 @@ pub fn collect_profiling_info(
             continue;
         }
 
-        // if end_of_program_reached {
-        //     unreachable!("End of program reached, but trace continues.");
-        // }
+        if end_of_program_reached {
+            unreachable!("End of program reached, but trace continues.");
+        }
 
         cur_weight += 1;
 
@@ -106,7 +106,7 @@ pub fn collect_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     // Push to the stack.
-                    if function_stack_depth < MAX_TRACE_DEPTH {
+                    if function_stack_depth < MAX_TRACE_DEPTH as usize {
                         function_stack.push((user_function_idx, cur_weight));
                         cur_weight = 0;
                     }
@@ -115,7 +115,7 @@ pub fn collect_profiling_info(
             }
             GenStatement::Return(_) => {
                 // Pop from the stack.
-                if function_stack_depth <= MAX_TRACE_DEPTH {
+                if function_stack_depth <= MAX_TRACE_DEPTH as usize {
                     // The current stack trace, including the current function.
                     let cur_stack: Vec<_> =
                         chain!(function_stack.iter().map(|f| f.0), [user_function_idx]).collect();
