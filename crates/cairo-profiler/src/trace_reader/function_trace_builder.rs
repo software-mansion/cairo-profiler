@@ -1,25 +1,33 @@
+use anyhow::{Context, Result};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, ProgramArtifact, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
-use itertools::chain;
+use itertools::{chain, Itertools};
+use regex::Regex;
 use std::collections::HashMap;
 use trace_data::TraceEntry;
 
 const MAX_TRACE_DEPTH: u8 = 100;
 
 /// Collects profiling info of the current run using the trace.
+// TODO: fix contracts
+// TODO 2: inlined functions
+// TODO 3: connecting appropriate function with entrypoint call
 pub fn collect_profiling_info(
     trace: &[TraceEntry],
+    program_artifact: &ProgramArtifact,
     casm_debug_info: &CairoProgramDebugInfo,
-    sierra_program: &ProgramArtifact,
-    sierra_program_registry: &ProgramRegistry<CoreType, CoreLibfunc>,
-) -> Vec<(Vec<String>, usize)> {
+    was_run_with_header: bool,
+) -> Result<Vec<(Vec<String>, usize)>> {
+    let program = &program_artifact.program;
+    let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
+
     let bytecode_len = casm_debug_info
         .sierra_statement_info
         .last()
         .unwrap()
-        .code_offset;
+        .end_offset;
     // The CASM program starts with a header of instructions to wrap the real program.
     // `real_pc_0` is the PC in the trace that points to the same CASM instruction which is in
     // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
@@ -28,7 +36,11 @@ pub fn collect_profiling_info(
     // This is the same as the PC of the last trace entry plus 1, as the header is built to have
     // a `ret` last instruction, which must be the last in the trace of any execution.
     // The first instruction after that is the first instruction in the original CASM program.
-    let real_pc_0 = trace.last().unwrap().pc + 1;
+    let real_pc_0 = if was_run_with_header {
+        trace.last().unwrap().pc + 1
+    } else {
+        0
+    };
 
     // The function stack trace of the current function, excluding the current function (that
     // is, the stack of the caller). Represented as a vector of indices of the functions
@@ -63,39 +75,27 @@ pub fn collect_profiling_info(
         }
         let real_pc = step.pc - real_pc_0;
         // Skip the footer.
-        if real_pc == bytecode_len {
+        if real_pc == bytecode_len && was_run_with_header {
             header_footer_steps += 1;
             continue;
         }
-        //
+
         // if end_of_program_reached {
         //     unreachable!("End of program reached, but trace continues.");
         // }
 
         cur_weight += 1;
 
-        // TODO(yuval): Maintain a map of pc to sierra statement index (only for PCs we saw), to
-        // save lookups.
-        let sierra_statement_idx = StatementIdx(
-            casm_debug_info
-                .sierra_statement_info
-                .partition_point(|x| x.code_offset <= real_pc)
-                - 1,
-        );
-        let user_function_idx = user_function_idx_by_sierra_statement_idx(
-            &sierra_program.program,
-            sierra_statement_idx,
-        );
+        // TODO: Maintain a map of pc to sierra statement index (only for PCs we saw), to save lookups.
+        let sierra_statement_idx = sierra_statement_index_by_pc(casm_debug_info, real_pc);
+        let user_function_idx =
+            user_function_idx_by_sierra_statement_idx(program, sierra_statement_idx);
 
         *sierra_statement_weights
             .entry(sierra_statement_idx)
             .or_insert(0) += 1;
 
-        let Some(gen_statement) = sierra_program
-            .program
-            .statements
-            .get(sierra_statement_idx.0)
-        else {
+        let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
         };
 
@@ -123,7 +123,9 @@ pub fn collect_profiling_info(
 
                     let Some(popped) = function_stack.pop() else {
                         // End of the program.
-                        end_of_program_reached = true;
+                        if was_run_with_header {
+                            end_of_program_reached = true;
+                        }
                         continue;
                     };
                     cur_weight = popped.1;
@@ -134,39 +136,54 @@ pub fn collect_profiling_info(
     }
 
     // region: my code
-    *stack_trace_weights
+    if let Some(x) = stack_trace_weights
         .iter_mut()
         .find(|(trace, _)| trace.len() == 1)
-        .unwrap()
-        .1 += header_footer_steps;
+    {
+        *x.1 += header_footer_steps;
+    };
 
     let stack_trace_weights = stack_trace_weights
         .iter()
         .map(|(idx_stack_trace, weight)| {
-            (
-                index_stack_trace_to_name_stack_trace(&sierra_program.program, idx_stack_trace),
+            Ok((
+                index_stack_trace_to_name_stack_trace(program, idx_stack_trace)?,
                 *weight,
-            )
+            ))
         })
-        .collect();
+        .collect::<Result<_>>()?;
     // endregion
 
-    // region: my code
-    // let cairo_function_weights =
-    //     process_cairo_function_weights(locations_map, &sierra_statement_weights);
-    // endregion
-
-    stack_trace_weights
+    Ok(stack_trace_weights)
 }
 
 fn index_stack_trace_to_name_stack_trace(
     sierra_program: &Program,
     idx_stack_trace: &[usize],
-) -> Vec<String> {
-    idx_stack_trace
+) -> Result<Vec<String>> {
+    let re_loop_func = Regex::new(r"\[expr\d*\]")
+        .context("Failed to create regex normalising loop functions names")?;
+
+    let re_monomorphization = Regex::new(r"<.*>")
+        .context("Failed to create regex normalising mononorphised generic functions names")?;
+
+    let stack_with_recursive_functions = idx_stack_trace
         .iter()
-        .map(|idx| sierra_program.funcs[*idx].id.to_string())
-        .collect()
+        .map(|idx| {
+            let sierra_func_name = &sierra_program.funcs[*idx].id.to_string();
+            let func_name = re_loop_func.replace(sierra_func_name, "");
+            re_monomorphization.replace(&*func_name, "").to_string()
+        })
+        .collect_vec();
+
+    let mut result = vec![stack_with_recursive_functions[0].clone()];
+    for i in 1..stack_with_recursive_functions.len() {
+        if stack_with_recursive_functions[i - 1] != stack_with_recursive_functions[i] {
+            result.push(stack_with_recursive_functions[i].clone());
+        }
+    }
+
+    Ok(result)
 }
 
 // copied from cairo_lang_runner to avoid adding additional dependencies
@@ -174,11 +191,27 @@ fn user_function_idx_by_sierra_statement_idx(
     sierra_program: &Program,
     statement_idx: StatementIdx,
 ) -> usize {
-    // The `-1` here can't cause an underflow as the first function's entry point is
-    // always 0, so it is always on the left side of the partition, and thus the
-    // partition index is >0.
-    sierra_program
+    let x = sierra_program
         .funcs
-        .partition_point(|f| f.entry_point.0 <= statement_idx.0)
-        - 1
+        .partition_point(|f| f.entry_point.0 <= statement_idx.0);
+    if x >= 1 {
+        x - 1
+    } else {
+        0
+    }
+}
+
+fn sierra_statement_index_by_pc(
+    casm_debug_info: &CairoProgramDebugInfo,
+    pc: usize,
+) -> StatementIdx {
+    // the `-1` here can't cause an underflow as the first statement is always at
+    // offset 0, so it is always on the left side of the
+    // partition, and thus the partition index is >0.
+    StatementIdx(
+        casm_debug_info
+            .sierra_statement_info
+            .partition_point(|x| x.start_offset <= pc)
+            - 1,
+    )
 }

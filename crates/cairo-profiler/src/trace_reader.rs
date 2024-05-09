@@ -1,4 +1,3 @@
-use cairo_lang_sierra::program_registry::ProgramRegistry;
 use core::fmt;
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -172,7 +171,6 @@ pub fn collect_samples_from_trace(
 }
 
 fn collect_samples<'a>(
-    // TODO
     samples: &mut Vec<ContractCallSample>,
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
@@ -195,10 +193,14 @@ fn collect_samples<'a>(
 
         let profiling_info = collect_profiling_info(
             &cairo_execution_info.vm_trace,
+            compiled_artifacts.sierra.get_program_artifact(),
             &compiled_artifacts.casm_debug_info,
-            &compiled_artifacts.sierra,
-            &ProgramRegistry::new(&compiled_artifacts.sierra.program).unwrap(),
-        );
+            compiled_artifacts.sierra.was_run_with_header(),
+        )?;
+
+        // if !compiled_artifacts.sierra.was_run_with_header() {
+        //     println!("{profiling_info:?}");
+        // }
 
         for (trace, weight) in &profiling_info {
             let mut function_trace = current_call_stack

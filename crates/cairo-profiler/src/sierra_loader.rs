@@ -1,19 +1,41 @@
 use anyhow::{anyhow, Context, Result};
 use cairo_lang_sierra::program::{ProgramArtifact, VersionedProgram};
-use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraStatementDebugInfo};
+use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraToCasmConfig};
+use cairo_lang_sierra_to_casm::metadata::calc_metadata;
+use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::{Utf8Path, Utf8PathBuf};
 use std::collections::HashMap;
 use std::fs;
-use universal_sierra_compiler_api::{compile_sierra_to_casm, AssembledProgramWithDebugInfo};
 
 pub struct CompiledArtifactsPathMap {
     map: HashMap<Utf8PathBuf, CompiledArtifacts>,
 }
 
 pub struct CompiledArtifacts {
-    pub sierra: ProgramArtifact,
+    pub sierra: SierraProgramArtifact,
     pub casm_debug_info: CairoProgramDebugInfo,
+}
+
+pub enum SierraProgramArtifact {
+    VersionedProgram(ProgramArtifact),
+    ContractClass(ProgramArtifact),
+}
+
+impl SierraProgramArtifact {
+    pub fn get_program_artifact(&self) -> &ProgramArtifact {
+        match self {
+            SierraProgramArtifact::VersionedProgram(program_artifact)
+            | SierraProgramArtifact::ContractClass(program_artifact) => program_artifact,
+        }
+    }
+
+    pub fn was_run_with_header(&self) -> bool {
+        match self {
+            SierraProgramArtifact::VersionedProgram(_) => true,
+            SierraProgramArtifact::ContractClass(_) => false,
+        }
+    }
 }
 
 impl CompiledArtifactsPathMap {
@@ -36,16 +58,21 @@ impl CompiledArtifactsPathMap {
                     program: contract_class
                         .extract_sierra_program()
                         .context("Failed to extract sierra program from contract code")?,
-                    debug_info: contract_class.sierra_program_debug_info,
+                    debug_info: contract_class.sierra_program_debug_info.clone(),
                 };
 
-                let casm = compile_sierra_to_casm(&program_artifact.program)?;
+                let (_casm_contract_class, casm_debug_info) =
+                    CasmContractClass::from_contract_class_with_debug_info(
+                        contract_class,
+                        false,
+                        usize::MAX,
+                    )?;
 
                 self.map.insert(
                     path,
                     CompiledArtifacts {
-                        sierra: program_artifact,
-                        casm_debug_info: extract_casm_debug_info(casm),
+                        sierra: SierraProgramArtifact::ContractClass(program_artifact),
+                        casm_debug_info,
                     },
                 );
 
@@ -57,13 +84,22 @@ impl CompiledArtifactsPathMap {
                     .into_v1()
                     .context("Failed to extract program artifact from versioned program. Make sure your versioned program is of version 1")?;
 
-                let casm = compile_sierra_to_casm(&program_artifact.program)?;
+                let casm = cairo_lang_sierra_to_casm::compiler::compile(
+                    &program_artifact.program,
+                    &calc_metadata(&program_artifact.program, Default::default())
+                        .with_context(|| "Failed calculating Sierra variables.")?,
+                    SierraToCasmConfig {
+                        gas_usage_check: true,
+                        max_bytecode_size: usize::MAX,
+                    },
+                )
+                .with_context(|| "Compilation failed.")?;
 
                 self.map.insert(
                     path,
                     CompiledArtifacts {
-                        sierra: program_artifact,
-                        casm_debug_info: extract_casm_debug_info(casm),
+                        sierra: SierraProgramArtifact::VersionedProgram(program_artifact),
+                        casm_debug_info: casm.debug_info,
                     },
                 );
 
@@ -83,18 +119,5 @@ impl CompiledArtifactsPathMap {
         self.map
             .get(path)
             .unwrap_or_else(|| panic!("Compiled artifacts not found for path {path}"))
-    }
-}
-
-fn extract_casm_debug_info(casm: AssembledProgramWithDebugInfo) -> CairoProgramDebugInfo {
-    CairoProgramDebugInfo {
-        sierra_statement_info: casm
-            .debug_info
-            .into_iter()
-            .map(|(offset, idx)| SierraStatementDebugInfo {
-                code_offset: offset,
-                instruction_idx: idx,
-            })
-            .collect(),
     }
 }
