@@ -185,22 +185,18 @@ fn collect_samples<'a>(
         show_details,
     ));
 
-    if let Some(cairo_execution_info) = &trace.cairo_execution_info {
+    let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
         compiled_artifacts_path_map
             .try_create_compiled_artifacts(&cairo_execution_info.source_sierra_path)?;
         let compiled_artifacts = compiled_artifacts_path_map
             .get_sierra_casm_artifacts_for_path(&cairo_execution_info.source_sierra_path);
 
-        let profiling_info = collect_profiling_info(
+        let (profiling_info, entrypoint_steps) = collect_profiling_info(
             &cairo_execution_info.vm_trace,
             compiled_artifacts.sierra.get_program_artifact(),
             &compiled_artifacts.casm_debug_info,
             compiled_artifacts.sierra.was_run_with_header(),
         )?;
-
-        // if !compiled_artifacts.sierra.was_run_with_header() {
-        //     println!("{profiling_info:?}");
-        // }
 
         for (trace, weight) in &profiling_info {
             let mut function_trace = current_call_stack
@@ -217,7 +213,10 @@ fn collect_samples<'a>(
                 )]),
             });
         }
-    }
+        Some(entrypoint_steps)
+    } else {
+        None
+    };
 
     let mut children_resources = ExecutionResources::default();
 
@@ -235,8 +234,9 @@ fn collect_samples<'a>(
     }
 
     let mut call_resources = &trace.cumulative_resources - &children_resources;
-    if trace.cairo_execution_info.is_some() {
-        call_resources.vm_resources.n_steps = 0;
+
+    if let Some(entrypoint_steps) = maybe_entrypoint_steps {
+        call_resources.vm_resources.n_steps = entrypoint_steps;
     }
 
     samples.push(ContractCallSample::from(
