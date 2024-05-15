@@ -15,6 +15,11 @@ type UserFunctionIndex = usize;
 type WeightInSteps = usize;
 type FunctionName = String;
 
+enum MaybeSierraStatementIndexFromPc {
+    SierraStatementIndex(StatementIdx),
+    PcOutOfFunctionArea,
+}
+
 /// Collects profiling info of the current run using the trace.
 // TODO: fix contracts
 // TODO 2: inlined functions
@@ -40,7 +45,7 @@ pub fn collect_profiling_info(
     let real_pc_0 = if was_run_with_header {
         trace.last().unwrap().pc + 1
     } else {
-        0
+        1
     };
 
     // The function stack trace of the current function, excluding the entrypoint function.
@@ -59,15 +64,18 @@ pub fn collect_profiling_info(
     // The value is the weight of the stack trace so far, not including the pending weight being
     // tracked at the time.
     let mut stack_trace_weights = HashMap::new();
+
     let mut end_of_program_reached = false;
 
-    // In case of program with header added to CASM entrypoint steps are footer and header steps.
-    let mut entrypoint_steps = 0;
+    // Those are counter separately and then displayed as steps of the entrypoint in the profile
+    // tree since technically they don't belong to any function, but still increase the number of
+    // total steps. The value is different from zero only for functions run with header.
+    let mut header_and_footer_steps = 0;
 
     for step in trace {
         // Skip the header. This only makes sense when a header was added to CASM program.
         if step.pc < real_pc_0 && was_run_with_header {
-            entrypoint_steps += 1;
+            header_and_footer_steps += 1;
             continue;
         }
         let real_pc = step.pc - real_pc_0;
@@ -80,7 +88,7 @@ pub fn collect_profiling_info(
                 .end_offset
             && was_run_with_header
         {
-            entrypoint_steps += 1;
+            header_and_footer_steps += 1;
             continue;
         }
 
@@ -91,26 +99,25 @@ pub fn collect_profiling_info(
         current_function_weight += 1;
 
         // TODO: Maintain a map of pc to sierra statement index (only for PCs we saw), to save lookups.
-        let sierra_statement_idx = sierra_statement_index_by_pc(casm_debug_info, real_pc);
+        let maybe_sierra_statement_idx = sierra_statement_index_by_pc(casm_debug_info, real_pc);
+        let sierra_statement_idx = match maybe_sierra_statement_idx {
+            MaybeSierraStatementIndexFromPc::SierraStatementIndex(sierra_statement_idx) => {
+                sierra_statement_idx
+            }
+            MaybeSierraStatementIndexFromPc::PcOutOfFunctionArea => {
+                continue;
+            }
+        };
+
         let user_function_idx =
             user_function_idx_by_sierra_statement_idx(program, sierra_statement_idx);
 
-        // if !was_run_with_header {
-        //     println!(
-        //         "{:?}",
-        //         program.funcs[user_function_idx]
-        //             .id
-        //             .debug_name
-        //             .as_ref()
-        //             .unwrap()
-        //     );
-        // }
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
         };
+
         match gen_statement {
             GenStatement::Invocation(invocation) => {
-                // println!("{:?}", invocation.libfunc_id.debug_name);
                 if matches!(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
@@ -133,7 +140,6 @@ pub fn collect_profiling_info(
                         current_function_weight;
 
                     let Some((_, caller_function_weight)) = function_stack.pop() else {
-                        // TODO check it in contracts (maybe last pc return)
                         end_of_program_reached = true;
                         continue;
                     };
@@ -155,7 +161,7 @@ pub fn collect_profiling_info(
         })
         .collect::<Result<_>>()?;
 
-    Ok((stack_trace_weights, entrypoint_steps))
+    Ok((stack_trace_weights, header_and_footer_steps))
 }
 
 fn index_stack_trace_to_name_stack_trace(
@@ -175,7 +181,7 @@ fn index_stack_trace_to_name_stack_trace(
             // Remove suffix in case of loop function e.g. `[expr36]`.
             let func_name = re_loop_func.replace(sierra_func_name, "");
             // Remove parameters from monomorphised Cairo generics e.g. `<felt252>`.
-            re_monomorphization.replace(&*func_name, "").to_string()
+            re_monomorphization.replace(&func_name, "").to_string()
         })
         .collect_vec();
 
@@ -205,13 +211,18 @@ fn user_function_idx_by_sierra_statement_idx(
 fn sierra_statement_index_by_pc(
     casm_debug_info: &CairoProgramDebugInfo,
     pc: usize,
-) -> StatementIdx {
+) -> MaybeSierraStatementIndexFromPc {
     // The `-1` here can't cause an underflow as the first statement is always at offset 0,
     // so it is always on the left side of the partition, thus the partition index is > 0.
-    StatementIdx(
+    let statement_index = StatementIdx(
         casm_debug_info
             .sierra_statement_info
             .partition_point(|x| x.start_offset <= pc)
             - 1,
-    )
+    );
+    if casm_debug_info.sierra_statement_info[statement_index.0].end_offset <= pc {
+        MaybeSierraStatementIndexFromPc::PcOutOfFunctionArea
+    } else {
+        MaybeSierraStatementIndexFromPc::SierraStatementIndex(statement_index)
+    }
 }
