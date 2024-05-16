@@ -45,7 +45,7 @@ impl CompiledArtifactsPathMap {
         }
     }
 
-    pub fn try_create_compiled_artifacts(&mut self, path: &Utf8Path) -> Result<()> {
+    pub fn compile_and_add_compiled_artifacts(&mut self, path: &Utf8Path) -> Result<()> {
         let path = path
             .canonicalize_utf8()
             .with_context(|| format!("Failed to canonicalize path: {path}"))?;

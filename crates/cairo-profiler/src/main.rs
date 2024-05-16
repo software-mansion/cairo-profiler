@@ -3,7 +3,6 @@ use std::{
     io::{Read, Write},
 };
 
-use crate::sierra_loader::CompiledArtifactsPathMap;
 use crate::trace_reader::collect_samples_from_trace;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
@@ -42,11 +41,7 @@ fn main() -> Result<()> {
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
-    let samples = collect_samples_from_trace(
-        &serialized_trace,
-        cli.show_details,
-        &mut CompiledArtifactsPathMap::new(),
-    )?;
+    let samples = collect_samples_from_trace(&serialized_trace, cli.show_details)?;
 
     let profile = build_profile(&samples);
 

@@ -12,7 +12,7 @@ use trace_data::{
 
 mod function_trace_builder;
 
-#[derive(Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
 
 impl FunctionName {
@@ -155,7 +155,6 @@ impl Display for EntryPointId {
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
     show_details: bool,
-    compiled_artifacts_path_map: &mut CompiledArtifactsPathMap,
 ) -> Result<Vec<ContractCallSample>> {
     let mut samples = vec![];
     let mut current_path = vec![];
@@ -165,7 +164,7 @@ pub fn collect_samples_from_trace(
         &mut current_path,
         trace,
         show_details,
-        compiled_artifacts_path_map,
+        &mut CompiledArtifactsPathMap::new(),
     )?;
     Ok(samples)
 }
@@ -187,33 +186,35 @@ fn collect_samples<'a>(
 
     let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
         compiled_artifacts_path_map
-            .try_create_compiled_artifacts(&cairo_execution_info.source_sierra_path)?;
+            .compile_and_add_compiled_artifacts(&cairo_execution_info.source_sierra_path)?;
         let compiled_artifacts = compiled_artifacts_path_map
             .get_sierra_casm_artifacts_for_path(&cairo_execution_info.source_sierra_path);
 
-        let (profiling_info, entrypoint_steps) = collect_profiling_info(
+        let profiling_info = collect_profiling_info(
             &cairo_execution_info.vm_trace,
             compiled_artifacts.sierra.get_program_artifact(),
             &compiled_artifacts.casm_debug_info,
             compiled_artifacts.sierra.was_run_with_header(),
         )?;
 
-        for (trace, weight) in &profiling_info {
+        for mut function_stack_trace in profiling_info.functions_stack_traces {
             let mut function_trace = current_call_stack
                 .iter()
                 .map(FunctionName::from)
                 .collect_vec();
-            function_trace.extend(trace.iter().map(|x| FunctionName(x.to_string())));
+            function_trace.append(&mut function_stack_trace.stack_trace);
 
             samples.push(ContractCallSample {
                 call_stack: function_trace,
                 measurements: HashMap::from([(
                     MeasurementUnit::from("steps"),
-                    MeasurementValue(i64::try_from(*weight).unwrap()),
+                    MeasurementValue(
+                        i64::try_from(function_stack_trace.weight_in_steps.0).unwrap(),
+                    ),
                 )]),
             });
         }
-        Some(entrypoint_steps)
+        Some(profiling_info.header_steps)
     } else {
         None
     };
@@ -222,7 +223,6 @@ fn collect_samples<'a>(
 
     for sub_trace_node in &trace.nested_calls {
         if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
-            // TODO append to callstack based on function traces
             children_resources += collect_samples(
                 samples,
                 current_call_stack,
@@ -236,7 +236,7 @@ fn collect_samples<'a>(
     let mut call_resources = &trace.cumulative_resources - &children_resources;
 
     if let Some(entrypoint_steps) = maybe_entrypoint_steps {
-        call_resources.vm_resources.n_steps = entrypoint_steps;
+        call_resources.vm_resources.n_steps = entrypoint_steps.0;
     }
 
     samples.push(ContractCallSample::from(
