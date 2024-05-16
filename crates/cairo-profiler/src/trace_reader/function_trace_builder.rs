@@ -166,7 +166,7 @@ pub fn collect_profiling_info(
         }
     }
 
-    if was_run_with_header {
+    if !was_run_with_header {
         assert!(header_steps == WeightInSteps(0));
     }
 
