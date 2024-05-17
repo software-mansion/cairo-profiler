@@ -16,8 +16,14 @@ serde.workspace = true
 serde_json.workspace = true
 camino.workspace = true
 anyhow.workspace = true
-trace-data = { path="../trace-data" }
+itertools.workspace = true
+tempfile.workspace = true
+regex.workspace = true
+trace-data = { path = "../trace-data" }
 
+cairo-lang-sierra.workspace = true
+cairo-lang-sierra-to-casm.workspace = true
+cairo-lang-starknet-classes.workspace = true
 
 [dev-dependencies]
 assert_fs.workspace = true

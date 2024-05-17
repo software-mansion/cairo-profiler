@@ -1,10 +1,16 @@
 use core::fmt;
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt::Display;
 
+use crate::sierra_loader::CompiledArtifactsPathMap;
+use crate::trace_reader::function_trace_builder::collect_profiling_info;
+use anyhow::{Context, Result};
 use trace_data::{
     CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
 };
+
+mod function_trace_builder;
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
@@ -148,21 +154,29 @@ impl Display for EntryPointId {
 
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
+    compiled_artifacts_path_map: &CompiledArtifactsPathMap,
     show_details: bool,
-) -> Vec<ContractCallSample> {
+) -> Result<Vec<ContractCallSample>> {
     let mut samples = vec![];
     let mut current_path = vec![];
 
-    collect_samples(&mut samples, &mut current_path, trace, show_details);
-    samples
+    collect_samples(
+        &mut samples,
+        &mut current_path,
+        trace,
+        compiled_artifacts_path_map,
+        show_details,
+    )?;
+    Ok(samples)
 }
 
 fn collect_samples<'a>(
     samples: &mut Vec<ContractCallSample>,
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
+    compiled_artifacts_path_map: &CompiledArtifactsPathMap,
     show_details: bool,
-) -> &'a ExecutionResources {
+) -> Result<&'a ExecutionResources> {
     current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
@@ -171,22 +185,74 @@ fn collect_samples<'a>(
         show_details,
     ));
 
+    let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
+        let absolute_source_sierra_path = cairo_execution_info
+            .source_sierra_path
+            .canonicalize_utf8()
+            .with_context(|| {
+                format!(
+                    "Failed to canonicalize path: {}",
+                    cairo_execution_info.source_sierra_path
+                )
+            })?;
+
+        let compiled_artifacts = compiled_artifacts_path_map
+            .get_sierra_casm_artifacts_for_path(&absolute_source_sierra_path);
+
+        let profiling_info = collect_profiling_info(
+            &cairo_execution_info.vm_trace,
+            compiled_artifacts.sierra.get_program_artifact(),
+            &compiled_artifacts.casm_debug_info,
+            compiled_artifacts.sierra.was_run_with_header(),
+        )?;
+
+        for mut function_stack_trace in profiling_info.functions_stack_traces {
+            let mut function_trace = current_call_stack
+                .iter()
+                .map(FunctionName::from)
+                .collect_vec();
+            function_trace.append(&mut function_stack_trace.stack_trace);
+
+            samples.push(ContractCallSample {
+                call_stack: function_trace,
+                measurements: HashMap::from([(
+                    MeasurementUnit::from("steps"),
+                    MeasurementValue(i64::try_from(function_stack_trace.steps.0).unwrap()),
+                )]),
+            });
+        }
+        Some(profiling_info.header_steps)
+    } else {
+        None
+    };
+
     let mut children_resources = ExecutionResources::default();
 
     for sub_trace_node in &trace.nested_calls {
         if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
-            children_resources +=
-                collect_samples(samples, current_call_stack, sub_trace, show_details);
+            children_resources += collect_samples(
+                samples,
+                current_call_stack,
+                sub_trace,
+                compiled_artifacts_path_map,
+                show_details,
+            )?;
         }
+    }
+
+    let mut call_resources = &trace.cumulative_resources - &children_resources;
+
+    if let Some(entrypoint_steps) = maybe_entrypoint_steps {
+        call_resources.vm_resources.n_steps = entrypoint_steps.0;
     }
 
     samples.push(ContractCallSample::from(
         current_call_stack.iter().map(FunctionName::from).collect(),
-        &(&trace.cumulative_resources - &children_resources),
+        &call_resources,
         &trace.used_l1_resources,
     ));
 
     current_call_stack.pop();
 
-    &trace.cumulative_resources
+    Ok(&trace.cumulative_resources)
 }

@@ -3,6 +3,7 @@ use std::{
     io::{Read, Write},
 };
 
+use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
@@ -14,6 +15,7 @@ use prost::Message;
 use trace_data::CallTrace;
 
 mod profile_builder;
+mod sierra_loader;
 mod trace_reader;
 
 #[derive(Parser, Debug)]
@@ -40,7 +42,12 @@ fn main() -> Result<()> {
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
-    let samples = collect_samples_from_trace(&serialized_trace, cli.show_details);
+    let compiled_artifacts_path_map = collect_and_compile_all_sierra_programs(&serialized_trace)?;
+    let samples = collect_samples_from_trace(
+        &serialized_trace,
+        &compiled_artifacts_path_map,
+        cli.show_details,
+    )?;
 
     let profile = build_profile(&samples);
 
