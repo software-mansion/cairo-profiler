@@ -32,6 +32,13 @@ struct Cli {
     /// Show contract addresses and function selectors in a trace tree
     #[arg(long)]
     show_details: bool,
+
+    /// Specify maximum depth of function tree in function level profiling.
+    /// The is applied per entrypoint - each entrypoint function tree is treated separately.
+    /// Keep in mind recursive functions are also taken into account even though they are later
+    /// aggregated to one function call.
+    #[arg(long, default_value_t = 100)]
+    max_function_trace_depth: usize,
 }
 
 fn main() -> Result<()> {
@@ -47,6 +54,7 @@ fn main() -> Result<()> {
         &serialized_trace,
         &compiled_artifacts_path_map,
         cli.show_details,
+        cli.max_function_trace_depth,
     )?;
 
     let profile = build_profile(&samples);

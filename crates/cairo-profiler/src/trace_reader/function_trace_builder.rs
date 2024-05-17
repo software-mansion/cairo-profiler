@@ -10,8 +10,6 @@ use std::collections::HashMap;
 use std::ops::AddAssign;
 use trace_data::TraceEntry;
 
-const MAX_TRACE_DEPTH: u8 = 100;
-
 pub struct ProfilingInfo {
     pub functions_stack_traces: Vec<FunctionStackTrace>,
     pub header_steps: Steps,
@@ -52,6 +50,7 @@ pub fn collect_profiling_info(
     program_artifact: &ProgramArtifact,
     casm_debug_info: &CairoProgramDebugInfo,
     was_run_with_header: bool,
+    max_function_trace_depth: usize,
 ) -> Result<ProfilingInfo> {
     let program = &program_artifact.program;
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
@@ -137,7 +136,7 @@ pub fn collect_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     // Push to the stack.
-                    if function_stack_depth < MAX_TRACE_DEPTH as usize {
+                    if function_stack_depth < max_function_trace_depth {
                         function_stack.push((user_function_idx, current_function_steps));
                         current_function_steps = Steps(0);
                     }
@@ -146,7 +145,7 @@ pub fn collect_profiling_info(
             }
             GenStatement::Return(_) => {
                 // Pop from the stack.
-                if function_stack_depth <= MAX_TRACE_DEPTH as usize {
+                if function_stack_depth <= max_function_trace_depth {
                     let current_stack =
                         chain!(function_stack.iter().map(|f| f.0), [user_function_idx])
                             .collect_vec();

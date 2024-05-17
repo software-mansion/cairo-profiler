@@ -156,6 +156,7 @@ pub fn collect_samples_from_trace(
     trace: &CallTrace,
     compiled_artifacts_path_map: &CompiledArtifactsPathMap,
     show_details: bool,
+    max_function_trace_depth: usize,
 ) -> Result<Vec<ContractCallSample>> {
     let mut samples = vec![];
     let mut current_path = vec![];
@@ -166,6 +167,7 @@ pub fn collect_samples_from_trace(
         trace,
         compiled_artifacts_path_map,
         show_details,
+        max_function_trace_depth,
     )?;
     Ok(samples)
 }
@@ -176,6 +178,7 @@ fn collect_samples<'a>(
     trace: &'a CallTrace,
     compiled_artifacts_path_map: &CompiledArtifactsPathMap,
     show_details: bool,
+    max_function_trace_depth: usize,
 ) -> Result<&'a ExecutionResources> {
     current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
@@ -204,6 +207,7 @@ fn collect_samples<'a>(
             compiled_artifacts.sierra.get_program_artifact(),
             &compiled_artifacts.casm_debug_info,
             compiled_artifacts.sierra.was_run_with_header(),
+            max_function_trace_depth,
         )?;
 
         for mut function_stack_trace in profiling_info.functions_stack_traces {
@@ -236,6 +240,7 @@ fn collect_samples<'a>(
                 sub_trace,
                 compiled_artifacts_path_map,
                 show_details,
+                max_function_trace_depth,
             )?;
         }
     }
