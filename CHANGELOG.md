@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - basic function level profiling
+- `--max-function-trace-depth` allowing to specify maximum depth of the function tree in function level profiling
 
 ## [0.3.0-dev.0] - 2024-04-17
 
