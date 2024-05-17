@@ -9,7 +9,7 @@ fn output_path() {
     temp_dir
         .copy_from(
             project_root.join("crates/cairo-profiler/tests/data/"),
-            &["call.json"],
+            &["*.json"],
         )
         .unwrap();
 
@@ -31,7 +31,7 @@ fn simple_package(args: &[&str]) {
     temp_dir
         .copy_from(
             project_root.join("crates/cairo-profiler/tests/data/"),
-            &["call.json"],
+            &["*.json"],
         )
         .unwrap();
 

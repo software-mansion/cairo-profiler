@@ -5,7 +5,7 @@ use std::fmt::Display;
 
 use crate::sierra_loader::CompiledArtifactsPathMap;
 use crate::trace_reader::function_trace_builder::collect_profiling_info;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use trace_data::{
     CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
 };
@@ -186,8 +186,18 @@ fn collect_samples<'a>(
     ));
 
     let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
+        let absolute_source_sierra_path = cairo_execution_info
+            .source_sierra_path
+            .canonicalize_utf8()
+            .with_context(|| {
+                format!(
+                    "Failed to canonicalize path: {}",
+                    cairo_execution_info.source_sierra_path
+                )
+            })?;
+
         let compiled_artifacts = compiled_artifacts_path_map
-            .get_sierra_casm_artifacts_for_path(&cairo_execution_info.source_sierra_path);
+            .get_sierra_casm_artifacts_for_path(&absolute_source_sierra_path);
 
         let profiling_info = collect_profiling_info(
             &cairo_execution_info.vm_trace,

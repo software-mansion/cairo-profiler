@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use std::fs;
 use trace_data::{CallTrace, CallTraceNode};
 
+/// Map with sierra and casm debug info needed for function level profiling.
+/// All paths in the map are absolute paths.
 pub struct CompiledArtifactsPathMap(pub HashMap<Utf8PathBuf, CompiledArtifacts>);
 
 pub struct CompiledArtifacts {
@@ -44,14 +46,14 @@ impl CompiledArtifactsPathMap {
 
     pub fn compile_sierra_and_add_compiled_artifacts_to_map(
         &mut self,
-        path: &Utf8Path,
+        sierra_path: &Utf8Path,
     ) -> Result<()> {
-        let path = path
+        let absolute_sierra_path = sierra_path
             .canonicalize_utf8()
-            .with_context(|| format!("Failed to canonicalize path: {path}"))?;
+            .with_context(|| format!("Failed to canonicalize path: {sierra_path}"))?;
 
-        if !self.0.contains_key(&path) {
-            let raw_sierra = fs::read_to_string(&path)?;
+        if !self.0.contains_key(&absolute_sierra_path) {
+            let raw_sierra = fs::read_to_string(&absolute_sierra_path)?;
 
             if let Ok(contract_class) = serde_json::from_str::<ContractClass>(&raw_sierra) {
                 let program_artifact = ProgramArtifact {
@@ -69,7 +71,7 @@ impl CompiledArtifactsPathMap {
                     )?;
 
                 self.0.insert(
-                    path,
+                    absolute_sierra_path,
                     CompiledArtifacts {
                         sierra: SierraProgramArtifact::ContractClass(program_artifact),
                         casm_debug_info,
@@ -96,7 +98,7 @@ impl CompiledArtifactsPathMap {
                 .with_context(|| "Compilation failed.")?;
 
                 self.0.insert(
-                    path,
+                    absolute_sierra_path,
                     CompiledArtifacts {
                         sierra: SierraProgramArtifact::VersionedProgram(program_artifact),
                         casm_debug_info: casm.debug_info,
@@ -108,7 +110,7 @@ impl CompiledArtifactsPathMap {
 
             return Err(anyhow!(
                 "Failed to deserialize sierra saved under path: {}",
-                path
+                absolute_sierra_path
             ));
         }
 
