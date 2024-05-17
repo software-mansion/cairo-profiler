@@ -14,24 +14,24 @@ const MAX_TRACE_DEPTH: u8 = 100;
 
 pub struct ProfilingInfo {
     pub functions_stack_traces: Vec<FunctionStackTrace>,
-    pub header_steps: WeightInSteps,
+    pub header_steps: Steps,
 }
 
 pub struct FunctionStackTrace {
     pub stack_trace: Vec<FunctionName>,
-    pub weight_in_steps: WeightInSteps,
+    pub steps: Steps,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub struct WeightInSteps(pub usize);
+pub struct Steps(pub usize);
 
-impl AddAssign for WeightInSteps {
+impl AddAssign for Steps {
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0;
     }
 }
 
-impl AddAssign<usize> for WeightInSteps {
+impl AddAssign<usize> for Steps {
     fn add_assign(&mut self, rhs: usize) {
         self.0 += rhs;
     }
@@ -73,26 +73,26 @@ pub fn collect_profiling_info(
     };
 
     // The function stack trace of the current function, excluding the current function.
-    // Represented as a vector of indices of the functions in the stack together with the weight
-    // of the caller function in the moment of the call. We use the saved weight to continue
+    // Represented as a vector of indices of the functions in the stack together with the steps
+    // of the caller function in the moment of the call. We use the saved steps to continue
     // counting flat steps of the caller later on. Limited to depth `max_stack_trace_depth`.
-    let mut function_stack: Vec<(UserFunctionSierraIndex, WeightInSteps)> = vec![];
+    let mut function_stack: Vec<(UserFunctionSierraIndex, Steps)> = vec![];
 
     // Tracks the depth of the function stack, without limit. This is usually equal to
     // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
     // this remains reliable while `function_stack` does not.
     let mut function_stack_depth: usize = 0;
 
-    // The value is the weight of the stack trace so far, not including the pending weight being
+    // The value is the steps of the stack trace so far, not including the pending steps being
     // tracked at the time. The key is a function stack trace.
-    let mut functions_stack_traces_weights: HashMap<Vec<UserFunctionSierraIndex>, WeightInSteps> =
+    let mut functions_stack_traces_steps: HashMap<Vec<UserFunctionSierraIndex>, Steps> =
         HashMap::new();
 
     // Header steps are counted separately and then displayed as steps of the entrypoint in the
     // profile tree. It is because technically they don't belong to any function, but still increase
     // the number of total steps. The value is different from zero only for functions run with header.
-    let mut header_steps = WeightInSteps(0);
-    let mut current_function_weight = WeightInSteps(0);
+    let mut header_steps = Steps(0);
+    let mut current_function_steps = Steps(0);
     let mut end_of_program_reached = false;
 
     for step in trace {
@@ -110,7 +110,7 @@ pub fn collect_profiling_info(
             unreachable!("End of program reached, but trace continues.");
         }
 
-        current_function_weight += 1;
+        current_function_steps += 1;
 
         let maybe_sierra_statement_idx =
             maybe_sierra_statement_index_by_pc(casm_debug_info, real_pc_code_offset);
@@ -138,8 +138,8 @@ pub fn collect_profiling_info(
                 ) {
                     // Push to the stack.
                     if function_stack_depth < MAX_TRACE_DEPTH as usize {
-                        function_stack.push((user_function_idx, current_function_weight));
-                        current_function_weight = WeightInSteps(0);
+                        function_stack.push((user_function_idx, current_function_steps));
+                        current_function_steps = Steps(0);
                     }
                     function_stack_depth += 1;
                 }
@@ -150,16 +150,16 @@ pub fn collect_profiling_info(
                     let current_stack =
                         chain!(function_stack.iter().map(|f| f.0), [user_function_idx])
                             .collect_vec();
-                    *functions_stack_traces_weights
+                    *functions_stack_traces_steps
                         .entry(current_stack)
-                        .or_insert_with(|| WeightInSteps(0)) += current_function_weight;
+                        .or_insert_with(|| Steps(0)) += current_function_steps;
 
-                    let Some((_, caller_function_weight)) = function_stack.pop() else {
+                    let Some((_, caller_function_steps)) = function_stack.pop() else {
                         end_of_program_reached = true;
                         continue;
                     };
-                    // Set to the caller function weight to continue counting its cost.
-                    current_function_weight = caller_function_weight;
+                    // Set to the caller function steps to continue counting its cost.
+                    current_function_steps = caller_function_steps;
                 }
                 function_stack_depth -= 1;
             }
@@ -167,18 +167,18 @@ pub fn collect_profiling_info(
     }
 
     if !was_run_with_header {
-        assert!(header_steps == WeightInSteps(0));
+        assert!(header_steps == Steps(0));
     }
 
-    let functions_stack_traces = functions_stack_traces_weights
+    let functions_stack_traces = functions_stack_traces_steps
         .iter()
-        .map(|(idx_stack_trace, weight)| {
+        .map(|(idx_stack_trace, steps)| {
             Ok(FunctionStackTrace {
                 stack_trace: index_stack_trace_to_function_name_stack_trace(
                     program,
                     idx_stack_trace,
                 )?,
-                weight_in_steps: *weight,
+                steps: *steps,
             })
         })
         .collect::<Result<_>>()?;

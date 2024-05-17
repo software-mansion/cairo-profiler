@@ -154,6 +154,7 @@ impl Display for EntryPointId {
 
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
+    compiled_artifacts_path_map: &CompiledArtifactsPathMap,
     show_details: bool,
 ) -> Result<Vec<ContractCallSample>> {
     let mut samples = vec![];
@@ -163,8 +164,8 @@ pub fn collect_samples_from_trace(
         &mut samples,
         &mut current_path,
         trace,
+        compiled_artifacts_path_map,
         show_details,
-        &mut CompiledArtifactsPathMap::new(),
     )?;
     Ok(samples)
 }
@@ -173,8 +174,8 @@ fn collect_samples<'a>(
     samples: &mut Vec<ContractCallSample>,
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
+    compiled_artifacts_path_map: &CompiledArtifactsPathMap,
     show_details: bool,
-    compiled_artifacts_path_map: &mut CompiledArtifactsPathMap,
 ) -> Result<&'a ExecutionResources> {
     current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
@@ -185,8 +186,6 @@ fn collect_samples<'a>(
     ));
 
     let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
-        compiled_artifacts_path_map
-            .compile_and_add_compiled_artifacts(&cairo_execution_info.source_sierra_path)?;
         let compiled_artifacts = compiled_artifacts_path_map
             .get_sierra_casm_artifacts_for_path(&cairo_execution_info.source_sierra_path);
 
@@ -208,9 +207,7 @@ fn collect_samples<'a>(
                 call_stack: function_trace,
                 measurements: HashMap::from([(
                     MeasurementUnit::from("steps"),
-                    MeasurementValue(
-                        i64::try_from(function_stack_trace.weight_in_steps.0).unwrap(),
-                    ),
+                    MeasurementValue(i64::try_from(function_stack_trace.steps.0).unwrap()),
                 )]),
             });
         }
@@ -227,8 +224,8 @@ fn collect_samples<'a>(
                 samples,
                 current_call_stack,
                 sub_trace,
-                show_details,
                 compiled_artifacts_path_map,
+                show_details,
             )?;
         }
     }

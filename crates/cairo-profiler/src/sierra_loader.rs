@@ -7,10 +7,9 @@ use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::{Utf8Path, Utf8PathBuf};
 use std::collections::HashMap;
 use std::fs;
+use trace_data::{CallTrace, CallTraceNode};
 
-pub struct CompiledArtifactsPathMap {
-    map: HashMap<Utf8PathBuf, CompiledArtifacts>,
-}
+pub struct CompiledArtifactsPathMap(pub HashMap<Utf8PathBuf, CompiledArtifacts>);
 
 pub struct CompiledArtifacts {
     pub sierra: SierraProgramArtifact,
@@ -40,17 +39,18 @@ impl SierraProgramArtifact {
 
 impl CompiledArtifactsPathMap {
     pub fn new() -> Self {
-        Self {
-            map: HashMap::new(),
-        }
+        Self(HashMap::new())
     }
 
-    pub fn compile_and_add_compiled_artifacts(&mut self, path: &Utf8Path) -> Result<()> {
+    pub fn compile_sierra_and_add_compiled_artifacts_to_map(
+        &mut self,
+        path: &Utf8Path,
+    ) -> Result<()> {
         let path = path
             .canonicalize_utf8()
             .with_context(|| format!("Failed to canonicalize path: {path}"))?;
 
-        if !self.map.contains_key(&path) {
+        if !self.0.contains_key(&path) {
             let raw_sierra = fs::read_to_string(&path)?;
 
             if let Ok(contract_class) = serde_json::from_str::<ContractClass>(&raw_sierra) {
@@ -68,7 +68,7 @@ impl CompiledArtifactsPathMap {
                         usize::MAX,
                     )?;
 
-                self.map.insert(
+                self.0.insert(
                     path,
                     CompiledArtifacts {
                         sierra: SierraProgramArtifact::ContractClass(program_artifact),
@@ -95,7 +95,7 @@ impl CompiledArtifactsPathMap {
                 )
                 .with_context(|| "Compilation failed.")?;
 
-                self.map.insert(
+                self.0.insert(
                     path,
                     CompiledArtifacts {
                         sierra: SierraProgramArtifact::VersionedProgram(program_artifact),
@@ -116,8 +116,36 @@ impl CompiledArtifactsPathMap {
     }
 
     pub fn get_sierra_casm_artifacts_for_path(&self, path: &Utf8Path) -> &CompiledArtifacts {
-        self.map
+        self.0
             .get(path)
             .unwrap_or_else(|| panic!("Compiled artifacts not found for path {path}"))
     }
+}
+
+pub fn collect_and_compile_all_sierra_programs(
+    trace: &CallTrace,
+) -> Result<CompiledArtifactsPathMap> {
+    let mut compiled_artifacts_path_map = CompiledArtifactsPathMap::new();
+    collect_compiled_artifacts(trace, &mut compiled_artifacts_path_map)?;
+
+    Ok(compiled_artifacts_path_map)
+}
+
+fn collect_compiled_artifacts(
+    trace: &CallTrace,
+    compiled_artifacts_path_map: &mut CompiledArtifactsPathMap,
+) -> Result<()> {
+    if let Some(cairo_execution_info) = &trace.cairo_execution_info {
+        compiled_artifacts_path_map.compile_sierra_and_add_compiled_artifacts_to_map(
+            &cairo_execution_info.source_sierra_path,
+        )?;
+    }
+
+    for sub_trace_node in &trace.nested_calls {
+        if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
+            collect_compiled_artifacts(sub_trace, compiled_artifacts_path_map)?;
+        }
+    }
+
+    Ok(())
 }
