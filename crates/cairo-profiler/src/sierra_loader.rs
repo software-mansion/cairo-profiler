@@ -118,8 +118,9 @@ impl CompiledArtifactsPathMap {
     }
 
     pub fn get_sierra_casm_artifacts_for_path(&self, path: &Utf8Path) -> &CompiledArtifacts {
+        let absolute_path = path.canonicalize_utf8()?;
         self.0
-            .get(path)
+            .get(&absolute_path)
             .unwrap_or_else(|| panic!("Compiled artifacts not found for path {path}"))
     }
 }

@@ -138,6 +138,14 @@ pub fn collect_profiling_info(
                 ) {
                     // Push to the stack.
                     if function_stack_depth < MAX_TRACE_DEPTH as usize {
+                        if let Some((prev_user_func_idx, _)) = function_stack.last() {
+                            // If the same function was called. It prevents multiple recursive
+                            // function calls from cluttering the stack and limiting trace depth
+                            // that's left. Especially important for profiling loop functions.
+                            if prev_user_func_idx.0 == user_function_idx.0 {
+                                continue;
+                            }
+                        }
                         function_stack.push((user_function_idx, current_function_steps));
                         current_function_steps = Steps(0);
                     }
@@ -164,10 +172,6 @@ pub fn collect_profiling_info(
                 function_stack_depth -= 1;
             }
         }
-    }
-
-    if !was_run_with_header {
-        assert!(header_steps == Steps(0));
     }
 
     let functions_stack_traces = functions_stack_traces_steps
@@ -212,7 +216,7 @@ fn index_stack_trace_to_function_name_stack_trace(
         })
         .collect_vec();
 
-    // Consolidate recursive function calls into one function call - they mess up the flame graph.
+    // Consolidate recursive function calls into one function call - they clutter the flame graph.
     let mut result = vec![stack_with_recursive_functions[0].clone()];
     for i in 1..stack_with_recursive_functions.len() {
         if stack_with_recursive_functions[i - 1] != stack_with_recursive_functions[i] {
