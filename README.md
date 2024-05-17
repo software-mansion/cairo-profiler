@@ -63,7 +63,7 @@ cairo-profiler path/to/trace.json
 
 > 📝 **Note**
 >
-> Trace needs to be in the correct format. See [trace.json](./crates/cairo-profiler/tests/data/trace.json) as an example.
+> Trace needs to be in the correct format. See [trace.json](./crates/cairo-profiler/tests/data/call.json) as an example.
 
 ### Running pprof
 
@@ -89,8 +89,13 @@ You can learn more about pprof usage options [here](https://github.com/google/pp
 - [ ] Starknet calls profiling:
   - [x] L2 resources - steps, memory holes, builtins, syscalls 
   - [ ] L1 resources - contract updates, L2 -> L1 messages
-- [ ] Function level profiling
-- [ ] Exposing `cairo-profiler` library to allow other tools to integrate
+- [ ] Function level profiling:
+  - [x] Basic function level profiling
+  - [ ] Information about inlined functions
+- [ ] Integrating with other tools:
+  - [x] Exposing `cairo-profiler` library to allow other tools to integrate
+  - [x] Integrating with [`snforge`](https://github.com/foundry-rs/starknet-foundry)
+  - [ ] Integrating with `cairo-test` and `cairo-run`
 
 ## Development
 
