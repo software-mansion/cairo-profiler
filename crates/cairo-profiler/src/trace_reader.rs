@@ -3,6 +3,7 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt::Display;
 
+use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
 use crate::sierra_loader::CompiledArtifactsPathMap;
 use crate::trace_reader::function_trace_builder::collect_profiling_info;
 use anyhow::{Context, Result};
@@ -155,8 +156,7 @@ impl Display for EntryPointId {
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
     compiled_artifacts_path_map: &CompiledArtifactsPathMap,
-    show_details: bool,
-    max_function_trace_depth: usize,
+    profiler_config: &ProfilerConfig,
 ) -> Result<Vec<ContractCallSample>> {
     let mut samples = vec![];
     let mut current_path = vec![];
@@ -166,8 +166,7 @@ pub fn collect_samples_from_trace(
         &mut current_path,
         trace,
         compiled_artifacts_path_map,
-        show_details,
-        max_function_trace_depth,
+        profiler_config,
     )?;
     Ok(samples)
 }
@@ -177,15 +176,14 @@ fn collect_samples<'a>(
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
     compiled_artifacts_path_map: &CompiledArtifactsPathMap,
-    show_details: bool,
-    max_function_trace_depth: usize,
+    profiler_config: &ProfilerConfig,
 ) -> Result<&'a ExecutionResources> {
     current_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
         trace.entry_point.contract_address.clone(),
         trace.entry_point.entry_point_selector.clone(),
-        show_details,
+        profiler_config.show_details,
     ));
 
     let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
@@ -207,7 +205,7 @@ fn collect_samples<'a>(
             compiled_artifacts.sierra.get_program_artifact(),
             &compiled_artifacts.casm_debug_info,
             compiled_artifacts.sierra.was_run_with_header(),
-            max_function_trace_depth,
+            &FunctionLevelConfig::from_profiler_config(profiler_config),
         )?;
 
         for mut function_stack_trace in profiling_info.functions_stack_traces {
@@ -239,8 +237,7 @@ fn collect_samples<'a>(
                 current_call_stack,
                 sub_trace,
                 compiled_artifacts_path_map,
-                show_details,
-                max_function_trace_depth,
+                profiler_config,
             )?;
         }
     }

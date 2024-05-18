@@ -3,6 +3,7 @@ use std::{
     io::{Read, Write},
 };
 
+use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
 use anyhow::{Context, Result};
@@ -15,6 +16,7 @@ use prost::Message;
 use trace_data::CallTrace;
 
 mod profile_builder;
+mod profiler_config;
 mod sierra_loader;
 mod trace_reader;
 
@@ -36,15 +38,20 @@ struct Cli {
     /// Specify maximum depth of function tree in function level profiling.
     /// The is applied per entrypoint - each entrypoint function tree is treated separately.
     /// Keep in mind recursive functions are also taken into account even though they are later
-    /// aggregated to one function call.
+    /// aggregated to a single function call.
     #[arg(long, default_value_t = 100)]
     max_function_trace_depth: usize,
+
+    /// Split non-inlined generic functions based on the type they were monomorphised with.
+    /// E.g. treat `function<felt252>` as different from `function<u8>`.
+    #[arg(long)]
+    split_generics: bool,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let data = fs::read_to_string(cli.path_to_trace_data)
+    let data = fs::read_to_string(&cli.path_to_trace_data)
         .context("Failed to read call trace from a file")?;
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
@@ -53,8 +60,7 @@ fn main() -> Result<()> {
     let samples = collect_samples_from_trace(
         &serialized_trace,
         &compiled_artifacts_path_map,
-        cli.show_details,
-        cli.max_function_trace_depth,
+        &ProfilerConfig::from_cli(&cli),
     )?;
 
     let profile = build_profile(&samples);

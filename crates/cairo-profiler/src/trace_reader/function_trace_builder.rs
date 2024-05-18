@@ -1,3 +1,4 @@
+use crate::profiler_config::FunctionLevelConfig;
 use crate::trace_reader::FunctionName;
 use anyhow::{Context, Result};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
@@ -50,7 +51,7 @@ pub fn collect_profiling_info(
     program_artifact: &ProgramArtifact,
     casm_debug_info: &CairoProgramDebugInfo,
     was_run_with_header: bool,
-    max_function_trace_depth: usize,
+    function_level_config: &FunctionLevelConfig,
 ) -> Result<ProfilingInfo> {
     let program = &program_artifact.program;
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
@@ -136,7 +137,7 @@ pub fn collect_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     // Push to the stack.
-                    if function_stack_depth < max_function_trace_depth {
+                    if function_stack_depth < function_level_config.max_function_trace_depth {
                         function_stack.push((user_function_idx, current_function_steps));
                         current_function_steps = Steps(0);
                     }
@@ -145,7 +146,7 @@ pub fn collect_profiling_info(
             }
             GenStatement::Return(_) => {
                 // Pop from the stack.
-                if function_stack_depth <= max_function_trace_depth {
+                if function_stack_depth <= function_level_config.max_function_trace_depth {
                     let current_stack =
                         chain!(function_stack.iter().map(|f| f.0), [user_function_idx])
                             .collect_vec();
@@ -165,10 +166,6 @@ pub fn collect_profiling_info(
         }
     }
 
-    if !was_run_with_header {
-        assert!(header_steps == Steps(0));
-    }
-
     let functions_stack_traces = functions_stack_traces_steps
         .iter()
         .map(|(idx_stack_trace, steps)| {
@@ -176,6 +173,7 @@ pub fn collect_profiling_info(
                 stack_trace: index_stack_trace_to_function_name_stack_trace(
                     program,
                     idx_stack_trace,
+                    function_level_config.split_generics,
                 )?,
                 steps: *steps,
             })
@@ -193,6 +191,7 @@ pub fn collect_profiling_info(
 fn index_stack_trace_to_function_name_stack_trace(
     sierra_program: &Program,
     idx_stack_trace: &[UserFunctionSierraIndex],
+    split_generics: bool,
 ) -> Result<Vec<FunctionName>> {
     let re_loop_func = Regex::new(r"\[expr\d*\]")
         .context("Failed to create regex normalising loop functions names")?;
@@ -207,7 +206,12 @@ fn index_stack_trace_to_function_name_stack_trace(
             // Remove suffix in case of loop function e.g. `[expr36]`.
             let func_name = re_loop_func.replace(sierra_func_name, "");
             // Remove parameters from monomorphised Cairo generics e.g. `<felt252>`.
-            re_monomorphization.replace(&func_name, "").to_string()
+            if split_generics {
+                func_name
+            } else {
+                re_monomorphization.replace(&func_name, "")
+            }
+            .to_string()
         })
         .collect_vec();
 
