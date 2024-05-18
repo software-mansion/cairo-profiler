@@ -23,6 +23,7 @@ fn output_path() {
     assert!(temp_dir.join("my/output/dir/my_file.pb.gz").exists());
 }
 
+#[test_case(&["call.json", "--max-function-trace-depth", "5"]; "with max function trace depth")]
 #[test_case(&["call.json", "--show-details"]; "with details")]
 #[test_case(&["call.json"]; "without details")]
 fn simple_package(args: &[&str]) {
