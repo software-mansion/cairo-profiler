@@ -89,6 +89,8 @@ jobs:
         with:
           go-version: 'stable'
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure cross and build
         shell: bash
