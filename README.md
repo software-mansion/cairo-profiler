@@ -40,7 +40,7 @@ trace in the [expected](./crates/trace-data/src/lib.rs) format.
 
 ### Integrated tools
 
-- [x] [Starknet Foundry](https://github.com/foundry-rs/starknet-foundry) - check how to generate the input file [here](https://foundry-rs.github.io/starknet-foundry/testing/profiling.html)
+- [x] [Starknet Foundry](https://github.com/foundry-rs/starknet-foundry) - check how to use it with `cairo-profiler` [here](https://foundry-rs.github.io/starknet-foundry/snforge-advanced-features/profiling.html)
 
 ## Usage
 
