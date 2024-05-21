@@ -86,7 +86,11 @@ jobs:
           echo "CARGO=cross" >> $GITHUB_ENV
 
       - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure cross and build
         shell: bash
@@ -127,7 +131,7 @@ jobs:
   create-release:
     name: Create release
     runs-on: ubuntu-latest
-    needs: [build-binaries, get-version]
+    needs: [ build-binaries, get-version ]
     steps:
       - uses: actions/checkout@v4
 

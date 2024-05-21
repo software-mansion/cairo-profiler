@@ -40,7 +40,7 @@ trace in the [expected](./crates/trace-data/src/lib.rs) format.
 
 ### Integrated tools
 
-- [x] [Starknet Foundry](https://github.com/foundry-rs/starknet-foundry) - check how to generate the input file [here](https://foundry-rs.github.io/starknet-foundry/testing/profiling.html)
+- [x] [Starknet Foundry](https://github.com/foundry-rs/starknet-foundry) - check how to use it with `cairo-profiler` [here](https://foundry-rs.github.io/starknet-foundry/snforge-advanced-features/profiling.html)
 
 ## Usage
 
@@ -90,7 +90,9 @@ You can learn more about pprof usage options [here](https://github.com/google/pp
   - [x] L2 resources - steps, memory holes, builtins, syscalls 
   - [ ] L1 resources - contract updates, L2 -> L1 messages
 - [ ] Function level profiling:
-  - [x] Basic function level profiling
+  - [x] Steps profiling
+  - [ ] Builtins profiling
+  - [ ] Memory holes profiling
   - [ ] Information about inlined functions
 - [ ] Integrating with other tools:
   - [x] Exposing `cairo-profiler` library to allow other tools to integrate
