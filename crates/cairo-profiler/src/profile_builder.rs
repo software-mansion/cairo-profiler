@@ -10,7 +10,8 @@ use std::collections::{HashMap, HashSet};
 
 pub use perftools::profiles as pprof;
 
-use crate::trace_reader::{ContractCallSample, FunctionName, MeasurementUnit, MeasurementValue};
+use crate::trace_reader::functions::FunctionName;
+use crate::trace_reader::{ContractCallSample, MeasurementUnit, MeasurementValue};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub struct StringId(pub u64);

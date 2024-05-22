@@ -443,6 +443,7 @@ dependencies = [
  "flate2",
  "hex",
  "itertools 0.11.0",
+ "lazy_static",
  "project-root",
  "prost",
  "prost-build",

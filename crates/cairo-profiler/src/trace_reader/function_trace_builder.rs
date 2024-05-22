@@ -1,11 +1,10 @@
-use crate::trace_reader::FunctionName;
-use anyhow::{Context, Result};
+use crate::profiler_config::FunctionLevelConfig;
+use crate::trace_reader::functions::{FunctionName, FunctionStackTrace};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, ProgramArtifact, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::{chain, Itertools};
-use regex::Regex;
 use std::collections::HashMap;
 use std::ops::AddAssign;
 use trace_data::TraceEntry;
@@ -13,11 +12,6 @@ use trace_data::TraceEntry;
 pub struct ProfilingInfo {
     pub functions_stack_traces: Vec<FunctionStackTrace>,
     pub header_steps: Steps,
-}
-
-pub struct FunctionStackTrace {
-    pub stack_trace: Vec<FunctionName>,
-    pub steps: Steps,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -50,8 +44,8 @@ pub fn collect_profiling_info(
     program_artifact: &ProgramArtifact,
     casm_debug_info: &CairoProgramDebugInfo,
     was_run_with_header: bool,
-    max_function_trace_depth: usize,
-) -> Result<ProfilingInfo> {
+    function_level_config: &FunctionLevelConfig,
+) -> ProfilingInfo {
     let program = &program_artifact.program;
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
@@ -122,8 +116,7 @@ pub fn collect_profiling_info(
             }
         };
 
-        let user_function_idx =
-            user_function_idx_by_sierra_statement_idx(program, sierra_statement_idx);
+        let user_function_idx = user_function_idx(sierra_statement_idx, program);
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
@@ -136,7 +129,7 @@ pub fn collect_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     // Push to the stack.
-                    if function_stack_depth < max_function_trace_depth {
+                    if function_stack_depth < function_level_config.max_function_trace_depth {
                         function_stack.push((user_function_idx, current_function_steps));
                         current_function_steps = Steps(0);
                     }
@@ -145,7 +138,7 @@ pub fn collect_profiling_info(
             }
             GenStatement::Return(_) => {
                 // Pop from the stack.
-                if function_stack_depth <= max_function_trace_depth {
+                if function_stack_depth <= function_level_config.max_function_trace_depth {
                     let current_stack =
                         chain!(function_stack.iter().map(|f| f.0), [user_function_idx])
                             .collect_vec();
@@ -165,66 +158,41 @@ pub fn collect_profiling_info(
         }
     }
 
-    if !was_run_with_header {
-        assert!(header_steps == Steps(0));
-    }
-
-    let functions_stack_traces = functions_stack_traces_steps
-        .iter()
-        .map(|(idx_stack_trace, steps)| {
-            Ok(FunctionStackTrace {
-                stack_trace: index_stack_trace_to_function_name_stack_trace(
-                    program,
-                    idx_stack_trace,
-                )?,
-                steps: *steps,
-            })
-        })
-        .collect::<Result<_>>()?;
-
-    let profiling_info = ProfilingInfo {
-        functions_stack_traces,
-        header_steps,
-    };
-
-    Ok(profiling_info)
-}
-
-fn index_stack_trace_to_function_name_stack_trace(
-    sierra_program: &Program,
-    idx_stack_trace: &[UserFunctionSierraIndex],
-) -> Result<Vec<FunctionName>> {
-    let re_loop_func = Regex::new(r"\[expr\d*\]")
-        .context("Failed to create regex normalising loop functions names")?;
-
-    let re_monomorphization = Regex::new(r"<.*>")
-        .context("Failed to create regex normalising mononorphised generic functions names")?;
-
-    let stack_with_recursive_functions = idx_stack_trace
-        .iter()
-        .map(|idx| {
-            let sierra_func_name = &sierra_program.funcs[idx.0].id.to_string();
-            // Remove suffix in case of loop function e.g. `[expr36]`.
-            let func_name = re_loop_func.replace(sierra_func_name, "");
-            // Remove parameters from monomorphised Cairo generics e.g. `<felt252>`.
-            re_monomorphization.replace(&func_name, "").to_string()
+    let real_functions_stack_traces = functions_stack_traces_steps
+        .into_iter()
+        .map(|(idx_stack_trace, steps)| FunctionStackTrace {
+            stack_trace: to_function_stack_trace(&idx_stack_trace, program),
+            steps,
         })
         .collect_vec();
 
-    // Consolidate recursive function calls into one function call - they mess up the flame graph.
-    let mut result = vec![stack_with_recursive_functions[0].clone()];
-    for i in 1..stack_with_recursive_functions.len() {
-        if stack_with_recursive_functions[i - 1] != stack_with_recursive_functions[i] {
-            result.push(stack_with_recursive_functions[i].clone());
-        }
-    }
+    let displayable_functions_stack_traces = real_functions_stack_traces
+        .iter()
+        .map(|function_stack_trace| {
+            function_stack_trace
+                .to_displayable_function_stack_trace(function_level_config.split_generics)
+        })
+        .collect_vec();
 
-    Ok(result.into_iter().map(FunctionName).collect())
+    ProfilingInfo {
+        functions_stack_traces: displayable_functions_stack_traces,
+        header_steps,
+    }
 }
 
-fn user_function_idx_by_sierra_statement_idx(
+fn to_function_stack_trace(
+    idx_stack_trace: &[UserFunctionSierraIndex],
     sierra_program: &Program,
+) -> Vec<FunctionName> {
+    idx_stack_trace
+        .iter()
+        .map(|function_idx| FunctionName(sierra_program.funcs[function_idx.0].id.to_string()))
+        .collect_vec()
+}
+
+fn user_function_idx(
     statement_idx: StatementIdx,
+    sierra_program: &Program,
 ) -> UserFunctionSierraIndex {
     // The `-1` here can't cause an underflow as the statement id of first function's entrypoint is
     // always 0, so it is always on the left side of the partition, thus the partition index is > 0.
