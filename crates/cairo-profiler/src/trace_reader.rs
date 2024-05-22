@@ -1,27 +1,19 @@
 use core::fmt;
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt::Display;
 
 use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
 use crate::sierra_loader::CompiledArtifactsPathMap;
 use crate::trace_reader::function_trace_builder::collect_profiling_info;
+use crate::trace_reader::functions::FunctionName;
 use anyhow::{Context, Result};
+use itertools::Itertools;
 use trace_data::{
     CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
 };
 
 mod function_trace_builder;
-
-#[derive(Clone, Hash, Eq, PartialEq)]
-pub struct FunctionName(pub String);
-
-impl FunctionName {
-    #[inline]
-    fn from(entry_point_id: &EntryPointId) -> FunctionName {
-        FunctionName(format!("{entry_point_id}"))
-    }
-}
+pub mod functions;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct MeasurementUnit(pub String);
@@ -206,7 +198,7 @@ fn collect_samples<'a>(
             &compiled_artifacts.casm_debug_info,
             compiled_artifacts.sierra.was_run_with_header(),
             &FunctionLevelConfig::from_profiler_config(profiler_config),
-        )?;
+        );
 
         for mut function_stack_trace in profiling_info.functions_stack_traces {
             let mut function_trace = current_call_stack
