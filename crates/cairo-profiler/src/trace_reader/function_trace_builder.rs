@@ -14,7 +14,7 @@ pub struct ProfilingInfo {
     pub header_steps: Steps,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub struct Steps(pub usize);
 
 impl AddAssign for Steps {
@@ -171,8 +171,22 @@ pub fn collect_profiling_info(
         })
         .collect_vec();
 
+    // Some real function traces may be converted to the same displayable traces e.g.
+    // [func, func[expr36], func[expr36]] and [func, func[expr36]] both are converted to [func].
+    // We aggregate them, adding their steps. It doesn't make a difference to pprof, but it may
+    // help us when adding integration tests.
+    let deduplicated_functions_stack_traces = displayable_functions_stack_traces
+        .into_iter()
+        .fold(HashMap::new(), |mut acc, stack_trace| {
+            *acc.entry(stack_trace.stack_trace).or_insert(Steps(0)) += stack_trace.steps;
+            acc
+        })
+        .into_iter()
+        .map(|(stack_trace, steps)| FunctionStackTrace { stack_trace, steps })
+        .collect();
+
     ProfilingInfo {
-        functions_stack_traces: displayable_functions_stack_traces,
+        functions_stack_traces: deduplicated_functions_stack_traces,
         header_steps,
     }
 }

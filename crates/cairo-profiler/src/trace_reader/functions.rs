@@ -11,7 +11,7 @@ lazy_static! {
         .expect("Failed to create regex normalising mononorphised generic functions names");
 }
 
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub struct FunctionName(pub String);
 
 impl From<&EntryPointId> for FunctionName {
@@ -36,6 +36,7 @@ impl FunctionName {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct FunctionStackTrace {
     pub stack_trace: Vec<FunctionName>,
     pub steps: Steps,
