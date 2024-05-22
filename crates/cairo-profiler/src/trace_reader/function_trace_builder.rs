@@ -173,7 +173,7 @@ pub fn collect_profiling_info(
 
     // Some real function traces may be converted to the same displayable traces e.g.
     // [func, func[expr36], func[expr36]] and [func, func[expr36]] both are converted to [func].
-    // We aggregate them, adding their steps. It doesn't make a difference to pprof, but it may
+    // We aggregate them, adding their steps. Pprof does it under the hood anyway, but it may
     // help us when adding integration tests.
     let deduplicated_functions_stack_traces = displayable_functions_stack_traces
         .into_iter()
