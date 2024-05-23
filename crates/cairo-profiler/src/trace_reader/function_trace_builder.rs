@@ -66,8 +66,9 @@ pub fn collect_profiling_info(
     };
 
     // The function stack trace of the current function, excluding the current function.
-    // Represented as a vector of indices of the functions in the stack together with the steps
-    // of the caller function in the moment of the call. We use the saved steps to continue
+    // Represented as a vector of displayable function names of the functions in the stack together
+    // with the steps of the caller function in the moment of the call and number of consecutive
+    // recursive calls of this function at the moment. We use the saved steps to continue
     // counting flat steps of the caller later on. Limited to depth `max_stack_trace_depth`.
     let mut function_stack: Vec<StackElement> = vec![];
 
