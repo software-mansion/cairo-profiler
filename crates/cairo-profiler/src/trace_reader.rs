@@ -17,9 +17,16 @@ pub mod functions;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct MeasurementUnit(pub String);
-impl MeasurementUnit {
-    fn from(name: &str) -> Self {
-        MeasurementUnit(String::from(name))
+
+impl From<&str> for MeasurementUnit {
+    fn from(value: &str) -> Self {
+        MeasurementUnit(String::from(value))
+    }
+}
+
+impl From<&String> for MeasurementUnit {
+    fn from(value: &String) -> Self {
+        MeasurementUnit(value.clone())
     }
 }
 
@@ -197,7 +204,7 @@ fn collect_samples<'a>(
             compiled_artifacts.sierra.get_program_artifact(),
             &compiled_artifacts.casm_debug_info,
             compiled_artifacts.sierra.was_run_with_header(),
-            &FunctionLevelConfig::from_profiler_config(profiler_config),
+            &FunctionLevelConfig::from(profiler_config),
         );
 
         for mut function_stack_trace in profiling_info.functions_stack_traces {

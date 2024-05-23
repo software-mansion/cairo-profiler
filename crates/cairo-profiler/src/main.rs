@@ -60,7 +60,7 @@ fn main() -> Result<()> {
     let samples = collect_samples_from_trace(
         &serialized_trace,
         &compiled_artifacts_path_map,
-        &ProfilerConfig::from_cli(&cli),
+        &ProfilerConfig::from(&cli),
     )?;
 
     let profile = build_profile(&samples);

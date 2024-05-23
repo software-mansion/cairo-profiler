@@ -11,7 +11,7 @@ use trace_data::{CallTrace, CallTraceNode};
 
 /// Map with sierra and casm debug info needed for function level profiling.
 /// All paths in the map are absolute paths.
-pub struct CompiledArtifactsPathMap(pub HashMap<Utf8PathBuf, CompiledArtifacts>);
+pub struct CompiledArtifactsPathMap(HashMap<Utf8PathBuf, CompiledArtifacts>);
 
 pub struct CompiledArtifacts {
     pub sierra: SierraProgramArtifact,

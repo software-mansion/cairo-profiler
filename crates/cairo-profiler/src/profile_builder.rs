@@ -14,7 +14,7 @@ use crate::trace_reader::functions::FunctionName;
 use crate::trace_reader::{ContractCallSample, MeasurementUnit, MeasurementValue};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
-pub struct StringId(pub u64);
+struct StringId(u64);
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 struct LocationId(u64);
@@ -40,7 +40,7 @@ impl From<FunctionId> for u64 {
     }
 }
 
-pub struct ProfilerContext {
+struct ProfilerContext {
     strings: HashMap<String, StringId>,
     functions: HashMap<FunctionName, pprof::Function>,
     locations: HashMap<FunctionName, pprof::Location>,
@@ -55,7 +55,7 @@ impl ProfilerContext {
         }
     }
 
-    pub fn string_id(&mut self, string: &String) -> StringId {
+    fn string_id(&mut self, string: &String) -> StringId {
         if let Some(id) = self.strings.get(string) {
             *id
         } else {
@@ -117,7 +117,7 @@ impl ProfilerContext {
     }
 }
 
-pub fn build_value_types(
+fn build_value_types(
     measurements_units: &Vec<MeasurementUnit>,
     context: &mut ProfilerContext,
 ) -> Vec<pprof::ValueType> {
