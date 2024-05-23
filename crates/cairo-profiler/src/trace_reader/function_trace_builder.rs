@@ -34,7 +34,11 @@ enum MaybeSierraStatementIndex {
     PcOutOfFunctionArea,
 }
 
-type RecursiveCallsCount = usize;
+struct StackElement {
+    caller_function_name: FunctionName,
+    caller_function_steps: Steps,
+    recursive_calls_count: usize,
+}
 
 /// Collects profiling info of the current run using the trace.
 pub fn collect_profiling_info(
@@ -65,7 +69,7 @@ pub fn collect_profiling_info(
     // Represented as a vector of indices of the functions in the stack together with the steps
     // of the caller function in the moment of the call. We use the saved steps to continue
     // counting flat steps of the caller later on. Limited to depth `max_stack_trace_depth`.
-    let mut function_stack: Vec<(FunctionName, Steps, RecursiveCallsCount)> = vec![];
+    let mut function_stack: Vec<StackElement> = vec![];
 
     // Tracks the depth of the function stack, without limit. This is usually equal to
     // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
@@ -124,17 +128,19 @@ pub fn collect_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     // Push to the stack.
-                    if let Some((last_function_name, _, recursive_calls_count)) =
-                        function_stack.last_mut()
-                    {
-                        if user_function_name == *last_function_name {
-                            *recursive_calls_count += 1;
+                    if let Some(stack_element) = function_stack.last_mut() {
+                        if user_function_name == stack_element.caller_function_name {
+                            stack_element.recursive_calls_count += 1;
                             continue;
                         }
                     }
 
                     if function_stack_depth < function_level_config.max_function_trace_depth {
-                        function_stack.push((user_function_name, current_function_steps, 0));
+                        function_stack.push(StackElement {
+                            caller_function_name: user_function_name,
+                            caller_function_steps: current_function_steps,
+                            recursive_calls_count: 0,
+                        });
                         current_function_steps = Steps(0);
                     }
                     function_stack_depth += 1;
@@ -143,9 +149,9 @@ pub fn collect_profiling_info(
             GenStatement::Return(_) => {
                 // Pop from the stack.
                 if function_stack_depth <= function_level_config.max_function_trace_depth {
-                    if let Some((_, _, recursive_calls_count)) = function_stack.last_mut() {
-                        if *recursive_calls_count > 0 {
-                            *recursive_calls_count -= 1;
+                    if let Some(stack_element) = function_stack.last_mut() {
+                        if stack_element.recursive_calls_count > 0 {
+                            stack_element.recursive_calls_count -= 1;
                             continue;
                         }
                     }
@@ -153,7 +159,7 @@ pub fn collect_profiling_info(
                     let current_stack = chain!(
                         function_stack
                             .iter()
-                            .map(|(function_name, _, _)| function_name.clone()),
+                            .map(|stack_element| stack_element.caller_function_name.clone()),
                         [user_function_name]
                     )
                     .collect_vec();
@@ -162,9 +168,9 @@ pub fn collect_profiling_info(
                         .entry(current_stack)
                         .or_insert_with(|| Steps(0)) += current_function_steps;
 
-                    if let Some((_, caller_function_steps, _)) = function_stack.pop() {
+                    if let Some(stack_element) = function_stack.pop() {
                         // Set to the caller function steps to continue counting its cost.
-                        current_function_steps = caller_function_steps;
+                        current_function_steps = stack_element.caller_function_steps;
                     } else {
                         end_of_program_reached = true;
                         continue;
