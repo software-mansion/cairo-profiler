@@ -31,7 +31,7 @@ impl AddAssign<usize> for Steps {
 
 /// Index according to the list of functions in the sierra program.
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
-struct UserFunctionSierraIndex(pub usize);
+struct UserFunctionSierraIndex(usize);
 
 enum MaybeSierraStatementIndex {
     SierraStatementIndex(StatementIdx),
@@ -50,16 +50,14 @@ pub fn collect_profiling_info(
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
     // Some CASM programs starts with a header of instructions to wrap the real program.
-    // `real_pc_0` is the PC in the trace that points to the same CASM instruction which is in
-    // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
-    // subtracted by `real_pc_0` to get the real PC they point to in the original CASM
-    // program.
+    // `real_minimal_pc` is the PC in the trace that points to the same CASM instruction which would
+    // be in the PC=1 in the original CASM program.
     // This is the same as the PC of the last trace entry plus 1, as the header is built to have
     // a `ret` last instruction, which must be the last in the trace of any execution.
     // The first instruction after that is the first instruction in the original CASM program.
-    // This logic only applies when a header was added to the CASM program, otherwise the `real_pc_0`
-    // is the default one which is 1.
-    let real_pc_0 = if was_run_with_header {
+    // This logic only applies when a header was added to the CASM program, otherwise the
+    // `real_minimal_pc` is the default one which is 1.
+    let real_minimal_pc = if was_run_with_header {
         trace.last().unwrap().pc + 1
     } else {
         1
@@ -90,14 +88,13 @@ pub fn collect_profiling_info(
 
     for step in trace {
         // Skip the header. This only makes sense when a header was added to CASM program.
-        if step.pc < real_pc_0 && was_run_with_header {
+        if step.pc < real_minimal_pc && was_run_with_header {
             header_steps += 1;
             continue;
         }
-        // The real pc would be equal to (step.pc - real_pc_0 + 1) since minimal real pc would be 1.
-        // This difference however is a code offset of the real pc - the code offset of the n-th
-        // instruction is n - 1. We need real code offset to map pc to sierra instruction.
-        let real_pc_code_offset = step.pc - real_pc_0;
+        // The real pc is equal to (1 + step.pc - real_minimal_pc). This difference however
+        // is a code offset of the real pc. We need real code offset to map pc to sierra statement.
+        let real_pc_code_offset = step.pc - real_minimal_pc;
 
         if end_of_program_reached {
             unreachable!("End of program reached, but trace continues.");
