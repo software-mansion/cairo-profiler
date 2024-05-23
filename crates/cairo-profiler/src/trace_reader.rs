@@ -18,15 +18,9 @@ pub mod functions;
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct MeasurementUnit(pub String);
 
-impl From<&str> for MeasurementUnit {
-    fn from(value: &str) -> Self {
-        MeasurementUnit(String::from(value))
-    }
-}
-
-impl From<&String> for MeasurementUnit {
-    fn from(value: &String) -> Self {
-        MeasurementUnit(value.clone())
+impl From<String> for MeasurementUnit {
+    fn from(value: String) -> Self {
+        MeasurementUnit(value)
     }
 }
 
@@ -45,13 +39,16 @@ impl ContractCallSample {
         l1_resources: &L1Resources,
     ) -> Self {
         let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
-            (MeasurementUnit::from("calls"), MeasurementValue(1)),
             (
-                MeasurementUnit::from("steps"),
+                MeasurementUnit::from("calls".to_string()),
+                MeasurementValue(1),
+            ),
+            (
+                MeasurementUnit::from("steps".to_string()),
                 MeasurementValue(i64::try_from(resources.vm_resources.n_steps).unwrap()),
             ),
             (
-                MeasurementUnit::from("memory_holes"),
+                MeasurementUnit::from("memory_holes".to_string()),
                 MeasurementValue(i64::try_from(resources.vm_resources.n_memory_holes).unwrap()),
             ),
         ]
@@ -59,9 +56,9 @@ impl ContractCallSample {
         .collect();
 
         for (builtin, count) in &resources.vm_resources.builtin_instance_counter {
-            assert!(!measurements.contains_key(&MeasurementUnit::from(builtin)));
+            assert!(!measurements.contains_key(&MeasurementUnit::from(builtin.to_string())));
             measurements.insert(
-                MeasurementUnit::from(builtin),
+                MeasurementUnit::from(builtin.to_string()),
                 MeasurementValue(i64::try_from(*count).unwrap()),
             );
         }
@@ -72,17 +69,19 @@ impl ContractCallSample {
             .map(|(syscall, count)| (format!("{syscall:?}"), *count))
             .collect();
         for (syscall, count) in &syscall_counter_with_string {
-            assert!(!measurements.contains_key(&MeasurementUnit::from(syscall)));
+            assert!(!measurements.contains_key(&MeasurementUnit::from(syscall.to_string())));
             measurements.insert(
-                MeasurementUnit::from(syscall),
+                MeasurementUnit::from(syscall.to_string()),
                 MeasurementValue(i64::try_from(*count).unwrap()),
             );
         }
 
-        assert!(!measurements.contains_key(&MeasurementUnit::from("l2_l1_message_sizes")));
+        assert!(
+            !measurements.contains_key(&MeasurementUnit::from("l2_l1_message_sizes".to_string()))
+        );
         let summarized_payload: usize = l1_resources.l2_l1_message_sizes.iter().sum();
         measurements.insert(
-            MeasurementUnit::from("l2_l1_message_sizes"),
+            MeasurementUnit::from("l2_l1_message_sizes".to_string()),
             MeasurementValue(i64::try_from(summarized_payload).unwrap()),
         );
 
@@ -217,7 +216,7 @@ fn collect_samples<'a>(
             samples.push(ContractCallSample {
                 call_stack: function_trace,
                 measurements: HashMap::from([(
-                    MeasurementUnit::from("steps"),
+                    MeasurementUnit::from("steps".to_string()),
                     MeasurementValue(i64::try_from(function_stack_trace.steps.0).unwrap()),
                 )]),
             });
