@@ -29,14 +29,12 @@ impl AddAssign<usize> for Steps {
     }
 }
 
-/// Index according to the list of functions in the sierra program.
-#[derive(Clone, Copy, Eq, PartialEq, Hash)]
-struct UserFunctionSierraIndex(usize);
-
 enum MaybeSierraStatementIndex {
     SierraStatementIndex(StatementIdx),
     PcOutOfFunctionArea,
 }
+
+type RecursiveCallsCount = usize;
 
 /// Collects profiling info of the current run using the trace.
 pub fn collect_profiling_info(
@@ -67,7 +65,7 @@ pub fn collect_profiling_info(
     // Represented as a vector of indices of the functions in the stack together with the steps
     // of the caller function in the moment of the call. We use the saved steps to continue
     // counting flat steps of the caller later on. Limited to depth `max_stack_trace_depth`.
-    let mut function_stack: Vec<(UserFunctionSierraIndex, Steps)> = vec![];
+    let mut function_stack: Vec<(FunctionName, Steps, RecursiveCallsCount)> = vec![];
 
     // Tracks the depth of the function stack, without limit. This is usually equal to
     // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
@@ -76,8 +74,7 @@ pub fn collect_profiling_info(
 
     // The value is the steps of the stack trace so far, not including the pending steps being
     // tracked at the time. The key is a function stack trace.
-    let mut functions_stack_traces_steps: HashMap<Vec<UserFunctionSierraIndex>, Steps> =
-        HashMap::new();
+    let mut functions_stack_traces: HashMap<Vec<FunctionName>, Steps> = HashMap::new();
 
     // Header steps are counted separately and then displayed as steps of the entrypoint in the
     // profile tree. It is because technically they don't belong to any function, but still increase
@@ -113,7 +110,8 @@ pub fn collect_profiling_info(
             }
         };
 
-        let user_function_idx = user_function_idx(sierra_statement_idx, program);
+        let user_function_name = user_function_name(sierra_statement_idx, program)
+            .to_displayable_function_name(function_level_config.split_generics);
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
@@ -126,8 +124,17 @@ pub fn collect_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     // Push to the stack.
+                    if let Some((last_function_name, _, recursive_calls_count)) =
+                        function_stack.last_mut()
+                    {
+                        if user_function_name == *last_function_name {
+                            *recursive_calls_count += 1;
+                            continue;
+                        }
+                    }
+
                     if function_stack_depth < function_level_config.max_function_trace_depth {
-                        function_stack.push((user_function_idx, current_function_steps));
+                        function_stack.push((user_function_name, current_function_steps, 0));
                         current_function_steps = Steps(0);
                     }
                     function_stack_depth += 1;
@@ -136,69 +143,58 @@ pub fn collect_profiling_info(
             GenStatement::Return(_) => {
                 // Pop from the stack.
                 if function_stack_depth <= function_level_config.max_function_trace_depth {
-                    let current_stack =
-                        chain!(function_stack.iter().map(|f| f.0), [user_function_idx])
-                            .collect_vec();
-                    *functions_stack_traces_steps
+                    if let Some((_, _, recursive_calls_count)) = function_stack.last_mut() {
+                        if *recursive_calls_count > 0 {
+                            *recursive_calls_count -= 1;
+                            continue;
+                        }
+                    }
+
+                    let current_stack = chain!(
+                        function_stack
+                            .iter()
+                            .map(|(function_name, _, _)| function_name.clone()),
+                        [user_function_name]
+                    )
+                    .collect_vec();
+
+                    *functions_stack_traces
                         .entry(current_stack)
                         .or_insert_with(|| Steps(0)) += current_function_steps;
 
-                    let Some((_, caller_function_steps)) = function_stack.pop() else {
+                    if let Some((_, caller_function_steps, _)) = function_stack.pop() {
+                        // Set to the caller function steps to continue counting its cost.
+                        current_function_steps = caller_function_steps;
+                    } else {
                         end_of_program_reached = true;
                         continue;
                     };
-                    // Set to the caller function steps to continue counting its cost.
-                    current_function_steps = caller_function_steps;
                 }
                 function_stack_depth -= 1;
             }
         }
     }
 
-    let real_functions_stack_traces = functions_stack_traces_steps
+    let functions_stack_traces = functions_stack_traces
         .into_iter()
-        .map(|(idx_stack_trace, steps)| FunctionStackTrace {
-            stack_trace: to_function_stack_trace(&idx_stack_trace, program),
-            steps,
-        })
-        .collect_vec();
-
-    let displayable_functions_stack_traces = real_functions_stack_traces
-        .iter()
-        .map(|function_stack_trace| {
-            function_stack_trace
-                .to_displayable_function_stack_trace(function_level_config.split_generics)
-        })
+        .map(|(stack_trace, steps)| FunctionStackTrace { stack_trace, steps })
         .collect_vec();
 
     ProfilingInfo {
-        functions_stack_traces: displayable_functions_stack_traces,
+        functions_stack_traces,
         header_steps,
     }
 }
 
-fn to_function_stack_trace(
-    idx_stack_trace: &[UserFunctionSierraIndex],
-    sierra_program: &Program,
-) -> Vec<FunctionName> {
-    idx_stack_trace
-        .iter()
-        .map(|function_idx| FunctionName(sierra_program.funcs[function_idx.0].id.to_string()))
-        .collect_vec()
-}
-
-fn user_function_idx(
-    statement_idx: StatementIdx,
-    sierra_program: &Program,
-) -> UserFunctionSierraIndex {
+fn user_function_name(statement_idx: StatementIdx, sierra_program: &Program) -> FunctionName {
     // The `-1` here can't cause an underflow as the statement id of first function's entrypoint is
     // always 0, so it is always on the left side of the partition, thus the partition index is > 0.
-    UserFunctionSierraIndex(
-        sierra_program
-            .funcs
-            .partition_point(|f| f.entry_point.0 <= statement_idx.0)
-            - 1,
-    )
+    let user_function_idx = sierra_program
+        .funcs
+        .partition_point(|f| f.entry_point.0 <= statement_idx.0)
+        - 1;
+
+    FunctionName(sierra_program.funcs[user_function_idx].id.to_string())
 }
 
 fn maybe_sierra_statement_index_by_pc(

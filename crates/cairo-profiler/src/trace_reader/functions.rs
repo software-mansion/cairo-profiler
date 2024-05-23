@@ -1,6 +1,5 @@
 use crate::trace_reader::function_trace_builder::Steps;
 use crate::trace_reader::EntryPointId;
-use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -39,22 +38,4 @@ impl FunctionName {
 pub struct FunctionStackTrace {
     pub stack_trace: Vec<FunctionName>,
     pub steps: Steps,
-}
-
-impl FunctionStackTrace {
-    pub fn to_displayable_function_stack_trace(&self, split_generics: bool) -> FunctionStackTrace {
-        let stack_with_recursive_functions = self
-            .stack_trace
-            .iter()
-            .map(|function_name| function_name.to_displayable_function_name(split_generics))
-            .collect_vec();
-
-        // Consolidate recursive function calls into one function call - they mess up the flame graph.
-        let displayable_stack_trace = stack_with_recursive_functions.into_iter().dedup().collect();
-
-        FunctionStackTrace {
-            stack_trace: displayable_stack_trace,
-            steps: self.steps,
-        }
-    }
 }
