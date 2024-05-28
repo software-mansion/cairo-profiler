@@ -3,20 +3,20 @@ use crate::trace_reader::functions::FunctionName;
 
 pub(super) struct Function {
     pub name: FunctionName,
-    // Steps of the function at the moment of putting it on the stack.
+    /// Steps of the function at the moment of putting it on the stack.
     pub steps: Steps,
-    // Consecutive recursive calls to this function that are currently on the stack.
+    /// Consecutive recursive calls to this function that are currently on the stack.
     recursive_calls_count: usize,
 }
 
 /// The function stack trace of the current function, excluding the current function.
 pub(super) struct FunctionStack {
     stack: Vec<Function>,
-    // Tracks the depth of the function stack, without limit. This is usually equal to
-    // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
-    // this remains reliable while `function_stack` does not.
+    /// Tracks the depth of the function stack, without limit. This is usually equal to
+    /// `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
+    /// this remains reliable while `function_stack` does not.
     real_function_stack_depth: usize,
-    // Constant through existence of the object.
+    /// Constant through existence of the object.
     max_function_trace_depth: usize,
 }
 
