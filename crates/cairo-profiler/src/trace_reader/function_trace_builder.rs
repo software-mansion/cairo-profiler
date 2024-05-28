@@ -114,7 +114,7 @@ pub fn collect_profiling_info(
             }
         };
 
-        let user_function_name = FunctionName::from_sierra_statement_idx(
+        let current_function_name = FunctionName::from_sierra_statement_idx(
             sierra_statement_idx,
             program,
             function_level_config.split_generics,
@@ -131,7 +131,7 @@ pub fn collect_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     function_stack
-                        .enter_function_call(user_function_name, &mut current_function_steps);
+                        .enter_function_call(current_function_name, &mut current_function_steps);
                 }
             }
             GenStatement::Return(_) => {
@@ -140,7 +140,7 @@ pub fn collect_profiling_info(
                         FunctionElement::Regular(stack_element) => {
                             let current_stack = chain!(
                                 function_stack.build_current_function_stack(),
-                                [stack_element.function_name, user_function_name]
+                                [stack_element.function_name, current_function_name]
                             )
                             .collect();
 
@@ -155,7 +155,7 @@ pub fn collect_profiling_info(
                 } else {
                     end_of_program_reached = true;
 
-                    let current_stack = vec![user_function_name];
+                    let current_stack = vec![current_function_name];
 
                     *functions_stack_traces
                         .entry(current_stack)
