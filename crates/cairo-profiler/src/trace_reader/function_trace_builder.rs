@@ -1,5 +1,7 @@
 use crate::profiler_config::FunctionLevelConfig;
-use crate::trace_reader::function_stack_trace::{FunctionElement, FunctionStack};
+use crate::trace_reader::function_trace_builder::function_stack_trace::{
+    FunctionElement, FunctionStack,
+};
 use crate::trace_reader::functions::{FunctionName, FunctionStackTrace};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, ProgramArtifact, StatementIdx};
@@ -9,6 +11,8 @@ use itertools::{chain, Itertools};
 use std::collections::HashMap;
 use std::ops::AddAssign;
 use trace_data::TraceEntry;
+
+mod function_stack_trace;
 
 pub struct ProfilingInfo {
     pub functions_stack_traces: Vec<FunctionStackTrace>,

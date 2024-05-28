@@ -12,7 +12,6 @@ use trace_data::{
     CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
 };
 
-mod function_stack_trace;
 mod function_trace_builder;
 pub mod functions;
 
