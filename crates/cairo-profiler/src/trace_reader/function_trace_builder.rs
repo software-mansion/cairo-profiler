@@ -155,11 +155,7 @@ pub fn collect_profiling_info(
                 } else {
                     end_of_program_reached = true;
 
-                    let current_stack = chain!(
-                        function_stack.build_current_function_stack(),
-                        [user_function_name]
-                    )
-                    .collect();
+                    let current_stack = vec![user_function_name];
 
                     *functions_stack_traces
                         .entry(current_stack)
