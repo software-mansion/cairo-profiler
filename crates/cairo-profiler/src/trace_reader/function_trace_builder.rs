@@ -1,6 +1,6 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
-    FunctionElement, FunctionStack,
+    FunctionStack, FunctionType,
 };
 use crate::trace_reader::functions::FunctionName;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
@@ -137,7 +137,7 @@ pub fn collect_profiling_info(
             GenStatement::Return(_) => {
                 if let Some(popped_element) = function_stack.exit_function_call() {
                     match popped_element {
-                        FunctionElement::Regular(stack_element) => {
+                        FunctionType::Regular(stack_element) => {
                             let current_stack = chain!(
                                 function_stack.build_current_function_stack(),
                                 [stack_element.function_name, current_function_name]
@@ -150,7 +150,7 @@ pub fn collect_profiling_info(
 
                             current_function_steps = stack_element.caller_function_steps;
                         }
-                        FunctionElement::Hidden | FunctionElement::Recursive => continue,
+                        FunctionType::Hidden | FunctionType::Recursive => continue,
                     }
                 } else {
                     end_of_program_reached = true;

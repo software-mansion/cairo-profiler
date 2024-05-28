@@ -1,14 +1,14 @@
 use crate::trace_reader::function_trace_builder::Steps;
 use crate::trace_reader::functions::FunctionName;
 
-pub struct StackElement {
+pub struct Function {
     pub function_name: FunctionName,
     pub caller_function_steps: Steps,
     recursive_calls_count: usize,
 }
 
 pub struct FunctionStack {
-    stack: Vec<StackElement>,
+    stack: Vec<Function>,
     // Tracks the depth of the function stack, without limit. This is usually equal to
     // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
     // this remains reliable while `function_stack` does not.
@@ -17,8 +17,8 @@ pub struct FunctionStack {
     max_function_trace_depth: usize,
 }
 
-pub enum FunctionElement {
-    Regular(StackElement),
+pub enum FunctionType {
+    Regular(Function),
     Hidden,
     Recursive,
 }
@@ -45,7 +45,7 @@ impl FunctionStack {
         }
 
         if self.real_function_stack_depth < self.max_function_trace_depth {
-            self.stack.push(StackElement {
+            self.stack.push(Function {
                 function_name,
                 caller_function_steps: *current_function_steps,
                 recursive_calls_count: 0,
@@ -56,7 +56,7 @@ impl FunctionStack {
         self.real_function_stack_depth += 1;
     }
 
-    pub fn exit_function_call(&mut self) -> Option<FunctionElement> {
+    pub fn exit_function_call(&mut self) -> Option<FunctionType> {
         if self.real_function_stack_depth <= self.max_function_trace_depth {
             let mut stack_element = self.stack.pop()?;
 
@@ -64,14 +64,14 @@ impl FunctionStack {
                 stack_element.recursive_calls_count -= 1;
                 self.stack.push(stack_element);
 
-                Some(FunctionElement::Recursive)
+                Some(FunctionType::Recursive)
             } else {
                 self.real_function_stack_depth -= 1;
-                Some(FunctionElement::Regular(stack_element))
+                Some(FunctionType::Regular(stack_element))
             }
         } else {
             self.real_function_stack_depth -= 1;
-            Some(FunctionElement::Hidden)
+            Some(FunctionType::Hidden)
         }
     }
 
