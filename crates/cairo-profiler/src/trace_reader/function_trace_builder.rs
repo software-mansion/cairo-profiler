@@ -130,12 +130,12 @@ pub fn collect_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
-                    function_stack.push(user_function_name, current_function_steps);
-                    current_function_steps = Steps(0);
+                    function_stack
+                        .enter_function_call(user_function_name, &mut current_function_steps);
                 }
             }
             GenStatement::Return(_) => {
-                if let Some(popped_element) = function_stack.pop() {
+                if let Some(popped_element) = function_stack.exit_function_call() {
                     match popped_element {
                         FunctionElement::Regular(stack_element) => {
                             let current_stack = chain!(

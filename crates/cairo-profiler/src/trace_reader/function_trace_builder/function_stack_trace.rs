@@ -32,7 +32,11 @@ impl FunctionStack {
         }
     }
 
-    pub fn push(&mut self, function_name: FunctionName, current_function_steps: Steps) {
+    pub fn enter_function_call(
+        &mut self,
+        function_name: FunctionName,
+        current_function_steps: &mut Steps,
+    ) {
         if let Some(stack_element) = self.stack.last_mut() {
             if function_name == stack_element.function_name {
                 stack_element.recursive_calls_count += 1;
@@ -43,14 +47,16 @@ impl FunctionStack {
         if self.real_function_stack_depth < self.max_function_trace_depth {
             self.stack.push(StackElement {
                 function_name,
-                caller_function_steps: current_function_steps,
+                caller_function_steps: *current_function_steps,
                 recursive_calls_count: 0,
             });
+            // Reset steps to count new function's steps.
+            *current_function_steps = Steps(0);
         }
         self.real_function_stack_depth += 1;
     }
 
-    pub fn pop(&mut self) -> Option<FunctionElement> {
+    pub fn exit_function_call(&mut self) -> Option<FunctionElement> {
         if self.real_function_stack_depth <= self.max_function_trace_depth {
             let mut stack_element = self.stack.pop()?;
 
