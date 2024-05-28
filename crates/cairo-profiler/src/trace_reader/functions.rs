@@ -27,11 +27,11 @@ impl FunctionName {
     ) -> Self {
         // The `-1` here can't cause an underflow as the statement id of first function's entrypoint is
         // always 0, so it is always on the left side of the partition, thus the partition index is > 0.
-        let user_function_idx = sierra_program
+        let function_idx = sierra_program
             .funcs
             .partition_point(|f| f.entry_point.0 <= statement_idx.0)
             - 1;
-        let function_name = sierra_program.funcs[user_function_idx].id.to_string();
+        let function_name = sierra_program.funcs[function_idx].id.to_string();
         // Remove suffix in case of loop function e.g. `[expr36]`.
         let function_name = RE_LOOP_FUNC.replace(&function_name, "");
         // Remove parameters from monomorphised Cairo generics e.g. `<felt252>`.
