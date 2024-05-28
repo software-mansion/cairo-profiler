@@ -13,8 +13,8 @@ pub(super) struct Function {
 pub(super) struct FunctionStack {
     stack: Vec<Function>,
     /// Tracks the depth of the function stack, without limit. This is usually equal to
-    /// `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
-    /// this remains reliable while `function_stack` does not.
+    /// `stack.len()`, but if the actual stack is deeper than `max_function_trace_depth`,
+    /// this remains reliable while `stack` does not.
     real_function_stack_depth: usize,
     /// Constant through existence of the object.
     max_function_trace_depth: usize,
