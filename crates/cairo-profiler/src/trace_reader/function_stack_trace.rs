@@ -17,9 +17,10 @@ pub struct FunctionStack {
     max_function_trace_depth: usize,
 }
 
-pub enum PoppedElement {
-    RegularFunction(StackElement),
-    HiddenOrRecursiveFunction,
+pub enum FunctionElement {
+    Regular(StackElement),
+    Hidden,
+    Recursive,
 }
 
 impl FunctionStack {
@@ -49,7 +50,7 @@ impl FunctionStack {
         self.real_function_stack_depth += 1;
     }
 
-    pub fn pop(&mut self) -> Option<PoppedElement> {
+    pub fn pop(&mut self) -> Option<FunctionElement> {
         if self.real_function_stack_depth <= self.max_function_trace_depth {
             let mut stack_element = self.stack.pop()?;
 
@@ -57,14 +58,14 @@ impl FunctionStack {
                 stack_element.recursive_calls_count -= 1;
                 self.stack.push(stack_element);
 
-                Some(PoppedElement::HiddenOrRecursiveFunction)
+                Some(FunctionElement::Recursive)
             } else {
                 self.real_function_stack_depth -= 1;
-                Some(PoppedElement::RegularFunction(stack_element))
+                Some(FunctionElement::Regular(stack_element))
             }
         } else {
             self.real_function_stack_depth -= 1;
-            Some(PoppedElement::HiddenOrRecursiveFunction)
+            Some(FunctionElement::Hidden)
         }
     }
 

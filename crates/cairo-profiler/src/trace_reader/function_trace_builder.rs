@@ -1,5 +1,5 @@
 use crate::profiler_config::FunctionLevelConfig;
-use crate::trace_reader::function_stack_trace::{FunctionStack, PoppedElement};
+use crate::trace_reader::function_stack_trace::{FunctionElement, FunctionStack};
 use crate::trace_reader::functions::{FunctionName, FunctionStackTrace};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, ProgramArtifact, StatementIdx};
@@ -125,7 +125,7 @@ pub fn collect_profiling_info(
             GenStatement::Return(_) => {
                 if let Some(popped_element) = function_stack.pop() {
                     match popped_element {
-                        PoppedElement::RegularFunction(stack_element) => {
+                        FunctionElement::Regular(stack_element) => {
                             let current_stack = chain!(
                                 function_stack.build_current_function_stack(),
                                 [stack_element.function_name, user_function_name]
@@ -138,7 +138,7 @@ pub fn collect_profiling_info(
 
                             current_function_steps = stack_element.caller_function_steps;
                         }
-                        PoppedElement::HiddenOrRecursiveFunction => continue,
+                        FunctionElement::Hidden | FunctionElement::Recursive => continue,
                     }
                 } else {
                     end_of_program_reached = true;
