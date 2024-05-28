@@ -14,7 +14,7 @@ use trace_data::TraceEntry;
 
 mod function_stack_trace;
 
-pub struct ProfilingInfo {
+pub struct FunctionLevelProfilingInfo {
     pub functions_stack_traces: Vec<FunctionStackTrace>,
     pub header_steps: Steps,
 }
@@ -45,13 +45,13 @@ enum MaybeSierraStatementIndex {
 }
 
 /// Collects profiling info of the current run using the trace.
-pub fn collect_profiling_info(
+pub fn collect_function_level_profiling_info(
     trace: &[TraceEntry],
     program_artifact: &ProgramArtifact,
     casm_debug_info: &CairoProgramDebugInfo,
     was_run_with_header: bool,
     function_level_config: &FunctionLevelConfig,
-) -> ProfilingInfo {
+) -> FunctionLevelProfilingInfo {
     let program = &program_artifact.program;
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
@@ -165,7 +165,7 @@ pub fn collect_profiling_info(
         .map(|(stack_trace, steps)| FunctionStackTrace { stack_trace, steps })
         .collect_vec();
 
-    ProfilingInfo {
+    FunctionLevelProfilingInfo {
         functions_stack_traces,
         header_steps,
     }
