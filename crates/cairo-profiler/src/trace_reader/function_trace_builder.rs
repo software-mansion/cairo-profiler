@@ -69,11 +69,6 @@ pub fn collect_profiling_info(
         1
     };
 
-    // The function stack trace of the current function, excluding the current function.
-    // Represented as a vector of displayable function names of the functions in the stack together
-    // with the steps of the caller function in the moment of the call and number of consecutive
-    // recursive calls of this function at the moment. We use the saved steps to continue
-    // counting flat steps of the caller later on. Limited to depth `max_stack_trace_depth`.
     let mut function_stack = FunctionStack::new(function_level_config.max_function_trace_depth);
 
     // The value is the steps of the stack trace so far, not including the pending steps being
@@ -147,8 +142,8 @@ pub fn collect_profiling_info(
                             *functions_stack_traces
                                 .entry(current_stack)
                                 .or_insert(Steps(0)) += current_function_steps;
-
-                            current_function_steps = stack_element.caller_function_steps;
+                            // Set to the caller function steps to continue counting its cost.
+                            current_function_steps = stack_element.steps;
                         }
                         FunctionType::Hidden | FunctionType::Recursive => continue,
                     }
