@@ -3,7 +3,7 @@ use crate::trace_reader::functions::FunctionName;
 
 pub(super) struct Function {
     pub name: FunctionName,
-    // Steps of the function in the moment of the call.
+    // Steps of the function at the moment of putting it on the stack.
     pub steps: Steps,
     // Consecutive recursive calls to this function that are currently on the stack.
     recursive_calls_count: usize,
