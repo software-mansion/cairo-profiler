@@ -35,9 +35,76 @@ enum MaybeSierraStatementIndex {
 }
 
 struct StackElement {
-    caller_function_name: FunctionName,
+    function_name: FunctionName,
     caller_function_steps: Steps,
     recursive_calls_count: usize,
+}
+
+struct FunctionStack {
+    stack: Vec<StackElement>,
+    // Tracks the depth of the function stack, without limit. This is usually equal to
+    // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
+    // this remains reliable while `function_stack` does not.
+    real_function_stack_depth: usize,
+    // Constant through existence of the object.
+    max_function_trace_depth: usize,
+}
+
+enum PoppedElement {
+    RegularFunction(StackElement),
+    HiddenOrRecursiveFunction,
+}
+
+impl FunctionStack {
+    fn new(max_function_trace_depth: usize) -> Self {
+        Self {
+            stack: vec![],
+            real_function_stack_depth: 0,
+            max_function_trace_depth,
+        }
+    }
+
+    fn push(&mut self, user_function_name: FunctionName, current_function_steps: Steps) {
+        if let Some(stack_element) = self.stack.last_mut() {
+            if user_function_name == stack_element.function_name {
+                stack_element.recursive_calls_count += 1;
+                return;
+            }
+        }
+
+        if self.real_function_stack_depth < self.max_function_trace_depth {
+            self.stack.push(StackElement {
+                function_name: user_function_name,
+                caller_function_steps: current_function_steps,
+                recursive_calls_count: 0,
+            });
+        }
+        self.real_function_stack_depth += 1;
+    }
+
+    fn pop(&mut self) -> Option<PoppedElement> {
+        if self.real_function_stack_depth <= self.max_function_trace_depth {
+            let mut stack_element = self.stack.pop()?;
+
+            if stack_element.recursive_calls_count > 0 {
+                stack_element.recursive_calls_count -= 1;
+                Some(PoppedElement::HiddenOrRecursiveFunction)
+            } else {
+                self.real_function_stack_depth -= 1;
+                Some(PoppedElement::RegularFunction(stack_element))
+            }
+        } else {
+            self.real_function_stack_depth -= 1;
+            Some(PoppedElement::HiddenOrRecursiveFunction)
+        }
+    }
+
+    fn build_current_function_stack(&self) -> Vec<FunctionName> {
+        self.stack
+            .iter()
+            .map(|stack_element| stack_element.function_name.clone())
+            .collect()
+    }
 }
 
 /// Collects profiling info of the current run using the trace.
@@ -70,12 +137,7 @@ pub fn collect_profiling_info(
     // with the steps of the caller function in the moment of the call and number of consecutive
     // recursive calls of this function at the moment. We use the saved steps to continue
     // counting flat steps of the caller later on. Limited to depth `max_stack_trace_depth`.
-    let mut function_stack: Vec<StackElement> = vec![];
-
-    // Tracks the depth of the function stack, without limit. This is usually equal to
-    // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
-    // this remains reliable while `function_stack` does not.
-    let mut function_stack_depth: usize = 0;
+    let mut function_stack = FunctionStack::new(function_level_config.max_function_trace_depth);
 
     // The value is the steps of the stack trace so far, not including the pending steps being
     // tracked at the time. The key is a function stack trace.
@@ -128,56 +190,42 @@ pub fn collect_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
-                    // Push to the stack.
-                    if let Some(stack_element) = function_stack.last_mut() {
-                        if user_function_name == stack_element.caller_function_name {
-                            stack_element.recursive_calls_count += 1;
-                            continue;
-                        }
-                    }
-
-                    if function_stack_depth < function_level_config.max_function_trace_depth {
-                        function_stack.push(StackElement {
-                            caller_function_name: user_function_name,
-                            caller_function_steps: current_function_steps,
-                            recursive_calls_count: 0,
-                        });
-                        current_function_steps = Steps(0);
-                    }
-                    function_stack_depth += 1;
+                    function_stack.push(user_function_name, current_function_steps);
+                    current_function_steps = Steps(0);
                 }
             }
             GenStatement::Return(_) => {
-                // Pop from the stack.
-                if function_stack_depth <= function_level_config.max_function_trace_depth {
-                    if let Some(stack_element) = function_stack.last_mut() {
-                        if stack_element.recursive_calls_count > 0 {
-                            stack_element.recursive_calls_count -= 1;
-                            continue;
+                let maybe_popped_function = function_stack.pop();
+                if let Some(popped_element) = maybe_popped_function {
+                    match popped_element {
+                        PoppedElement::RegularFunction(stack_element) => {
+                            let current_stack = chain!(
+                                function_stack.build_current_function_stack(),
+                                [stack_element.function_name, user_function_name]
+                            )
+                            .collect();
+
+                            *functions_stack_traces
+                                .entry(current_stack)
+                                .or_insert_with(|| Steps(0)) += current_function_steps;
+
+                            current_function_steps = stack_element.caller_function_steps;
                         }
+                        PoppedElement::HiddenOrRecursiveFunction => continue,
                     }
+                } else {
+                    end_of_program_reached = true;
 
                     let current_stack = chain!(
-                        function_stack
-                            .iter()
-                            .map(|stack_element| stack_element.caller_function_name.clone()),
+                        function_stack.build_current_function_stack(),
                         [user_function_name]
                     )
-                    .collect_vec();
+                    .collect();
 
                     *functions_stack_traces
                         .entry(current_stack)
                         .or_insert_with(|| Steps(0)) += current_function_steps;
-
-                    if let Some(stack_element) = function_stack.pop() {
-                        // Set to the caller function steps to continue counting its cost.
-                        current_function_steps = stack_element.caller_function_steps;
-                    } else {
-                        end_of_program_reached = true;
-                        continue;
-                    };
                 }
-                function_stack_depth -= 1;
             }
         }
     }
