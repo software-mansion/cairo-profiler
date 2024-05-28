@@ -198,7 +198,7 @@ fn collect_samples<'a>(
         let compiled_artifacts = compiled_artifacts_path_map
             .get_sierra_casm_artifacts_for_path(&absolute_source_sierra_path);
 
-        let profiling_info = collect_function_level_profiling_info(
+        let function_level_profiling_info = collect_function_level_profiling_info(
             &cairo_execution_info.vm_trace,
             compiled_artifacts.sierra.get_program_artifact(),
             &compiled_artifacts.casm_debug_info,
@@ -206,7 +206,7 @@ fn collect_samples<'a>(
             &FunctionLevelConfig::from(profiler_config),
         );
 
-        for mut function_stack_trace in profiling_info.functions_stack_traces {
+        for mut function_stack_trace in function_level_profiling_info.functions_stack_traces {
             let mut function_trace = current_call_stack
                 .iter()
                 .map(FunctionName::from)
@@ -221,7 +221,7 @@ fn collect_samples<'a>(
                 )]),
             });
         }
-        Some(profiling_info.header_steps)
+        Some(function_level_profiling_info.header_steps)
     } else {
         None
     };
