@@ -37,8 +37,6 @@ struct Cli {
 
     /// Specify maximum depth of function tree in function level profiling.
     /// The is applied per entrypoint - each entrypoint function tree is treated separately.
-    /// Keep in mind recursive functions are also taken into account even though they are later
-    /// aggregated to a single function call.
     #[arg(long, default_value_t = 100)]
     max_function_trace_depth: usize,
 

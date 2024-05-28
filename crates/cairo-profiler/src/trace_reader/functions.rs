@@ -1,6 +1,5 @@
-use crate::trace_reader::function_trace_builder::Steps;
 use crate::trace_reader::EntryPointId;
-use itertools::Itertools;
+use cairo_lang_sierra::program::{Program, StatementIdx};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -21,40 +20,27 @@ impl From<&EntryPointId> for FunctionName {
 }
 
 impl FunctionName {
-    pub fn to_displayable_function_name(&self, split_generics: bool) -> FunctionName {
+    pub fn from_sierra_statement_idx(
+        statement_idx: StatementIdx,
+        sierra_program: &Program,
+        split_generics: bool,
+    ) -> Self {
+        // The `-1` here can't cause an underflow as the statement id of first function's entrypoint is
+        // always 0, so it is always on the left side of the partition, thus the partition index is > 0.
+        let function_idx = sierra_program
+            .funcs
+            .partition_point(|f| f.entry_point.0 <= statement_idx.0)
+            - 1;
+        let function_name = sierra_program.funcs[function_idx].id.to_string();
         // Remove suffix in case of loop function e.g. `[expr36]`.
-        let func_name = RE_LOOP_FUNC.replace(&self.0, "");
+        let function_name = RE_LOOP_FUNC.replace(&function_name, "");
         // Remove parameters from monomorphised Cairo generics e.g. `<felt252>`.
-        FunctionName(
-            if split_generics {
-                func_name
-            } else {
-                RE_MONOMORPHIZATION.replace(&func_name, "")
-            }
-            .to_string(),
-        )
-    }
-}
+        let function_name = if split_generics {
+            function_name
+        } else {
+            RE_MONOMORPHIZATION.replace(&function_name, "")
+        };
 
-pub struct FunctionStackTrace {
-    pub stack_trace: Vec<FunctionName>,
-    pub steps: Steps,
-}
-
-impl FunctionStackTrace {
-    pub fn to_displayable_function_stack_trace(&self, split_generics: bool) -> FunctionStackTrace {
-        let stack_with_recursive_functions = self
-            .stack_trace
-            .iter()
-            .map(|function_name| function_name.to_displayable_function_name(split_generics))
-            .collect_vec();
-
-        // Consolidate recursive function calls into one function call - they mess up the flame graph.
-        let displayable_stack_trace = stack_with_recursive_functions.into_iter().dedup().collect();
-
-        FunctionStackTrace {
-            stack_trace: displayable_stack_trace,
-            steps: self.steps,
-        }
+        Self(function_name.to_string())
     }
 }
