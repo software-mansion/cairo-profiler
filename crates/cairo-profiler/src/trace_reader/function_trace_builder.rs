@@ -123,8 +123,7 @@ pub fn collect_profiling_info(
                 }
             }
             GenStatement::Return(_) => {
-                let maybe_popped_function = function_stack.pop();
-                if let Some(popped_element) = maybe_popped_function {
+                if let Some(popped_element) = function_stack.pop() {
                     match popped_element {
                         PoppedElement::RegularFunction(stack_element) => {
                             let current_stack = chain!(

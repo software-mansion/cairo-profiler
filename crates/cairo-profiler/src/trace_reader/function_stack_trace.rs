@@ -55,6 +55,8 @@ impl FunctionStack {
 
             if stack_element.recursive_calls_count > 0 {
                 stack_element.recursive_calls_count -= 1;
+                self.stack.push(stack_element);
+
                 Some(PoppedElement::HiddenOrRecursiveFunction)
             } else {
                 self.real_function_stack_depth -= 1;
