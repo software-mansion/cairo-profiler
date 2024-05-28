@@ -2,9 +2,9 @@ use crate::profiler_config::FunctionLevelConfig;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
     FunctionElement, FunctionStack,
 };
-use crate::trace_reader::functions::{FunctionName, FunctionStackTrace};
+use crate::trace_reader::functions::FunctionName;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
-use cairo_lang_sierra::program::{GenStatement, Program, ProgramArtifact, StatementIdx};
+use cairo_lang_sierra::program::{GenStatement, ProgramArtifact, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::{chain, Itertools};
@@ -17,6 +17,11 @@ mod function_stack_trace;
 pub struct ProfilingInfo {
     pub functions_stack_traces: Vec<FunctionStackTrace>,
     pub header_steps: Steps,
+}
+
+pub struct FunctionStackTrace {
+    pub stack_trace: Vec<FunctionName>,
+    pub steps: Steps,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -109,8 +114,11 @@ pub fn collect_profiling_info(
             }
         };
 
-        let user_function_name = user_function_name(sierra_statement_idx, program)
-            .to_displayable_function_name(function_level_config.split_generics);
+        let user_function_name = FunctionName::from_sierra_statement_idx(
+            sierra_statement_idx,
+            program,
+            function_level_config.split_generics,
+        );
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
@@ -138,7 +146,7 @@ pub fn collect_profiling_info(
 
                             *functions_stack_traces
                                 .entry(current_stack)
-                                .or_insert_with(|| Steps(0)) += current_function_steps;
+                                .or_insert(Steps(0)) += current_function_steps;
 
                             current_function_steps = stack_element.caller_function_steps;
                         }
@@ -155,7 +163,7 @@ pub fn collect_profiling_info(
 
                     *functions_stack_traces
                         .entry(current_stack)
-                        .or_insert_with(|| Steps(0)) += current_function_steps;
+                        .or_insert(Steps(0)) += current_function_steps;
                 }
             }
         }
@@ -170,17 +178,6 @@ pub fn collect_profiling_info(
         functions_stack_traces,
         header_steps,
     }
-}
-
-fn user_function_name(statement_idx: StatementIdx, sierra_program: &Program) -> FunctionName {
-    // The `-1` here can't cause an underflow as the statement id of first function's entrypoint is
-    // always 0, so it is always on the left side of the partition, thus the partition index is > 0.
-    let user_function_idx = sierra_program
-        .funcs
-        .partition_point(|f| f.entry_point.0 <= statement_idx.0)
-        - 1;
-
-    FunctionName(sierra_program.funcs[user_function_idx].id.to_string())
 }
 
 fn maybe_sierra_statement_index_by_pc(
