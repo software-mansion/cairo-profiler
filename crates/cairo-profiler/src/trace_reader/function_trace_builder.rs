@@ -140,7 +140,7 @@ pub fn collect_profiling_info(
                         FunctionType::Regular(stack_element) => {
                             let current_stack = chain!(
                                 function_stack.build_current_function_stack(),
-                                [stack_element.function_name, current_function_name]
+                                [stack_element.name, current_function_name]
                             )
                             .collect();
 

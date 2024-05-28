@@ -1,13 +1,13 @@
 use crate::trace_reader::function_trace_builder::Steps;
 use crate::trace_reader::functions::FunctionName;
 
-pub struct Function {
-    pub function_name: FunctionName,
+pub(super) struct Function {
+    pub name: FunctionName,
     pub caller_function_steps: Steps,
     recursive_calls_count: usize,
 }
 
-pub struct FunctionStack {
+pub(super) struct FunctionStack {
     stack: Vec<Function>,
     // Tracks the depth of the function stack, without limit. This is usually equal to
     // `function_stack.len()`, but if the actual stack is deeper than `max_stack_trace_depth`,
@@ -17,7 +17,7 @@ pub struct FunctionStack {
     max_function_trace_depth: usize,
 }
 
-pub enum FunctionType {
+pub(super) enum FunctionType {
     Regular(Function),
     Hidden,
     Recursive,
@@ -38,7 +38,7 @@ impl FunctionStack {
         current_function_steps: &mut Steps,
     ) {
         if let Some(stack_element) = self.stack.last_mut() {
-            if function_name == stack_element.function_name {
+            if function_name == stack_element.name {
                 stack_element.recursive_calls_count += 1;
                 return;
             }
@@ -46,7 +46,7 @@ impl FunctionStack {
 
         if self.real_function_stack_depth < self.max_function_trace_depth {
             self.stack.push(Function {
-                function_name,
+                name: function_name,
                 caller_function_steps: *current_function_steps,
                 recursive_calls_count: 0,
             });
@@ -78,7 +78,7 @@ impl FunctionStack {
     pub fn build_current_function_stack(&self) -> Vec<FunctionName> {
         self.stack
             .iter()
-            .map(|stack_element| stack_element.function_name.clone())
+            .map(|stack_element| stack_element.name.clone())
             .collect()
     }
 }
