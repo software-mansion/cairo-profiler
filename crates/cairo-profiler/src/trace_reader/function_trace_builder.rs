@@ -130,22 +130,19 @@ pub fn collect_function_level_profiling_info(
                 }
             }
             GenStatement::Return(_) => {
-                if let Some(popped_element) = function_stack.exit_function_call() {
-                    match popped_element {
-                        FunctionType::Regular(stack_element) => {
-                            let current_stack = chain!(
-                                function_stack.build_current_function_stack(),
-                                [stack_element.name, current_function_name]
-                            )
-                            .collect();
+                if let Some(exited_function) = function_stack.exit_function_call() {
+                    if let FunctionType::Regular(function) = exited_function {
+                        let current_stack = chain!(
+                            function_stack.build_current_function_stack(),
+                            [function.name, current_function_name]
+                        )
+                        .collect();
 
-                            *functions_stack_traces
-                                .entry(current_stack)
-                                .or_insert(Steps(0)) += current_function_steps;
-                            // Set to the caller function steps to continue counting its cost.
-                            current_function_steps = stack_element.steps;
-                        }
-                        FunctionType::Hidden | FunctionType::Recursive => continue,
+                        *functions_stack_traces
+                            .entry(current_stack)
+                            .or_insert(Steps(0)) += current_function_steps;
+                        // Set to the caller function steps to continue counting its cost.
+                        current_function_steps = function.steps;
                     }
                 } else {
                     end_of_program_reached = true;
