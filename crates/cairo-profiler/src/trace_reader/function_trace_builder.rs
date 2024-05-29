@@ -8,6 +8,7 @@ use cairo_lang_sierra::program::{GenStatement, ProgramArtifact, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::{chain, Itertools};
+use std::cmp::max;
 use std::collections::HashMap;
 use std::ops::AddAssign;
 use trace_data::TraceEntry;
@@ -52,6 +53,23 @@ pub fn collect_function_level_profiling_info(
     was_run_with_header: bool,
     function_level_config: &FunctionLevelConfig,
 ) -> FunctionLevelProfilingInfo {
+    let statements_functions_map = program_artifact
+        .debug_info
+        .as_ref()
+        .and_then(|x| {
+            x.annotations
+                .get("github.com/software-mansion/cairo-profiler")
+        })
+        .map(|x| {
+            x.get("statements_functions")
+                .expect("Wrong debug info annotations format")
+        })
+        .map(|x| {
+            serde_json::from_value::<HashMap<StatementIdx, Vec<String>>>(x.clone())
+                .expect("Wrong statements function map format")
+        })
+        .unwrap_or_default();
+
     let program = &program_artifact.program;
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
@@ -115,6 +133,28 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
+        let maybe_real_function_stack = statements_functions_map.get(&sierra_statement_idx);
+
+        if let Some(real_function_stack_suffix) = maybe_real_function_stack {
+            let real_function_stack_suffix = real_function_stack_suffix
+                .iter()
+                .filter(|x| !x.ends_with("::"))
+                .dedup()
+                .collect_vec();
+
+            for function in real_function_stack_suffix {
+                print!("{function} ");
+            }
+            println!(
+                "\n{:?}\n",
+                chain!(
+                    function_stack.build_current_function_stack(),
+                    [current_function_name.clone()]
+                )
+                .collect_vec()
+            );
+        }
+
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
         };
@@ -166,6 +206,28 @@ pub fn collect_function_level_profiling_info(
         functions_stack_traces,
         header_steps,
     }
+}
+
+fn find_array_overlap<T: Eq>(base: &[T], overlapping: &[T]) -> usize {
+    let start_index = max(base.len() as i128 - overlapping.len() as i128, 0)
+        .try_into()
+        .expect("Non-negative i128 to usize cast should never fail");
+    for i in start_index..base.len() {
+        let mut overlapped = true;
+
+        for j in 0..base.len() - i {
+            if overlapping[j] != base[i + j] {
+                overlapped = false;
+                break;
+            }
+        }
+
+        if overlapped {
+            return i;
+        }
+    }
+
+    base.len()
 }
 
 fn maybe_sierra_statement_index_by_pc(
