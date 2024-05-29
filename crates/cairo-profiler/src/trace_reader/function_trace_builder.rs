@@ -3,18 +3,19 @@ use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
     FunctionStack, FunctionType,
 };
+use crate::trace_reader::function_trace_builder::inlining::add_inlined_functions_info;
 use crate::trace_reader::functions::FunctionName;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::{chain, Itertools};
-use std::cmp::max;
 use std::collections::HashMap;
-use std::ops::AddAssign;
+use std::ops::{AddAssign, SubAssign};
 use trace_data::TraceEntry;
 
 mod function_stack_trace;
+mod inlining;
 
 pub struct FunctionLevelProfilingInfo {
     pub functions_stack_traces: Vec<FunctionStackTrace>,
@@ -38,6 +39,12 @@ impl AddAssign for Steps {
 impl AddAssign<usize> for Steps {
     fn add_assign(&mut self, rhs: usize) {
         self.0 += rhs;
+    }
+}
+
+impl SubAssign<usize> for Steps {
+    fn sub_assign(&mut self, rhs: usize) {
+        self.0 -= rhs;
     }
 }
 
@@ -117,26 +124,14 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
-        let maybe_real_function_stack = maybe_statements_functions_map
-            .as_ref()
-            .and_then(|x| x.get(sierra_statement_idx));
-
-        if let Some(real_function_stack_suffix) = maybe_real_function_stack {
-            let real_function_stack_suffix =
-                real_function_stack_suffix.iter().dedup().collect_vec();
-
-            for function in real_function_stack_suffix {
-                print!("{function} ");
-            }
-            println!(
-                "\n{:?}\n",
-                chain!(
-                    function_stack.build_current_function_stack(),
-                    [current_function_name.clone()]
-                )
-                .collect_vec()
-            );
-        }
+        add_inlined_functions_info(
+            sierra_statement_idx,
+            maybe_statements_functions_map.as_ref(),
+            &function_stack,
+            &current_function_name,
+            &mut functions_stack_traces,
+            &mut current_function_steps,
+        );
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
@@ -189,28 +184,6 @@ pub fn collect_function_level_profiling_info(
         functions_stack_traces,
         header_steps,
     }
-}
-
-fn find_array_overlap<T: Eq>(base: &[T], overlapping: &[T]) -> usize {
-    let start_index = max(base.len() as i128 - overlapping.len() as i128, 0)
-        .try_into()
-        .expect("Non-negative i128 to usize cast should never fail");
-    for i in start_index..base.len() {
-        let mut overlapped = true;
-
-        for j in 0..base.len() - i {
-            if overlapping[j] != base[i + j] {
-                overlapped = false;
-                break;
-            }
-        }
-
-        if overlapped {
-            return i;
-        }
-    }
-
-    base.len()
 }
 
 fn maybe_sierra_statement_index_by_pc(
