@@ -1,10 +1,11 @@
 use crate::profiler_config::FunctionLevelConfig;
+use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
     FunctionStack, FunctionType,
 };
 use crate::trace_reader::functions::FunctionName;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
-use cairo_lang_sierra::program::{GenStatement, ProgramArtifact, StatementIdx};
+use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::{chain, Itertools};
@@ -48,29 +49,12 @@ enum MaybeSierraStatementIndex {
 /// Collects profiling info of the current run using the trace.
 pub fn collect_function_level_profiling_info(
     trace: &[TraceEntry],
-    program_artifact: &ProgramArtifact,
+    program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
     was_run_with_header: bool,
+    maybe_statements_functions_map: &Option<StatementsFunctionsMap>,
     function_level_config: &FunctionLevelConfig,
 ) -> FunctionLevelProfilingInfo {
-    let statements_functions_map = program_artifact
-        .debug_info
-        .as_ref()
-        .and_then(|x| {
-            x.annotations
-                .get("github.com/software-mansion/cairo-profiler")
-        })
-        .map(|x| {
-            x.get("statements_functions")
-                .expect("Wrong debug info annotations format")
-        })
-        .map(|x| {
-            serde_json::from_value::<HashMap<StatementIdx, Vec<String>>>(x.clone())
-                .expect("Wrong statements function map format")
-        })
-        .unwrap_or_default();
-
-    let program = &program_artifact.program;
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
     // Some CASM programs starts with a header of instructions to wrap the real program.
@@ -133,14 +117,13 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
-        let maybe_real_function_stack = statements_functions_map.get(&sierra_statement_idx);
+        let maybe_real_function_stack = maybe_statements_functions_map
+            .as_ref()
+            .and_then(|x| x.get(sierra_statement_idx));
 
         if let Some(real_function_stack_suffix) = maybe_real_function_stack {
-            let real_function_stack_suffix = real_function_stack_suffix
-                .iter()
-                .filter(|x| !x.ends_with("::"))
-                .dedup()
-                .collect_vec();
+            let real_function_stack_suffix =
+                real_function_stack_suffix.iter().dedup().collect_vec();
 
             for function in real_function_stack_suffix {
                 print!("{function} ");

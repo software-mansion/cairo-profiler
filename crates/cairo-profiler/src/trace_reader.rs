@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fmt::Display;
 
 use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
-use crate::sierra_loader::CompiledArtifactsPathMap;
+use crate::sierra_loader::CompiledArtifactsCache;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
 use crate::trace_reader::functions::FunctionName;
 use anyhow::{Context, Result};
@@ -153,7 +153,7 @@ impl Display for EntryPointId {
 
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
-    compiled_artifacts_path_map: &CompiledArtifactsPathMap,
+    compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
 ) -> Result<Vec<ContractCallSample>> {
     let mut samples = vec![];
@@ -163,7 +163,7 @@ pub fn collect_samples_from_trace(
         &mut samples,
         &mut current_path,
         trace,
-        compiled_artifacts_path_map,
+        compiled_artifacts_cache,
         profiler_config,
     )?;
     Ok(samples)
@@ -173,7 +173,7 @@ fn collect_samples<'a>(
     samples: &mut Vec<ContractCallSample>,
     current_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
-    compiled_artifacts_path_map: &CompiledArtifactsPathMap,
+    compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
 ) -> Result<&'a ExecutionResources> {
     current_call_stack.push(EntryPointId::from(
@@ -195,14 +195,15 @@ fn collect_samples<'a>(
                 )
             })?;
 
-        let compiled_artifacts = compiled_artifacts_path_map
-            .get_sierra_casm_artifacts_for_path(&absolute_source_sierra_path);
+        let compiled_artifacts =
+            compiled_artifacts_cache.get_compiled_artifacts_for_path(&absolute_source_sierra_path);
 
         let function_level_profiling_info = collect_function_level_profiling_info(
             &cairo_execution_info.vm_trace,
-            compiled_artifacts.sierra.get_program_artifact(),
+            compiled_artifacts.sierra_program.get_program(),
             &compiled_artifacts.casm_debug_info,
-            compiled_artifacts.sierra.was_run_with_header(),
+            compiled_artifacts.sierra_program.was_run_with_header(),
+            &compiled_artifacts.maybe_statements_functions_map,
             &FunctionLevelConfig::from(profiler_config),
         );
 
@@ -234,7 +235,7 @@ fn collect_samples<'a>(
                 samples,
                 current_call_stack,
                 sub_trace,
-                compiled_artifacts_path_map,
+                compiled_artifacts_cache,
                 profiler_config,
             )?;
         }
