@@ -1,5 +1,5 @@
+use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::Steps;
-use crate::trace_reader::functions::FunctionName;
 
 pub(super) struct FunctionOnStack {
     pub name: FunctionName,

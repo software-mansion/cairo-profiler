@@ -1,10 +1,10 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::sierra_loader::StatementsFunctionsMap;
+use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::function_call_trace::{
     FunctionStack, FunctionType,
 };
 use crate::trace_reader::function_trace_builder::inlining::add_inlined_functions_info;
-use crate::trace_reader::functions::FunctionName;
 use crate::trace_reader::Function;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};

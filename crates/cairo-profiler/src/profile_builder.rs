@@ -10,8 +10,8 @@ use std::collections::{HashMap, HashSet};
 
 pub use perftools::profiles as pprof;
 
-use crate::trace_reader::functions::FunctionName;
-use crate::trace_reader::Function::{Inlined, NonInlined};
+use crate::trace_reader::function_name::FunctionName;
+use crate::trace_reader::Function::{Entrypoint, Inlined, NonInlined};
 use crate::trace_reader::{Function, MeasurementUnit, MeasurementValue, Sample};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
@@ -72,7 +72,7 @@ impl ProfilerContext {
         let mut pprof_locations = vec![];
         for (index, loc) in locations.iter().enumerate() {
             match loc {
-                NonInlined(function_name) => {
+                NonInlined(function_name) | Entrypoint(function_name) => {
                     let line = pprof::Line {
                         function_id: self.function_id(function_name).into(),
                         line: 0,

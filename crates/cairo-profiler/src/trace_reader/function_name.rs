@@ -1,7 +1,7 @@
-use crate::trace_reader::EntryPointId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use lazy_static::lazy_static;
 use regex::Regex;
+use trace_data::{ContractAddress, EntryPointSelector};
 
 lazy_static! {
     static ref RE_LOOP_FUNC: Regex = Regex::new(r"\[expr\d*\]")
@@ -10,14 +10,8 @@ lazy_static! {
         .expect("Failed to create regex normalising mononorphised generic functions names");
 }
 
-#[derive(Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct FunctionName(pub String);
-
-impl From<&EntryPointId> for FunctionName {
-    fn from(value: &EntryPointId) -> Self {
-        FunctionName(format!("{value}"))
-    }
-}
 
 impl FunctionName {
     pub fn from_sierra_statement_idx(
@@ -42,5 +36,38 @@ impl FunctionName {
         };
 
         Self(function_name.to_string())
+    }
+
+    pub fn from_entry_point_params(
+        contract_name: Option<String>,
+        function_name: Option<String>,
+        contract_address: ContractAddress,
+        function_selector: EntryPointSelector,
+        show_details: bool,
+    ) -> Self {
+        let (contract_name, address) = match contract_name {
+            Some(name) if show_details => (name, Some(contract_address.0)),
+            Some(name) => (name, None),
+            None => (String::from("<unknown>"), Some(contract_address.0)),
+        };
+
+        let (function_name, selector) = match function_name {
+            Some(name) if show_details => (name, Some(function_selector.0)),
+            Some(name) => (name, None),
+            None => (String::from("<unknown>"), Some(function_selector.0)),
+        };
+
+        let contract_address = match address {
+            None => String::new(),
+            Some(address) => format!("Address: {address}\n"),
+        };
+        let selector = match selector {
+            None => String::new(),
+            Some(selector) => format!("Selector: {selector}\n"),
+        };
+
+        FunctionName(format!(
+            "Contract: {contract_name}\n{contract_address}Function: {function_name}\n{selector}",
+        ))
     }
 }
