@@ -5,6 +5,7 @@ use crate::trace_reader::function_trace_builder::function_stack_trace::{
 };
 use crate::trace_reader::function_trace_builder::inlining::add_inlined_functions_info;
 use crate::trace_reader::functions::FunctionName;
+use crate::trace_reader::Function;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
@@ -18,12 +19,12 @@ mod function_stack_trace;
 mod inlining;
 
 pub struct FunctionLevelProfilingInfo {
-    pub functions_stack_traces: Vec<FunctionStackTrace>,
+    pub functions_traces: Vec<FunctionCallTrace>,
     pub header_steps: Steps,
 }
 
-pub struct FunctionStackTrace {
-    pub stack_trace: Vec<FunctionName>,
+pub struct FunctionCallTrace {
+    pub stack_trace: Vec<Function>,
     pub steps: Steps,
 }
 
@@ -82,7 +83,7 @@ pub fn collect_function_level_profiling_info(
 
     // The value is the steps of the stack trace so far, not including the pending steps being
     // tracked at the time. The key is a function stack trace.
-    let mut functions_stack_traces: HashMap<Vec<FunctionName>, Steps> = HashMap::new();
+    let mut functions_traces: HashMap<Vec<Function>, Steps> = HashMap::new();
 
     // Header steps are counted separately and then displayed as steps of the entrypoint in the
     // profile tree. It is because technically they don't belong to any function, but still increase
@@ -129,7 +130,7 @@ pub fn collect_function_level_profiling_info(
             maybe_statements_functions_map.as_ref(),
             &function_stack,
             &current_function_name,
-            &mut functions_stack_traces,
+            &mut functions_traces,
             &mut current_function_steps,
         );
 
@@ -150,14 +151,19 @@ pub fn collect_function_level_profiling_info(
             GenStatement::Return(_) => {
                 if let Some(exited_function) = function_stack.exit_function_call() {
                     if let FunctionType::Regular(function) = exited_function {
-                        let current_stack = chain!(
-                            function_stack.build_current_function_stack(),
+                        let current_function_names_call_stack = chain!(
+                            function_stack.current_function_names_stack(),
                             [function.name, current_function_name]
                         )
-                        .collect();
+                        .collect_vec();
 
-                        *functions_stack_traces
-                            .entry(current_stack)
+                        let current_function_call_stack = current_function_names_call_stack
+                            .into_iter()
+                            .map(Function::NonInlined)
+                            .collect();
+
+                        *functions_traces
+                            .entry(current_function_call_stack)
                             .or_insert(Steps(0)) += current_function_steps;
                         // Set to the caller function steps to continue counting its cost.
                         current_function_steps = function.steps;
@@ -165,23 +171,23 @@ pub fn collect_function_level_profiling_info(
                 } else {
                     end_of_program_reached = true;
 
-                    let current_stack = vec![current_function_name];
+                    let current_function_stack = vec![Function::NonInlined(current_function_name)];
 
-                    *functions_stack_traces
-                        .entry(current_stack)
+                    *functions_traces
+                        .entry(current_function_stack)
                         .or_insert(Steps(0)) += current_function_steps;
                 }
             }
         }
     }
 
-    let functions_stack_traces = functions_stack_traces
+    let functions_traces = functions_traces
         .into_iter()
-        .map(|(stack_trace, steps)| FunctionStackTrace { stack_trace, steps })
+        .map(|(stack_trace, steps)| FunctionCallTrace { stack_trace, steps })
         .collect_vec();
 
     FunctionLevelProfilingInfo {
-        functions_stack_traces,
+        functions_traces,
         header_steps,
     }
 }

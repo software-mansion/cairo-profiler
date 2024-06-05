@@ -1,7 +1,7 @@
 use crate::trace_reader::function_trace_builder::Steps;
 use crate::trace_reader::functions::FunctionName;
 
-pub(super) struct Function {
+pub(super) struct FunctionOnStack {
     pub name: FunctionName,
     /// Steps of the function at the moment of putting it on the stack.
     pub steps: Steps,
@@ -11,7 +11,7 @@ pub(super) struct Function {
 
 /// The function stack trace of the current function, excluding the current function.
 pub(super) struct FunctionStack {
-    stack: Vec<Function>,
+    stack: Vec<FunctionOnStack>,
     /// Tracks the depth of the function stack, without limit. This is usually equal to
     /// `stack.len()`, but if the actual stack is deeper than `max_function_trace_depth`,
     /// this remains reliable while `stack` does not.
@@ -21,7 +21,7 @@ pub(super) struct FunctionStack {
 }
 
 pub(super) enum FunctionType {
-    Regular(Function),
+    Regular(FunctionOnStack),
     Hidden,
     Recursive,
 }
@@ -48,7 +48,7 @@ impl FunctionStack {
         }
 
         if self.real_function_stack_depth < self.max_function_trace_depth {
-            self.stack.push(Function {
+            self.stack.push(FunctionOnStack {
                 name: function_name,
                 steps: *current_function_steps,
                 recursive_calls_count: 0,
@@ -78,7 +78,7 @@ impl FunctionStack {
         }
     }
 
-    pub fn build_current_function_stack(&self) -> Vec<FunctionName> {
+    pub fn current_function_names_stack(&self) -> Vec<FunctionName> {
         self.stack
             .iter()
             .map(|stack_element| stack_element.name.clone())

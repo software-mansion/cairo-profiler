@@ -6,8 +6,9 @@ use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
 use crate::sierra_loader::CompiledArtifactsCache;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
 use crate::trace_reader::functions::FunctionName;
+use crate::trace_reader::Function::NonInlined;
 use anyhow::{Context, Result};
-use itertools::Itertools;
+use itertools::{chain, Itertools};
 use trace_data::{
     CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
 };
@@ -27,14 +28,20 @@ impl From<String> for MeasurementUnit {
 #[derive(Debug, Clone)]
 pub struct MeasurementValue(pub i64);
 
-pub struct ContractCallSample {
-    pub call_stack: Vec<FunctionName>,
+pub struct Sample {
+    pub call_stack: Vec<Function>,
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
 }
 
-impl ContractCallSample {
+#[derive(PartialEq, Eq, Hash, Clone)]
+pub enum Function {
+    Inlined(FunctionName),
+    NonInlined(FunctionName),
+}
+
+impl Sample {
     pub fn from(
-        call_stack: Vec<FunctionName>,
+        call_stack: Vec<Function>,
         resources: &ExecutionResources,
         l1_resources: &L1Resources,
     ) -> Self {
@@ -85,7 +92,7 @@ impl ContractCallSample {
             MeasurementValue(i64::try_from(summarized_payload).unwrap()),
         );
 
-        ContractCallSample {
+        Sample {
             call_stack,
             measurements,
         }
@@ -155,7 +162,7 @@ pub fn collect_samples_from_trace(
     trace: &CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
-) -> Result<Vec<ContractCallSample>> {
+) -> Result<Vec<Sample>> {
     let mut samples = vec![];
     let mut current_path = vec![];
 
@@ -170,13 +177,13 @@ pub fn collect_samples_from_trace(
 }
 
 fn collect_samples<'a>(
-    samples: &mut Vec<ContractCallSample>,
-    current_call_stack: &mut Vec<EntryPointId>,
+    samples: &mut Vec<Sample>,
+    current_entrypoint_call_stack: &mut Vec<EntryPointId>,
     trace: &'a CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
 ) -> Result<&'a ExecutionResources> {
-    current_call_stack.push(EntryPointId::from(
+    current_entrypoint_call_stack.push(EntryPointId::from(
         trace.entry_point.contract_name.clone(),
         trace.entry_point.function_name.clone(),
         trace.entry_point.contract_address.clone(),
@@ -207,18 +214,21 @@ fn collect_samples<'a>(
             &FunctionLevelConfig::from(profiler_config),
         );
 
-        for mut function_stack_trace in function_level_profiling_info.functions_stack_traces {
-            let mut function_trace = current_call_stack
-                .iter()
-                .map(FunctionName::from)
-                .collect_vec();
-            function_trace.append(&mut function_stack_trace.stack_trace);
+        for function_trace in function_level_profiling_info.functions_traces {
+            let call_stack = chain!(
+                current_entrypoint_call_stack
+                    .iter()
+                    .map(|entry_point_id| NonInlined(FunctionName::from(entry_point_id)))
+                    .collect_vec(),
+                function_trace.stack_trace
+            )
+            .collect();
 
-            samples.push(ContractCallSample {
-                call_stack: function_trace,
+            samples.push(Sample {
+                call_stack,
                 measurements: HashMap::from([(
                     MeasurementUnit::from("steps".to_string()),
-                    MeasurementValue(i64::try_from(function_stack_trace.steps.0).unwrap()),
+                    MeasurementValue(i64::try_from(function_trace.steps.0).unwrap()),
                 )]),
             });
         }
@@ -233,7 +243,7 @@ fn collect_samples<'a>(
         if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
             children_resources += collect_samples(
                 samples,
-                current_call_stack,
+                current_entrypoint_call_stack,
                 sub_trace,
                 compiled_artifacts_cache,
                 profiler_config,
@@ -247,13 +257,16 @@ fn collect_samples<'a>(
         call_resources.vm_resources.n_steps = entrypoint_steps.0;
     }
 
-    samples.push(ContractCallSample::from(
-        current_call_stack.iter().map(FunctionName::from).collect(),
+    samples.push(Sample::from(
+        current_entrypoint_call_stack
+            .iter()
+            .map(|entry_point_id| NonInlined(FunctionName::from(entry_point_id)))
+            .collect(),
         &call_resources,
         &trace.used_l1_resources,
     ));
 
-    current_call_stack.pop();
+    current_entrypoint_call_stack.pop();
 
     Ok(&trace.cumulative_resources)
 }

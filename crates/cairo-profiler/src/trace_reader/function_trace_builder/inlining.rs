@@ -1,75 +1,89 @@
 use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_trace_builder::function_stack_trace::FunctionStack;
-use crate::trace_reader::function_trace_builder::Steps;
+use crate::trace_reader::function_trace_builder::{Function, Steps};
 use crate::trace_reader::functions::FunctionName;
+use crate::trace_reader::Function::{Inlined, NonInlined};
 use cairo_lang_sierra::program::StatementIdx;
-use itertools::Itertools;
-use std::cmp::max;
+use itertools::{chain, Itertools};
 use std::collections::HashMap;
 
-// TODO: refactor
+// TODO: refactor and optimise (clones)
 pub(super) fn add_inlined_functions_info(
     sierra_statement_idx: StatementIdx,
     maybe_statements_functions_map: Option<&StatementsFunctionsMap>,
     function_stack: &FunctionStack,
     current_function_name: &FunctionName,
-    functions_stack_traces: &mut HashMap<Vec<FunctionName>, Steps>,
+    functions_traces: &mut HashMap<Vec<Function>, Steps>,
     current_function_steps: &mut Steps,
 ) {
-    let maybe_real_function_stack = maybe_statements_functions_map
+    let maybe_original_function_names_stack = maybe_statements_functions_map
         .as_ref()
-        .and_then(|x| x.get(sierra_statement_idx));
+        .and_then(|statements_functions_map| statements_functions_map.get(sierra_statement_idx));
 
-    if let Some(real_function_stack_suffix) = maybe_real_function_stack {
-        let real_function_stack_suffix = real_function_stack_suffix
+    if let Some(original_function_names_stack) = maybe_original_function_names_stack {
+        let original_function_names_stack = original_function_names_stack
             .iter()
             .rev() // TODO: add comments
             .dedup()
-            .map(|x| FunctionName(x.clone()))
             .collect_vec();
 
-        let mut sierra_function_stack = function_stack.build_current_function_stack();
-        sierra_function_stack.push(current_function_name.clone());
+        let current_function_names_stack = function_stack.current_function_names_stack();
+        let sierra_function_names_stack = chain!(
+            current_function_names_stack
+                .iter()
+                .map(|x| &x.0)
+                .collect_vec(),
+            [&current_function_name.0]
+        )
+        .collect_vec();
 
-        let num_of_overlapping_functions =
-            find_array_overlap(&sierra_function_stack, &real_function_stack_suffix);
+        let original_function_stack = build_original_function_stack(
+            &original_function_names_stack,
+            &sierra_function_names_stack,
+        );
 
-        for func in &real_function_stack_suffix
-            [num_of_overlapping_functions..real_function_stack_suffix.len()]
-        {
-            sierra_function_stack.push(func.clone());
-        }
-
-        // TODO: add as inlined function instead (make hashmap key an enum and then reuse the enum in
-        //  `ContractCallSample`. Take it into account while building `Profile` for pprof - signalise
-        //  that a function was inlined using multiple lines in one location.
-        *functions_stack_traces
-            .entry(sierra_function_stack)
+        *functions_traces
+            .entry(original_function_stack)
             .or_insert(Steps(0)) += 1;
 
         *current_function_steps -= 1;
     }
 }
 
-/// Returns number of overlapping elements.
-fn find_array_overlap<T: Eq>(base: &[T], overlapping: &[T]) -> usize {
-    let start_index = max(base.len() as i128 - overlapping.len() as i128, 0)
-        .try_into()
-        .expect("Non-negative i128 to usize cast should never fail");
-    for i in start_index..base.len() {
-        let mut overlapped = true;
+/// Compares original (before inlining) function names stack with sierra function names stack to find
+/// out which functions were inlined.
+fn build_original_function_stack(
+    original_function_names_stack: &[&String],
+    sierra_function_names_stack: &[&String],
+) -> Vec<Function> {
+    let mut result =
+        vec![NonInlined(FunctionName(String::new())); original_function_names_stack.len()];
 
-        for j in 0..base.len() - i {
-            if overlapping[j] != base[i + j] {
-                overlapped = false;
-                break;
+    let mut original_function_indices_map = HashMap::new();
+    for (index, item) in original_function_names_stack.iter().enumerate() {
+        original_function_indices_map
+            .entry(item)
+            .or_insert_with(Vec::new)
+            .push(index);
+    }
+
+    for function_name in sierra_function_names_stack {
+        if let Some(indices) = original_function_indices_map.get_mut(function_name) {
+            if let Some(index) = indices.pop() {
+                result[index] =
+                    NonInlined(FunctionName(original_function_names_stack[index].clone()));
             }
-        }
-
-        if overlapped {
-            return base.len() - i;
         }
     }
 
-    0
+    let indices_of_inlined_functions = original_function_indices_map
+        .into_iter()
+        .flat_map(|(_, indices)| indices)
+        .collect_vec();
+
+    for index in indices_of_inlined_functions {
+        result[index] = Inlined(FunctionName(original_function_names_stack[index].clone()));
+    }
+
+    result
 }

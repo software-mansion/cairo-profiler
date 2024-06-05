@@ -11,7 +11,8 @@ use std::collections::{HashMap, HashSet};
 pub use perftools::profiles as pprof;
 
 use crate::trace_reader::functions::FunctionName;
-use crate::trace_reader::{ContractCallSample, MeasurementUnit, MeasurementValue};
+use crate::trace_reader::Function::{Inlined, NonInlined};
+use crate::trace_reader::{Function, MeasurementUnit, MeasurementValue, Sample};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 struct StringId(u64);
@@ -43,7 +44,7 @@ impl From<FunctionId> for u64 {
 struct ProfilerContext {
     strings: HashMap<String, StringId>,
     functions: HashMap<FunctionName, pprof::Function>,
-    locations: HashMap<FunctionName, pprof::Location>,
+    locations: Vec<pprof::Location>,
 }
 
 impl ProfilerContext {
@@ -51,7 +52,7 @@ impl ProfilerContext {
         ProfilerContext {
             strings: vec![(String::new(), StringId(0))].into_iter().collect(),
             functions: HashMap::new(),
-            locations: HashMap::new(),
+            locations: vec![],
         }
     }
 
@@ -66,25 +67,51 @@ impl ProfilerContext {
         }
     }
 
-    fn location_id(&mut self, location: &FunctionName) -> LocationId {
-        if let Some(loc) = self.locations.get(location) {
-            LocationId(loc.id)
-        } else {
-            let line = pprof::Line {
-                function_id: self.function_id(location).into(),
-                line: 0,
-            };
-            let location_data = pprof::Location {
-                id: (self.locations.len() + 1) as u64,
-                mapping_id: 0,
-                address: 0,
-                line: vec![line],
-                is_folded: true,
-            };
+    // TODO: optimize with map
+    fn locations_ids(&mut self, locations: &[Function]) -> Vec<LocationId> {
+        let mut pprof_locations = vec![];
+        for (index, loc) in locations.iter().enumerate() {
+            match loc {
+                NonInlined(function_name) => {
+                    let line = pprof::Line {
+                        function_id: self.function_id(function_name).into(),
+                        line: 0,
+                    };
+                    let location_data = pprof::Location {
+                        id: (self.locations.len() + 1 + index) as u64,
+                        mapping_id: 0,
+                        address: 0,
+                        line: vec![line],
+                        is_folded: true,
+                    };
+                    pprof_locations.push(location_data);
+                }
+                Inlined(function_name) => {
+                    let line = pprof::Line {
+                        function_id: self.function_id(function_name).into(),
+                        line: 0,
+                    };
+                    let location_data = pprof_locations
+                        .last_mut()
+                        .expect("Inlined function was on top of the stack trace, but shouldn't");
 
-            self.locations.insert(location.clone(), location_data);
-            LocationId(self.locations.len() as u64)
+                    location_data.line.push(line);
+                }
+            }
         }
+
+        for location in &mut pprof_locations {
+            // pprof format represents callstack from the least meaningful elements
+            location.line.reverse();
+        }
+
+        let locations_ids = pprof_locations
+            .iter()
+            .map(|loc| LocationId(loc.id))
+            .collect();
+        self.locations.append(&mut pprof_locations);
+
+        locations_ids
     }
 
     fn function_id(&mut self, function_name: &FunctionName) -> FunctionId {
@@ -111,14 +138,12 @@ impl ProfilerContext {
 
         let functions = self.functions.into_values().collect();
 
-        let locations = self.locations.into_values().collect();
-
-        (string_table, functions, locations)
+        (string_table, functions, self.locations)
     }
 }
 
 fn build_value_types(
-    measurements_units: &Vec<MeasurementUnit>,
+    measurements_units: &[MeasurementUnit],
     context: &mut ProfilerContext,
 ) -> Vec<pprof::ValueType> {
     let mut value_types = vec![];
@@ -142,16 +167,16 @@ fn build_value_types(
 
 fn build_samples(
     context: &mut ProfilerContext,
-    samples: &[ContractCallSample],
+    samples: &[Sample],
     all_measurements_units: &[MeasurementUnit],
 ) -> Vec<pprof::Sample> {
     let samples = samples
         .iter()
         .map(|s| pprof::Sample {
-            location_id: s
-                .call_stack
-                .iter()
-                .map(|loc| context.location_id(loc).into())
+            location_id: context
+                .locations_ids(&s.call_stack)
+                .into_iter()
+                .map(Into::into)
                 .rev() // pprof format represents callstack from the least meaningful element
                 .collect(),
             value: all_measurements_units
@@ -171,13 +196,13 @@ fn build_samples(
     samples
 }
 
-fn collect_all_measurements_units(samples: &[ContractCallSample]) -> Vec<MeasurementUnit> {
+fn collect_all_measurements_units(samples: &[Sample]) -> Vec<MeasurementUnit> {
     let units_set: HashSet<&MeasurementUnit> =
         samples.iter().flat_map(|m| m.measurements.keys()).collect();
     units_set.into_iter().cloned().collect()
 }
 
-pub fn build_profile(samples: &[ContractCallSample]) -> pprof::Profile {
+pub fn build_profile(samples: &[Sample]) -> pprof::Profile {
     let mut context = ProfilerContext::new();
     let all_measurements_units = collect_all_measurements_units(samples);
     let value_types = build_value_types(&all_measurements_units, &mut context);
