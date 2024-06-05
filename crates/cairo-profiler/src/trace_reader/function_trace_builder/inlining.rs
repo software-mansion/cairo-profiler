@@ -7,7 +7,6 @@ use cairo_lang_sierra::program::StatementIdx;
 use itertools::{chain, Itertools};
 use std::collections::HashMap;
 
-// TODO: refactor and optimise (clones)
 pub(super) fn add_inlined_functions_info(
     sierra_statement_idx: StatementIdx,
     maybe_statements_functions_map: Option<&StatementsFunctionsMap>,
@@ -23,7 +22,7 @@ pub(super) fn add_inlined_functions_info(
     if let Some(original_function_names_stack) = maybe_original_function_names_stack {
         let original_function_names_stack = original_function_names_stack
             .iter()
-            .rev() // TODO: add comments
+            .rev() // The mappings from `statements_functions_map` represent callstack from the least meaningful element.
             .dedup()
             .collect_vec();
 
@@ -52,6 +51,7 @@ pub(super) fn add_inlined_functions_info(
 
 /// Compares original (before inlining) function names stack with sierra function names stack to find
 /// out which functions were inlined.
+// TODO: don't build anything if there are mutually recursive functions on the stack
 fn build_original_function_stack(
     original_function_names_stack: &[&String],
     sierra_function_names_stack: &[&String],
@@ -59,6 +59,7 @@ fn build_original_function_stack(
     let mut result =
         vec![NonInlined(FunctionName(String::new())); original_function_names_stack.len()];
 
+    // Maps each function name from the original stack to its indices on the stack.
     let mut original_function_indices_map = HashMap::new();
     for (index, item) in original_function_names_stack.iter().enumerate() {
         original_function_indices_map
