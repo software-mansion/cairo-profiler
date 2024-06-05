@@ -1,5 +1,5 @@
 use crate::sierra_loader::StatementsFunctionsMap;
-use crate::trace_reader::function_trace_builder::function_stack_trace::FunctionStack;
+use crate::trace_reader::function_trace_builder::function_call_trace::FunctionStack;
 use crate::trace_reader::function_trace_builder::{Function, Steps};
 use crate::trace_reader::functions::FunctionName;
 use crate::trace_reader::Function::{Inlined, NonInlined};

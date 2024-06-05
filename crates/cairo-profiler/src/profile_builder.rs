@@ -93,7 +93,7 @@ impl ProfilerContext {
                     };
                     let location_data = pprof_locations
                         .last_mut()
-                        .expect("Inlined function was on top of the stack trace, but shouldn't");
+                        .expect("Inlined function was on top of the call trace, but shouldn't");
 
                     location_data.line.push(line);
                 }

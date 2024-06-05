@@ -1,6 +1,6 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::sierra_loader::StatementsFunctionsMap;
-use crate::trace_reader::function_trace_builder::function_stack_trace::{
+use crate::trace_reader::function_trace_builder::function_call_trace::{
     FunctionStack, FunctionType,
 };
 use crate::trace_reader::function_trace_builder::inlining::add_inlined_functions_info;
@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::ops::{AddAssign, SubAssign};
 use trace_data::TraceEntry;
 
-mod function_stack_trace;
+mod function_call_trace;
 mod inlining;
 
 pub struct FunctionLevelProfilingInfo {
@@ -24,7 +24,7 @@ pub struct FunctionLevelProfilingInfo {
 }
 
 pub struct FunctionCallTrace {
-    pub stack_trace: Vec<Function>,
+    pub call_trace: Vec<Function>,
     pub steps: Steps,
 }
 
@@ -81,8 +81,8 @@ pub fn collect_function_level_profiling_info(
 
     let mut function_stack = FunctionStack::new(function_level_config.max_function_trace_depth);
 
-    // The value is the steps of the stack trace so far, not including the pending steps being
-    // tracked at the time. The key is a function stack trace.
+    // The value is the steps of the call trace so far, not including the pending steps being
+    // tracked at the time. The key is a function call trace.
     let mut functions_traces: HashMap<Vec<Function>, Steps> = HashMap::new();
 
     // Header steps are counted separately and then displayed as steps of the entrypoint in the
@@ -183,7 +183,7 @@ pub fn collect_function_level_profiling_info(
 
     let functions_traces = functions_traces
         .into_iter()
-        .map(|(stack_trace, steps)| FunctionCallTrace { stack_trace, steps })
+        .map(|(call_trace, steps)| FunctionCallTrace { call_trace, steps })
         .collect_vec();
 
     FunctionLevelProfilingInfo {

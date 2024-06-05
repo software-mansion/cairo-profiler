@@ -9,7 +9,7 @@ pub(super) struct FunctionOnStack {
     recursive_calls_count: usize,
 }
 
-/// The function stack trace of the current function, excluding the current function.
+/// The function call stack of the current function, excluding the current function.
 pub(super) struct FunctionStack {
     stack: Vec<FunctionOnStack>,
     /// Tracks the depth of the function stack, without limit. This is usually equal to

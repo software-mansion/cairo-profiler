@@ -220,7 +220,7 @@ fn collect_samples<'a>(
                     .iter()
                     .map(|entry_point_id| NonInlined(FunctionName::from(entry_point_id)))
                     .collect_vec(),
-                function_trace.stack_trace
+                function_trace.call_trace
             )
             .collect();
 
