@@ -77,12 +77,18 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
         let raw_sierra = fs::read_to_string(&absolute_sierra_path)?;
 
         if let Ok(contract_class) = serde_json::from_str::<ContractClass>(&raw_sierra) {
-            let maybe_statements_functions_map = maybe_get_statements_functions_map(
-                contract_class.sierra_program_debug_info.as_ref(),
-            );
             let program = contract_class
                 .extract_sierra_program()
                 .context("Failed to extract sierra program from contract code")?;
+
+            let maybe_statements_functions_map =
+                maybe_get_statements_functions_map(contract_class.sierra_program_debug_info);
+
+            let contract_class = ContractClass {
+                // Debug info is unused in the compilation. This saves us a costly clone.
+                sierra_program_debug_info: None,
+                ..contract_class
+            };
 
             let (_casm_contract_class, casm_debug_info) =
                 CasmContractClass::from_contract_class_with_debug_info(
@@ -108,7 +114,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 .into_v1()
                 .context("Failed to extract program artifact from versioned program. Make sure your versioned program is of version 1")?;
             let maybe_statements_functions_map =
-                maybe_get_statements_functions_map(program_artifact.debug_info.as_ref());
+                maybe_get_statements_functions_map(program_artifact.debug_info);
 
             let casm = cairo_lang_sierra_to_casm::compiler::compile(
                 &program_artifact.program,
@@ -143,20 +149,25 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
 }
 
 fn maybe_get_statements_functions_map(
-    maybe_sierra_program_debug_info: Option<&DebugInfo>,
+    maybe_sierra_program_debug_info: Option<DebugInfo>,
 ) -> Option<StatementsFunctionsMap> {
     maybe_sierra_program_debug_info
-        .and_then(|x| {
-            x.annotations
-                .get("github.com/software-mansion/cairo-profiler")
+        .and_then(|mut debug_info| {
+            debug_info
+                .annotations
+                .shift_remove("github.com/software-mansion/cairo-profiler")
         })
-        .map(|x| {
-            x.get("statements_functions")
-                .expect("Wrong debug info annotations format")
+        .map(|mut annotations| {
+            assert!(
+                annotations.get("statements_functions").is_some(),
+                "Wrong debug info annotations format"
+            );
+            annotations["statements_functions"].take()
         })
-        .map(|x| {
-            let map = serde_json::from_value::<HashMap<StatementIdx, Vec<String>>>(x.clone())
-                .expect("Wrong statements function map format");
+        .map(|statements_functions| {
+            let map =
+                serde_json::from_value::<HashMap<StatementIdx, Vec<String>>>(statements_functions)
+                    .expect("Wrong statements function map format");
             StatementsFunctionsMap(map)
         })
 }
