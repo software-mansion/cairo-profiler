@@ -24,14 +24,14 @@ mod trace_reader;
 #[command(version)]
 #[clap(name = "cairo-profiler")]
 struct Cli {
-    /// Path to .json with trace data
+    /// Path to .json with trace data.
     path_to_trace_data: Utf8PathBuf,
 
-    /// Path to the output file
+    /// Path to the output file.
     #[arg(short, long, default_value = "profile.pb.gz")]
     output_path: Utf8PathBuf,
 
-    /// Show contract addresses and function selectors in a trace tree
+    /// Show contract addresses and function selectors in a trace tree.
     #[arg(long)]
     show_details: bool,
 
@@ -44,6 +44,11 @@ struct Cli {
     /// E.g. treat `function<felt252>` as different from `function<u8>`.
     #[arg(long)]
     split_generics: bool,
+
+    /// Show inlined function in a trace tree. Requires Scarb >= 2.7.0 and setting
+    /// `unstable-add-statements-functions-debug-info = true` in `[cairo]` section of Scarb.toml.
+    #[arg(long)]
+    show_inlined_functions: bool,
 }
 
 fn main() -> Result<()> {

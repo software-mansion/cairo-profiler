@@ -125,14 +125,16 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
-        add_inlined_functions_info(
-            sierra_statement_idx,
-            maybe_statements_functions_map.as_ref(),
-            &function_stack,
-            &current_function_name,
-            &mut functions_traces,
-            &mut current_function_steps,
-        );
+        if function_level_config.show_inlined_functions {
+            add_inlined_functions_info(
+                sierra_statement_idx,
+                maybe_statements_functions_map.as_ref(),
+                &function_stack,
+                &current_function_name,
+                &mut functions_traces,
+                &mut current_function_steps,
+            );
+        }
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
