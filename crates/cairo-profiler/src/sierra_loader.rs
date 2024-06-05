@@ -30,13 +30,6 @@ impl SierraProgramArtifact {
             | SierraProgramArtifact::ContractClass(program_artifact) => program_artifact,
         }
     }
-
-    pub fn was_run_with_header(&self) -> bool {
-        match self {
-            SierraProgramArtifact::VersionedProgram(_) => true,
-            SierraProgramArtifact::ContractClass(_) => false,
-        }
-    }
 }
 
 impl CompiledArtifactsPathMap {

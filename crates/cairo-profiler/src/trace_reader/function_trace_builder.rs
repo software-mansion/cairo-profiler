@@ -49,7 +49,7 @@ pub fn collect_function_level_profiling_info(
     trace: &[TraceEntry],
     program_artifact: &ProgramArtifact,
     casm_debug_info: &CairoProgramDebugInfo,
-    was_run_with_header: bool,
+    run_with_call_header: bool,
     function_level_config: &FunctionLevelConfig,
 ) -> FunctionLevelProfilingInfo {
     let program = &program_artifact.program;
@@ -63,7 +63,7 @@ pub fn collect_function_level_profiling_info(
     // The first instruction after that is the first instruction in the original CASM program.
     // This logic only applies when a header was added to the CASM program, otherwise the
     // `real_minimal_pc` is the default one which is 1.
-    let real_minimal_pc = if was_run_with_header {
+    let real_minimal_pc = if run_with_call_header {
         trace.last().unwrap().pc + 1
     } else {
         1
@@ -84,7 +84,7 @@ pub fn collect_function_level_profiling_info(
 
     for step in trace {
         // Skip the header. This only makes sense when a header was added to CASM program.
-        if step.pc < real_minimal_pc && was_run_with_header {
+        if step.pc < real_minimal_pc && run_with_call_header {
             header_steps += 1;
             continue;
         }

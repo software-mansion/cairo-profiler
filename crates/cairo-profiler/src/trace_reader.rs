@@ -199,10 +199,10 @@ fn collect_samples<'a>(
             .get_sierra_casm_artifacts_for_path(&absolute_source_sierra_path);
 
         let function_level_profiling_info = collect_function_level_profiling_info(
-            &cairo_execution_info.vm_trace,
+            &cairo_execution_info.casm_level_info.vm_trace,
             compiled_artifacts.sierra.get_program_artifact(),
             &compiled_artifacts.casm_debug_info,
-            compiled_artifacts.sierra.was_run_with_header(),
+            cairo_execution_info.casm_level_info.run_with_call_header,
             &FunctionLevelConfig::from(profiler_config),
         );
 
