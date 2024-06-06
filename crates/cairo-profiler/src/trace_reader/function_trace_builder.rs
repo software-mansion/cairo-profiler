@@ -146,6 +146,7 @@ pub fn collect_function_level_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
+                    // TODO: check the original stack during function call and save it
                     function_stack
                         .enter_function_call(current_function_name, &mut current_function_steps);
                 }
