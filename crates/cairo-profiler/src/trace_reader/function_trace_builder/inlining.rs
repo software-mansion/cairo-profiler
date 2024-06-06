@@ -26,7 +26,7 @@ pub(super) fn add_inlined_functions_info(
     .collect_vec();
 
     // If names on the stack are not unique it means that there is some sort of non-trivial
-    // recursiveness, that won't be reflected in the mappings.
+    // recursiveness that won't be reflected in the mappings.
     if sierra_function_names_stack.iter().unique().count() != sierra_function_names_stack.len() {
         return;
     }
@@ -73,7 +73,7 @@ fn build_original_function_stack(
         .collect();
 
     // The first common element in original stack and sierra stack is the first non-inlined
-    // user function, so we have to put the previous functions in the result separately.
+    // original cairo function, so we have to put the previous functions in the result separately.
     let mut first_non_inlined_user_function_index = 0;
 
     while first_non_inlined_user_function_index < sierra_function_names_stack.len()
@@ -89,7 +89,7 @@ fn build_original_function_stack(
     for &function_name in &sierra_function_names_stack[first_non_inlined_user_function_index..] {
         let index = function_name_to_index_in_original_stack
             .remove(function_name)
-            .expect("Bug in mappings/logic");
+            .expect("Part of function stack from mappings should be a superset of sierra function stack. This is a bug, contact us");
 
         result[index + first_non_inlined_user_function_index] =
             NonInlined(FunctionName(original_function_names_stack[index].clone()));
