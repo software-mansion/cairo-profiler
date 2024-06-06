@@ -61,7 +61,6 @@ fn build_original_function_stack(
     original_function_names_stack: &[&String],
     sierra_function_names_stack: &[&String],
 ) -> Vec<Function> {
-    println!("{original_function_names_stack:?}");
     let mut result = VecDeque::from(vec![
         NonInlined(FunctionName(String::new()));
         original_function_names_stack.len()
