@@ -1,10 +1,11 @@
 use crate::profiler_config::FunctionLevelConfig;
+use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
     FunctionStack, FunctionType,
 };
-use crate::trace_reader::functions::FunctionName;
+use crate::trace_reader::Function;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
-use cairo_lang_sierra::program::{GenStatement, ProgramArtifact, StatementIdx};
+use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::{chain, Itertools};
@@ -15,12 +16,12 @@ use trace_data::TraceEntry;
 mod function_stack_trace;
 
 pub struct FunctionLevelProfilingInfo {
-    pub functions_stack_traces: Vec<FunctionStackTrace>,
+    pub functions_traces: Vec<FunctionCallTrace>,
     pub header_steps: Steps,
 }
 
-pub struct FunctionStackTrace {
-    pub stack_trace: Vec<FunctionName>,
+pub struct FunctionCallTrace {
+    pub call_trace: Vec<Function>,
     pub steps: Steps,
 }
 
@@ -47,12 +48,11 @@ enum MaybeSierraStatementIndex {
 /// Collects profiling info of the current run using the trace.
 pub fn collect_function_level_profiling_info(
     trace: &[TraceEntry],
-    program_artifact: &ProgramArtifact,
+    program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
     run_with_call_header: bool,
     function_level_config: &FunctionLevelConfig,
 ) -> FunctionLevelProfilingInfo {
-    let program = &program_artifact.program;
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
     // Some CASM programs starts with a header of instructions to wrap the real program.
@@ -71,9 +71,9 @@ pub fn collect_function_level_profiling_info(
 
     let mut function_stack = FunctionStack::new(function_level_config.max_function_trace_depth);
 
-    // The value is the steps of the stack trace so far, not including the pending steps being
-    // tracked at the time. The key is a function stack trace.
-    let mut functions_stack_traces: HashMap<Vec<FunctionName>, Steps> = HashMap::new();
+    // The value is the steps of the call trace so far, not including the pending steps being
+    // tracked at the time. The key is a function call trace.
+    let mut functions_traces: HashMap<Vec<Function>, Steps> = HashMap::new();
 
     // Header steps are counted separately and then displayed as steps of the entrypoint in the
     // profile tree. It is because technically they don't belong to any function, but still increase
@@ -132,14 +132,19 @@ pub fn collect_function_level_profiling_info(
             GenStatement::Return(_) => {
                 if let Some(exited_function) = function_stack.exit_function_call() {
                     if let FunctionType::Regular(function) = exited_function {
-                        let current_stack = chain!(
-                            function_stack.build_current_function_stack(),
+                        let current_function_names_call_stack = chain!(
+                            function_stack.current_function_names_stack(),
                             [function.name, current_function_name]
                         )
-                        .collect();
+                        .collect_vec();
 
-                        *functions_stack_traces
-                            .entry(current_stack)
+                        let current_function_call_stack = current_function_names_call_stack
+                            .into_iter()
+                            .map(Function::NonInlined)
+                            .collect();
+
+                        *functions_traces
+                            .entry(current_function_call_stack)
                             .or_insert(Steps(0)) += current_function_steps;
                         // Set to the caller function steps to continue counting its cost.
                         current_function_steps = function.steps;
@@ -147,23 +152,23 @@ pub fn collect_function_level_profiling_info(
                 } else {
                     end_of_program_reached = true;
 
-                    let current_stack = vec![current_function_name];
+                    let current_function_stack = vec![Function::NonInlined(current_function_name)];
 
-                    *functions_stack_traces
-                        .entry(current_stack)
+                    *functions_traces
+                        .entry(current_function_stack)
                         .or_insert(Steps(0)) += current_function_steps;
                 }
             }
         }
     }
 
-    let functions_stack_traces = functions_stack_traces
+    let functions_stack_traces = functions_traces
         .into_iter()
-        .map(|(stack_trace, steps)| FunctionStackTrace { stack_trace, steps })
+        .map(|(call_trace, steps)| FunctionCallTrace { call_trace, steps })
         .collect_vec();
 
     FunctionLevelProfilingInfo {
-        functions_stack_traces,
+        functions_traces: functions_stack_traces,
         header_steps,
     }
 }

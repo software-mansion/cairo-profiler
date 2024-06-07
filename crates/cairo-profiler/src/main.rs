@@ -54,10 +54,10 @@ fn main() -> Result<()> {
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
-    let compiled_artifacts_path_map = collect_and_compile_all_sierra_programs(&serialized_trace)?;
+    let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(&serialized_trace)?;
     let samples = collect_samples_from_trace(
         &serialized_trace,
-        &compiled_artifacts_path_map,
+        &compiled_artifacts_cache,
         &ProfilerConfig::from(&cli),
     )?;
 
