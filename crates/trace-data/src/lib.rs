@@ -27,9 +27,15 @@ pub struct CallTrace {
 /// Struct needed for function level profiling.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CairoExecutionInfo {
-    pub vm_trace: Vec<TraceEntry>,
     /// Path to a file with serialized `ContractClass` or `VersionedProgram`.
     pub source_sierra_path: Utf8PathBuf,
+    pub casm_level_info: CasmLevelInfo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CasmLevelInfo {
+    pub run_with_call_header: bool,
+    pub vm_trace: Vec<TraceEntry>,
 }
 
 /// Enum representing node of a trace of a call.
