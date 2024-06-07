@@ -36,7 +36,8 @@ pub enum Function {
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub enum InternalFunction {
-    _Inlined(FunctionName),
+    #[allow(dead_code)]
+    Inlined(FunctionName),
     NonInlined(FunctionName),
 }
 

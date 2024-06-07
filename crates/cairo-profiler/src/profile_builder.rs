@@ -43,7 +43,7 @@ impl From<FunctionId> for u64 {
 struct ProfilerContext {
     strings: HashMap<String, StringId>,
     functions: HashMap<FunctionName, pprof::Function>,
-    locations: HashMap<FunctionName, pprof::Location>,
+    locations: Vec<pprof::Location>,
 }
 
 impl ProfilerContext {
@@ -51,7 +51,7 @@ impl ProfilerContext {
         ProfilerContext {
             strings: vec![(String::new(), StringId(0))].into_iter().collect(),
             functions: HashMap::new(),
-            locations: HashMap::new(),
+            locations: vec![],
         }
     }
 
@@ -66,35 +66,52 @@ impl ProfilerContext {
         }
     }
 
-    fn location_id(&mut self, location: &Function) -> LocationId {
-        let location = match location {
-            Function::Entrypoint(function_name)
-            | Function::InternalFunction(InternalFunction::NonInlined(function_name)) => {
-                function_name
-            }
-            Function::InternalFunction(InternalFunction::_Inlined(_)) => {
-                todo!("Unused, logic for it will be added in the next PR")
-            }
-        };
+    // TODO: optimize with map
+    fn locations_ids(&mut self, locations: &[Function]) -> Vec<LocationId> {
+        let mut pprof_locations = vec![];
+        for (index, loc) in locations.iter().enumerate() {
+            match loc {
+                Function::InternalFunction(InternalFunction::NonInlined(function_name))
+                | Function::Entrypoint(function_name) => {
+                    let line = pprof::Line {
+                        function_id: self.function_id(function_name).into(),
+                        line: 0,
+                    };
+                    let location_data = pprof::Location {
+                        id: (self.locations.len() + 1 + index) as u64,
+                        mapping_id: 0,
+                        address: 0,
+                        line: vec![line],
+                        is_folded: true,
+                    };
+                    pprof_locations.push(location_data);
+                }
+                Function::InternalFunction(InternalFunction::Inlined(function_name)) => {
+                    let line = pprof::Line {
+                        function_id: self.function_id(function_name).into(),
+                        line: 0,
+                    };
+                    let location_data = pprof_locations
+                        .last_mut()
+                        .expect("Inlined function was on top of the call trace, but shouldn't");
 
-        if let Some(loc) = self.locations.get(location) {
-            LocationId(loc.id)
-        } else {
-            let line = pprof::Line {
-                function_id: self.function_id(location).into(),
-                line: 0,
-            };
-            let location_data = pprof::Location {
-                id: (self.locations.len() + 1) as u64,
-                mapping_id: 0,
-                address: 0,
-                line: vec![line],
-                is_folded: true,
-            };
-
-            self.locations.insert(location.clone(), location_data);
-            LocationId(self.locations.len() as u64)
+                    location_data.line.push(line);
+                }
+            }
         }
+
+        for location in &mut pprof_locations {
+            // pprof format represents callstack from the least meaningful elements
+            location.line.reverse();
+        }
+
+        let locations_ids = pprof_locations
+            .iter()
+            .map(|loc| LocationId(loc.id))
+            .collect();
+        self.locations.append(&mut pprof_locations);
+
+        locations_ids
     }
 
     fn function_id(&mut self, function_name: &FunctionName) -> FunctionId {
@@ -121,9 +138,7 @@ impl ProfilerContext {
 
         let functions = self.functions.into_values().collect();
 
-        let locations = self.locations.into_values().collect();
-
-        (string_table, functions, locations)
+        (string_table, functions, self.locations)
     }
 }
 
@@ -158,10 +173,10 @@ fn build_samples(
     let samples = samples
         .iter()
         .map(|s| pprof::Sample {
-            location_id: s
-                .call_stack
-                .iter()
-                .map(|loc| context.location_id(loc).into())
+            location_id: context
+                .locations_ids(&s.call_stack)
+                .into_iter()
+                .map(Into::into)
                 .rev() // pprof format represents callstack from the least meaningful element
                 .collect(),
             value: all_measurements_units
