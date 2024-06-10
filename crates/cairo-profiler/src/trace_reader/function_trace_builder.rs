@@ -1,6 +1,6 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::function_trace_builder::function_stack_trace::{CallStack, FunctionType};
+use crate::trace_reader::function_trace_builder::function_stack_trace::{CallStack, CallType};
 use crate::trace_reader::{Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
@@ -62,11 +62,11 @@ pub fn collect_function_level_profiling_info(
         1
     };
 
-    let mut function_stack = CallStack::new(function_level_config.max_function_trace_depth);
+    let mut call_stack = CallStack::new(function_level_config.max_function_stack_trace_depth);
 
-    // The value is the steps of the call trace so far, not including the pending steps being
-    // tracked at the time. The key is a function call trace.
-    let mut functions_traces: HashMap<Vec<Function>, Steps> = HashMap::new();
+    // The value is the steps of the stack trace so far, not including the pending steps being
+    // tracked at the time. The key is a function stack trace.
+    let mut functions_stack_traces: HashMap<Vec<Function>, Steps> = HashMap::new();
 
     // Header steps are counted separately and then displayed as steps of the entrypoint in the
     // profile tree. It is because technically they don't belong to any function, but still increase
@@ -118,20 +118,20 @@ pub fn collect_function_level_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
-                    function_stack
+                    call_stack
                         .enter_function_call(current_function_name, &mut current_function_steps);
                 }
             }
             GenStatement::Return(_) => {
-                if let Some(exited_function) = function_stack.exit_function_call() {
-                    if let FunctionType::Regular((function_name, steps)) = exited_function {
-                        let current_function_names_call_stack = chain!(
-                            function_stack.current_function_names_stack(),
+                if let Some(exited_call) = call_stack.exit_function_call() {
+                    if let CallType::Regular((function_name, steps)) = exited_call {
+                        let names_call_stack = chain!(
+                            call_stack.current_function_names_stack(),
                             [function_name, current_function_name]
                         )
                         .collect_vec();
 
-                        let current_function_call_stack = current_function_names_call_stack
+                        let call_stack = names_call_stack
                             .into_iter()
                             .map(|function_name| {
                                 Function::InternalFunction(InternalFunction::NonInlined(
@@ -140,28 +140,26 @@ pub fn collect_function_level_profiling_info(
                             })
                             .collect();
 
-                        *functions_traces
-                            .entry(current_function_call_stack)
-                            .or_insert(Steps(0)) += current_function_steps;
+                        *functions_stack_traces.entry(call_stack).or_insert(Steps(0)) +=
+                            current_function_steps;
                         // Set to the caller function steps to continue counting its cost.
                         current_function_steps = steps;
                     }
                 } else {
                     end_of_program_reached = true;
 
-                    let current_function_stack = vec![Function::InternalFunction(
+                    let call_stack = vec![Function::InternalFunction(
                         InternalFunction::NonInlined(current_function_name),
                     )];
 
-                    *functions_traces
-                        .entry(current_function_stack)
-                        .or_insert(Steps(0)) += current_function_steps;
+                    *functions_stack_traces.entry(call_stack).or_insert(Steps(0)) +=
+                        current_function_steps;
                 }
             }
         }
     }
 
-    let functions_samples = functions_traces
+    let functions_samples = functions_stack_traces
         .into_iter()
         .map(|(call_stack, steps)| Sample {
             call_stack,

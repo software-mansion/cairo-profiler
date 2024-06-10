@@ -9,29 +9,29 @@ struct FunctionOnStack {
     recursive_calls_count: usize,
 }
 
-/// The function stack trace of the current function, excluding the current function.
+/// The function call stack of the current function, excluding the current function call.
 pub(super) struct CallStack {
     stack: Vec<FunctionOnStack>,
-    /// Tracks the depth of the function stack, without limit. This is usually equal to
+    /// Tracks the depth of the function call stack, without limit. This is usually equal to
     /// `stack.len()`, but if the actual stack is deeper than `max_function_trace_depth`,
     /// this remains reliable while `stack` does not.
     real_function_stack_depth: usize,
     /// Constant through existence of the object.
-    max_function_trace_depth: usize,
+    max_function_stack_trace_depth: usize,
 }
 
-pub(super) enum FunctionType {
+pub(super) enum CallType {
     Regular((FunctionName, Steps)),
     Hidden,
     Recursive,
 }
 
 impl CallStack {
-    pub fn new(max_function_trace_depth: usize) -> Self {
+    pub fn new(max_function_stack_trace_depth: usize) -> Self {
         Self {
             stack: vec![],
             real_function_stack_depth: 0,
-            max_function_trace_depth,
+            max_function_stack_trace_depth,
         }
     }
 
@@ -47,7 +47,7 @@ impl CallStack {
             }
         }
 
-        if self.real_function_stack_depth < self.max_function_trace_depth {
+        if self.real_function_stack_depth < self.max_function_stack_trace_depth {
             self.stack.push(FunctionOnStack {
                 name: function_name,
                 steps: *current_function_steps,
@@ -59,25 +59,25 @@ impl CallStack {
         self.real_function_stack_depth += 1;
     }
 
-    pub fn exit_function_call(&mut self) -> Option<FunctionType> {
-        if self.real_function_stack_depth <= self.max_function_trace_depth {
+    pub fn exit_function_call(&mut self) -> Option<CallType> {
+        if self.real_function_stack_depth <= self.max_function_stack_trace_depth {
             let mut stack_element = self.stack.pop()?;
 
             if stack_element.recursive_calls_count > 0 {
                 stack_element.recursive_calls_count -= 1;
                 self.stack.push(stack_element);
 
-                Some(FunctionType::Recursive)
+                Some(CallType::Recursive)
             } else {
                 self.real_function_stack_depth -= 1;
-                Some(FunctionType::Regular((
+                Some(CallType::Regular((
                     stack_element.name,
                     stack_element.steps,
                 )))
             }
         } else {
             self.real_function_stack_depth -= 1;
-            Some(FunctionType::Hidden)
+            Some(CallType::Hidden)
         }
     }
 
