@@ -76,7 +76,7 @@ impl ProfilerContext {
         let mut current_function_stack_start_index = 0;
         for (index, function) in call_stack.iter().enumerate() {
             match function {
-                Function::InternalFunction(InternalFunction::Inlined(_))
+                Function::InternalFunction(InternalFunction::NonInlined(_))
                 | Function::Entrypoint(_) => {
                     if index != 0 {
                         function_stacks_indexes
@@ -84,7 +84,7 @@ impl ProfilerContext {
                     }
                     current_function_stack_start_index = index;
                 }
-                Function::InternalFunction(InternalFunction::NonInlined(_)) => {}
+                Function::InternalFunction(InternalFunction::Inlined(_)) => {}
             }
         }
         function_stacks_indexes.push((current_function_stack_start_index, call_stack.len() - 1));
@@ -108,7 +108,7 @@ impl ProfilerContext {
                             is_folded: true,
                         }
                     }
-                    Function::InternalFunction(InternalFunction::Inlined(_)) => unreachable!("First function in a function stack corresponding to a single location cannot be inlined")
+                    Function::InternalFunction(InternalFunction::Inlined(_)) => unreachable!("First function in a call stack corresponding to a single location cannot be inlined")
                 };
 
                 for function in function_stack.get(1..).unwrap_or_default() {
@@ -122,7 +122,7 @@ impl ProfilerContext {
                         }
                         Function::Entrypoint(_)
                         | Function::InternalFunction(InternalFunction::NonInlined(_)) => {
-                            unreachable!("Only first function in a function stack corresponding to a single location can be not inlined")
+                            unreachable!("Only first function in a call stack corresponding to a single location can be not inlined")
                         }
                     }
                 }
