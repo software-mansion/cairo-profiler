@@ -70,10 +70,7 @@ impl CallStack {
                 Some(CallType::Recursive)
             } else {
                 self.real_function_stack_depth -= 1;
-                Some(CallType::Regular((
-                    stack_element.name,
-                    stack_element.steps,
-                )))
+                Some(CallType::Regular((stack_element.name, stack_element.steps)))
             }
         } else {
             self.real_function_stack_depth -= 1;

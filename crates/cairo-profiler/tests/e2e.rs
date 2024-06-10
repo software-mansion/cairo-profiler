@@ -24,7 +24,7 @@ fn output_path() {
 }
 
 #[test_case(&["call.json", "--split-generics"]; "with split generics")]
-#[test_case(&["call.json", "--max-function-trace-depth", "5"]; "with max function trace depth")]
+#[test_case(&["call.json", "--max-function-stack-trace-depth", "5"]; "with max function trace depth")]
 #[test_case(&["call.json", "--show-details"]; "with details")]
 #[test_case(&["call.json"]; "without details")]
 fn simple_package(args: &[&str]) {
