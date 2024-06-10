@@ -43,7 +43,7 @@ impl From<FunctionId> for u64 {
 struct ProfilerContext {
     strings: HashMap<String, StringId>,
     functions: HashMap<FunctionName, pprof::Function>,
-    locations: Vec<pprof::Location>,
+    locations: HashMap<Vec<Function>, pprof::Location>,
 }
 
 impl ProfilerContext {
@@ -51,7 +51,7 @@ impl ProfilerContext {
         ProfilerContext {
             strings: vec![(String::new(), StringId(0))].into_iter().collect(),
             functions: HashMap::new(),
-            locations: vec![],
+            locations: HashMap::new(),
         }
     }
 
@@ -66,50 +66,74 @@ impl ProfilerContext {
         }
     }
 
-    // TODO: optimize with map
-    fn locations_ids(&mut self, locations: &[Function]) -> Vec<LocationId> {
-        let mut pprof_locations = vec![];
-        for (index, loc) in locations.iter().enumerate() {
-            match loc {
-                Function::InternalFunction(InternalFunction::NonInlined(function_name))
-                | Function::Entrypoint(function_name) => {
-                    let line = pprof::Line {
-                        function_id: self.function_id(function_name).into(),
-                        line: 0,
-                    };
-                    let location_data = pprof::Location {
-                        id: (self.locations.len() + 1 + index) as u64,
-                        mapping_id: 0,
-                        address: 0,
-                        line: vec![line],
-                        is_folded: true,
-                    };
-                    pprof_locations.push(location_data);
-                }
-                Function::InternalFunction(InternalFunction::Inlined(function_name)) => {
-                    let line = pprof::Line {
-                        function_id: self.function_id(function_name).into(),
-                        line: 0,
-                    };
-                    let location_data = pprof_locations
-                        .last_mut()
-                        .expect("Inlined function was on top of the call trace, but shouldn't");
+    fn locations_ids(&mut self, call_stack: &[Function]) -> Vec<LocationId> {
+        let mut locations_ids = vec![];
+        // This vector represent stacks of functions corresponding to single locations.
+        // It contains tuples of form (start_index, end_index).
+        // A single stack is `&call_stack[start_index..=end_index]`.
+        let mut function_stacks_indexes = vec![];
 
-                    location_data.line.push(line);
+        let mut current_function_stack_start_index = 0;
+        for (index, function) in call_stack.iter().enumerate() {
+            match function {
+                Function::InternalFunction(InternalFunction::Inlined(_))
+                | Function::Entrypoint(_) => {
+                    if index != 0 {
+                        function_stacks_indexes
+                            .push((current_function_stack_start_index, index - 1));
+                    }
+                    current_function_stack_start_index = index;
                 }
+                Function::InternalFunction(InternalFunction::NonInlined(_)) => {}
             }
         }
+        function_stacks_indexes.push((current_function_stack_start_index, call_stack.len() - 1));
 
-        for location in &mut pprof_locations {
-            // pprof format represents callstack from the least meaningful elements
-            location.line.reverse();
+        for (start_index, end_index) in function_stacks_indexes {
+            let function_stack = &call_stack[start_index..=end_index];
+            if let Some(location) = self.locations.get(function_stack) {
+                locations_ids.push(LocationId(location.id));
+            } else {
+                let mut location = match &function_stack[0] {
+                    Function::Entrypoint(function_name) | Function::InternalFunction(InternalFunction::NonInlined(function_name)) => {
+                        let line = pprof::Line {
+                            function_id: self.function_id(function_name).into(),
+                            line: 0,
+                        };
+                         pprof::Location {
+                            id: (self.locations.len() + 1) as u64,
+                            mapping_id: 0,
+                            address: 0,
+                            line: vec![line],
+                            is_folded: true,
+                        }
+                    }
+                    Function::InternalFunction(InternalFunction::Inlined(_)) => unreachable!("First function in a function stack corresponding to a single location cannot be inlined")
+                };
+
+                for function in function_stack.get(1..).unwrap_or_default() {
+                    match function {
+                        Function::InternalFunction(InternalFunction::Inlined(function_name)) => {
+                            let line = pprof::Line {
+                                function_id: self.function_id(function_name).into(),
+                                line: 0,
+                            };
+                            location.line.push(line);
+                        }
+                        Function::Entrypoint(_)
+                        | Function::InternalFunction(InternalFunction::NonInlined(_)) => {
+                            unreachable!("Only first function in a function stack corresponding to a single location can be not inlined")
+                        }
+                    }
+                }
+
+                // pprof format represents callstack from the least meaningful elements
+                location.line.reverse();
+                locations_ids.push(LocationId(location.id));
+
+                self.locations.insert(function_stack.to_vec(), location);
+            }
         }
-
-        let locations_ids = pprof_locations
-            .iter()
-            .map(|loc| LocationId(loc.id))
-            .collect();
-        self.locations.append(&mut pprof_locations);
 
         locations_ids
     }
@@ -137,8 +161,9 @@ impl ProfilerContext {
         }
 
         let functions = self.functions.into_values().collect();
+        let locations = self.locations.into_values().collect();
 
-        (string_table, functions, self.locations)
+        (string_table, functions, locations)
     }
 }
 
