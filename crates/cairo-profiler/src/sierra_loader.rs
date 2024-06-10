@@ -1,3 +1,4 @@
+use crate::trace_reader::function_name::FunctionName;
 use anyhow::{anyhow, Context, Result};
 use cairo_lang_sierra::debug_info::DebugInfo;
 use cairo_lang_sierra::program::{Program, ProgramArtifact, StatementIdx, VersionedProgram};
@@ -6,6 +7,7 @@ use cairo_lang_sierra_to_casm::metadata::calc_metadata;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::{Utf8Path, Utf8PathBuf};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use trace_data::{CallTrace, CallTraceNode};
@@ -37,11 +39,11 @@ impl SierraProgram {
 
 #[allow(dead_code)]
 #[derive(Default, Clone)]
-pub struct StatementsFunctionsMap(HashMap<StatementIdx, Vec<String>>);
+pub struct StatementsFunctionsMap(HashMap<StatementIdx, Vec<FunctionName>>);
 
 #[allow(dead_code)]
 impl StatementsFunctionsMap {
-    pub fn get(&self, key: StatementIdx) -> Option<&Vec<String>> {
+    pub fn get(&self, key: StatementIdx) -> Option<&Vec<FunctionName>> {
         self.0.get(&key)
     }
 }
@@ -148,25 +150,28 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
 fn maybe_get_statements_functions_map(
     maybe_sierra_program_debug_info: Option<DebugInfo>,
 ) -> Option<StatementsFunctionsMap> {
-    maybe_sierra_program_debug_info
-        .and_then(|mut debug_info| {
-            debug_info
-                .annotations
-                .shift_remove("github.com/software-mansion/cairo-profiler")
-        })
-        .map(|mut annotations| {
-            assert!(
-                annotations.get("statements_functions").is_some(),
-                "Wrong debug info annotations format"
-            );
-            annotations["statements_functions"].take()
-        })
-        .map(|statements_functions| {
-            let map =
-                serde_json::from_value::<HashMap<StatementIdx, Vec<String>>>(statements_functions)
-                    .expect("Wrong statements function map format");
-            StatementsFunctionsMap(map)
-        })
+    maybe_sierra_program_debug_info.and_then(|mut debug_info| {
+        debug_info
+            .annotations
+            .shift_remove("github.com/software-mansion/cairo-profiler")
+            .map(get_statements_functions_map)
+    })
+}
+
+pub fn get_statements_functions_map(mut annotations: Value) -> StatementsFunctionsMap {
+    assert!(
+        annotations.get("statements_functions").is_some(),
+        "Wrong debug info annotations format"
+    );
+    let statements_functions = annotations["statements_functions"].take();
+    let map = serde_json::from_value::<HashMap<StatementIdx, Vec<String>>>(statements_functions)
+        .expect("Wrong statements function map format");
+
+    StatementsFunctionsMap(
+        map.into_iter()
+            .map(|(key, names)| (key, names.into_iter().map(FunctionName).collect()))
+            .collect(),
+    )
 }
 
 pub fn collect_and_compile_all_sierra_programs(
