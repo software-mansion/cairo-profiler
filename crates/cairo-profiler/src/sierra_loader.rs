@@ -128,10 +128,10 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
 pub fn collect_and_compile_all_sierra_programs(
     trace: &CallTrace,
 ) -> Result<CompiledArtifactsCache> {
-    let mut compiled_artifacts_cacge = CompiledArtifactsCache::new();
-    collect_compiled_artifacts(trace, &mut compiled_artifacts_cacge)?;
+    let mut compiled_artifacts_cache = CompiledArtifactsCache::new();
+    collect_compiled_artifacts(trace, &mut compiled_artifacts_cache)?;
 
-    Ok(compiled_artifacts_cacge)
+    Ok(compiled_artifacts_cache)
 }
 
 fn collect_compiled_artifacts(

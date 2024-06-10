@@ -1,9 +1,7 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::function_trace_builder::function_stack_trace::{
-    FunctionStack, FunctionType,
-};
-use crate::trace_reader::{Function, InternalFunction};
+use crate::trace_reader::function_trace_builder::function_stack_trace::{CallStack, FunctionType};
+use crate::trace_reader::{Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
@@ -16,13 +14,8 @@ use trace_data::TraceEntry;
 mod function_stack_trace;
 
 pub struct FunctionLevelProfilingInfo {
-    pub functions_samples: Vec<FunctionSample>,
+    pub functions_samples: Vec<Sample>,
     pub header_steps: Steps,
-}
-
-pub struct FunctionSample {
-    pub call_trace: Vec<Function>,
-    pub steps: Steps,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -69,7 +62,7 @@ pub fn collect_function_level_profiling_info(
         1
     };
 
-    let mut function_stack = FunctionStack::new(function_level_config.max_function_trace_depth);
+    let mut function_stack = CallStack::new(function_level_config.max_function_trace_depth);
 
     // The value is the steps of the call trace so far, not including the pending steps being
     // tracked at the time. The key is a function call trace.
@@ -131,10 +124,10 @@ pub fn collect_function_level_profiling_info(
             }
             GenStatement::Return(_) => {
                 if let Some(exited_function) = function_stack.exit_function_call() {
-                    if let FunctionType::Regular(function) = exited_function {
+                    if let FunctionType::Regular((function_name, steps)) = exited_function {
                         let current_function_names_call_stack = chain!(
                             function_stack.current_function_names_stack(),
-                            [function.name, current_function_name]
+                            [function_name, current_function_name]
                         )
                         .collect_vec();
 
@@ -151,7 +144,7 @@ pub fn collect_function_level_profiling_info(
                             .entry(current_function_call_stack)
                             .or_insert(Steps(0)) += current_function_steps;
                         // Set to the caller function steps to continue counting its cost.
-                        current_function_steps = function.steps;
+                        current_function_steps = steps;
                     }
                 } else {
                     end_of_program_reached = true;
@@ -170,7 +163,13 @@ pub fn collect_function_level_profiling_info(
 
     let functions_samples = functions_traces
         .into_iter()
-        .map(|(call_trace, steps)| FunctionSample { call_trace, steps })
+        .map(|(call_stack, steps)| Sample {
+            call_stack,
+            measurements: HashMap::from([(
+                MeasurementUnit::from("steps".to_string()),
+                MeasurementValue(i64::try_from(steps.0).unwrap()),
+            )]),
+        })
         .collect_vec();
 
     FunctionLevelProfilingInfo {
