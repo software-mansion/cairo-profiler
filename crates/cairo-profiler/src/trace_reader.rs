@@ -31,6 +31,11 @@ pub struct Sample {
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub enum Function {
     Entrypoint(FunctionName),
+    InternalFunction(InternalFunction),
+}
+
+#[derive(PartialEq, Eq, Hash, Clone)]
+pub enum InternalFunction {
     _Inlined(FunctionName),
     NonInlined(FunctionName),
 }
@@ -152,7 +157,7 @@ fn collect_samples<'a>(
             &FunctionLevelConfig::from(profiler_config),
         );
 
-        for function_trace in function_level_profiling_info.functions_traces {
+        for function_trace in function_level_profiling_info.functions_samples {
             let call_stack = chain!(
                 current_entrypoint_call_stack.clone(),
                 function_trace.call_trace

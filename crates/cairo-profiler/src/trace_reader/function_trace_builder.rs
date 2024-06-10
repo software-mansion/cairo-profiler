@@ -3,7 +3,7 @@ use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
     FunctionStack, FunctionType,
 };
-use crate::trace_reader::Function;
+use crate::trace_reader::{Function, InternalFunction};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
@@ -16,11 +16,11 @@ use trace_data::TraceEntry;
 mod function_stack_trace;
 
 pub struct FunctionLevelProfilingInfo {
-    pub functions_traces: Vec<FunctionCallTrace>,
+    pub functions_samples: Vec<FunctionSample>,
     pub header_steps: Steps,
 }
 
-pub struct FunctionCallTrace {
+pub struct FunctionSample {
     pub call_trace: Vec<Function>,
     pub steps: Steps,
 }
@@ -140,7 +140,11 @@ pub fn collect_function_level_profiling_info(
 
                         let current_function_call_stack = current_function_names_call_stack
                             .into_iter()
-                            .map(Function::NonInlined)
+                            .map(|function_name| {
+                                Function::InternalFunction(InternalFunction::NonInlined(
+                                    function_name,
+                                ))
+                            })
                             .collect();
 
                         *functions_traces
@@ -152,7 +156,9 @@ pub fn collect_function_level_profiling_info(
                 } else {
                     end_of_program_reached = true;
 
-                    let current_function_stack = vec![Function::NonInlined(current_function_name)];
+                    let current_function_stack = vec![Function::InternalFunction(
+                        InternalFunction::NonInlined(current_function_name),
+                    )];
 
                     *functions_traces
                         .entry(current_function_stack)
@@ -162,13 +168,13 @@ pub fn collect_function_level_profiling_info(
         }
     }
 
-    let functions_stack_traces = functions_traces
+    let functions_samples = functions_traces
         .into_iter()
-        .map(|(call_trace, steps)| FunctionCallTrace { call_trace, steps })
+        .map(|(call_trace, steps)| FunctionSample { call_trace, steps })
         .collect_vec();
 
     FunctionLevelProfilingInfo {
-        functions_traces: functions_stack_traces,
+        functions_samples,
         header_steps,
     }
 }

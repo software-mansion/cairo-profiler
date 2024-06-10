@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 pub use perftools::profiles as pprof;
 
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::{Function, MeasurementUnit, MeasurementValue, Sample};
+use crate::trace_reader::{Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 struct StringId(u64);
@@ -68,10 +68,13 @@ impl ProfilerContext {
 
     fn location_id(&mut self, location: &Function) -> LocationId {
         let location = match location {
-            Function::Entrypoint(function_name) | Function::NonInlined(function_name) => {
+            Function::Entrypoint(function_name)
+            | Function::InternalFunction(InternalFunction::NonInlined(function_name)) => {
                 function_name
             }
-            Function::_Inlined(_) => todo!("Unused, logic for it will be added in the next PR"),
+            Function::InternalFunction(InternalFunction::_Inlined(_)) => {
+                todo!("Unused, logic for it will be added in the next PR")
+            }
         };
 
         if let Some(loc) = self.locations.get(location) {
