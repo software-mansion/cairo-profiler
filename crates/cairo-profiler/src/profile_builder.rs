@@ -11,7 +11,9 @@ use std::collections::{HashMap, HashSet};
 pub use perftools::profiles as pprof;
 
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::{Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample};
+use crate::trace_reader::sample::{
+    Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample,
+};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 struct StringId(u64);

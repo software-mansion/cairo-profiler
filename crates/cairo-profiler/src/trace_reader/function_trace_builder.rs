@@ -1,7 +1,9 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{CallStack, CallType};
-use crate::trace_reader::{Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample};
+use crate::trace_reader::sample::{
+    Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample,
+};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
