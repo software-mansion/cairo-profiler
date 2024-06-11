@@ -1,10 +1,13 @@
+use crate::trace_reader::function_name::FunctionName;
 use anyhow::{anyhow, Context, Result};
-use cairo_lang_sierra::program::{Program, VersionedProgram};
+use cairo_lang_sierra::debug_info::DebugInfo;
+use cairo_lang_sierra::program::{Program, ProgramArtifact, StatementIdx, VersionedProgram};
 use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::calc_metadata;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::{Utf8Path, Utf8PathBuf};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use trace_data::{CallTrace, CallTraceNode};
@@ -16,6 +19,7 @@ pub struct CompiledArtifactsCache(HashMap<Utf8PathBuf, CompiledArtifacts>);
 pub struct CompiledArtifacts {
     pub sierra_program: SierraProgram,
     pub casm_debug_info: CairoProgramDebugInfo,
+    pub maybe_statements_functions_map: Option<StatementsFunctionsMap>,
 }
 
 pub enum SierraProgram {
@@ -30,6 +34,17 @@ impl SierraProgram {
                 program
             }
         }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Default, Clone)]
+pub struct StatementsFunctionsMap(HashMap<StatementIdx, Vec<FunctionName>>);
+
+#[allow(dead_code)]
+impl StatementsFunctionsMap {
+    pub fn get(&self, key: StatementIdx) -> Option<&Vec<FunctionName>> {
+        self.0.get(&key)
     }
 }
 
@@ -64,6 +79,9 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 .extract_sierra_program()
                 .context("Failed to extract sierra program from contract code")?;
 
+            let maybe_statements_functions_map =
+                maybe_get_statements_functions_map(contract_class.sierra_program_debug_info);
+
             let contract_class = ContractClass {
                 // Debug info is unused in the compilation. This saves us a costly clone.
                 sierra_program_debug_info: None,
@@ -83,6 +101,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 CompiledArtifacts {
                     sierra_program: SierraProgram::ContractClass(program),
                     casm_debug_info,
+                    maybe_statements_functions_map,
                 },
             );
 
@@ -90,9 +109,11 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
         }
 
         if let Ok(versioned_program) = serde_json::from_str::<VersionedProgram>(&raw_sierra) {
-            let program = versioned_program
+            let ProgramArtifact{ program, debug_info} = versioned_program
                 .into_v1()
-                .context("Failed to extract program artifact from versioned program. Make sure your versioned program is of version 1")?.program;
+                .context("Failed to extract program artifact from versioned program. Make sure your versioned program is of version 1")?;
+
+            let maybe_statements_functions_map = maybe_get_statements_functions_map(debug_info);
 
             let casm = cairo_lang_sierra_to_casm::compiler::compile(
                 &program,
@@ -110,6 +131,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 CompiledArtifacts {
                     sierra_program: SierraProgram::VersionedProgram(program),
                     casm_debug_info: casm.debug_info,
+                    maybe_statements_functions_map,
                 },
             );
 
@@ -123,6 +145,33 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
     }
 
     Ok(())
+}
+
+fn maybe_get_statements_functions_map(
+    maybe_sierra_program_debug_info: Option<DebugInfo>,
+) -> Option<StatementsFunctionsMap> {
+    maybe_sierra_program_debug_info.and_then(|mut debug_info| {
+        debug_info
+            .annotations
+            .shift_remove("github.com/software-mansion/cairo-profiler")
+            .map(get_statements_functions_map)
+    })
+}
+
+pub fn get_statements_functions_map(mut annotations: Value) -> StatementsFunctionsMap {
+    assert!(
+        annotations.get("statements_functions").is_some(),
+        "Wrong debug info annotations format"
+    );
+    let statements_functions = annotations["statements_functions"].take();
+    let map = serde_json::from_value::<HashMap<StatementIdx, Vec<String>>>(statements_functions)
+        .expect("Wrong statements function map format");
+
+    StatementsFunctionsMap(
+        map.into_iter()
+            .map(|(key, names)| (key, names.into_iter().map(FunctionName).collect()))
+            .collect(),
+    )
 }
 
 pub fn collect_and_compile_all_sierra_programs(
