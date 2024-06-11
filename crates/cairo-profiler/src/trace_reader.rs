@@ -5,6 +5,7 @@ use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
 use crate::sierra_loader::CompiledArtifactsCache;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
+
 use crate::trace_reader::sample::{AggregatedSample, Function, InternalFunction, Sample};
 
 use trace_data::{CallTrace, CallTraceNode, ExecutionResources};

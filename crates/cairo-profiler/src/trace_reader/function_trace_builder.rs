@@ -1,6 +1,8 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::function_trace_builder::function_stack_trace::{CallStack, CallType};
+use crate::trace_reader::function_trace_builder::function_stack_trace::{
+    CallStack, CurrentCallType,
+};
 use crate::trace_reader::sample::{
     Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample,
 };
@@ -126,7 +128,7 @@ pub fn collect_function_level_profiling_info(
             }
             GenStatement::Return(_) => {
                 if let Some(exited_call) = call_stack.exit_function_call() {
-                    if let CallType::Regular((function_name, steps)) = exited_call {
+                    if let CurrentCallType::Regular((function_name, steps)) = exited_call {
                         let names_call_stack = chain!(
                             call_stack.current_function_names_stack(),
                             [function_name, current_function_name]
