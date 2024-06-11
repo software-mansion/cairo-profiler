@@ -10,8 +10,8 @@ use std::collections::{HashMap, HashSet};
 
 pub use perftools::profiles as pprof;
 
-use crate::trace_reader::functions::FunctionName;
-use crate::trace_reader::{ContractCallSample, MeasurementUnit, MeasurementValue};
+use crate::trace_reader::function_name::FunctionName;
+use crate::trace_reader::{Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample};
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 struct StringId(u64);
@@ -66,7 +66,17 @@ impl ProfilerContext {
         }
     }
 
-    fn location_id(&mut self, location: &FunctionName) -> LocationId {
+    fn location_id(&mut self, location: &Function) -> LocationId {
+        let location = match location {
+            Function::Entrypoint(function_name)
+            | Function::InternalFunction(InternalFunction::NonInlined(function_name)) => {
+                function_name
+            }
+            Function::InternalFunction(InternalFunction::_Inlined(_)) => {
+                todo!("Unused, logic for it will be added in the next PR")
+            }
+        };
+
         if let Some(loc) = self.locations.get(location) {
             LocationId(loc.id)
         } else {
@@ -142,7 +152,7 @@ fn build_value_types(
 
 fn build_samples(
     context: &mut ProfilerContext,
-    samples: &[ContractCallSample],
+    samples: &[Sample],
     all_measurements_units: &[MeasurementUnit],
 ) -> Vec<pprof::Sample> {
     let samples = samples
@@ -171,13 +181,13 @@ fn build_samples(
     samples
 }
 
-fn collect_all_measurements_units(samples: &[ContractCallSample]) -> Vec<MeasurementUnit> {
+fn collect_all_measurements_units(samples: &[Sample]) -> Vec<MeasurementUnit> {
     let units_set: HashSet<&MeasurementUnit> =
         samples.iter().flat_map(|m| m.measurements.keys()).collect();
     units_set.into_iter().cloned().collect()
 }
 
-pub fn build_profile(samples: &[ContractCallSample]) -> pprof::Profile {
+pub fn build_profile(samples: &[Sample]) -> pprof::Profile {
     let mut context = ProfilerContext::new();
     let all_measurements_units = collect_all_measurements_units(samples);
     let value_types = build_value_types(&all_measurements_units, &mut context);

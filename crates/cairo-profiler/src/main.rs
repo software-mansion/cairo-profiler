@@ -38,7 +38,7 @@ struct Cli {
     /// Specify maximum depth of function tree in function level profiling.
     /// The is applied per entrypoint - each entrypoint function tree is treated separately.
     #[arg(long, default_value_t = 100)]
-    max_function_trace_depth: usize,
+    max_function_stack_trace_depth: usize,
 
     /// Split non-inlined generic functions based on the type they were monomorphised with.
     /// E.g. treat `function<felt252>` as different from `function<u8>`.
@@ -54,10 +54,10 @@ fn main() -> Result<()> {
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
-    let compiled_artifacts_path_map = collect_and_compile_all_sierra_programs(&serialized_trace)?;
+    let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(&serialized_trace)?;
     let samples = collect_samples_from_trace(
         &serialized_trace,
-        &compiled_artifacts_path_map,
+        &compiled_artifacts_cache,
         &ProfilerConfig::from(&cli),
     )?;
 

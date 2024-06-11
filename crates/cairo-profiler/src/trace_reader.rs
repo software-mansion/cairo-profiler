@@ -1,19 +1,15 @@
-use core::fmt;
 use std::collections::HashMap;
-use std::fmt::Display;
 
 use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
-use crate::sierra_loader::CompiledArtifactsPathMap;
+use crate::sierra_loader::CompiledArtifactsCache;
+use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
-use crate::trace_reader::functions::FunctionName;
 use anyhow::{Context, Result};
-use itertools::Itertools;
-use trace_data::{
-    CallTrace, CallTraceNode, ContractAddress, EntryPointSelector, ExecutionResources, L1Resources,
-};
+use itertools::chain;
+use trace_data::{CallTrace, CallTraceNode, ExecutionResources, L1Resources};
 
+pub mod function_name;
 mod function_trace_builder;
-pub mod functions;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct MeasurementUnit(pub String);
@@ -27,14 +23,26 @@ impl From<String> for MeasurementUnit {
 #[derive(Debug, Clone)]
 pub struct MeasurementValue(pub i64);
 
-pub struct ContractCallSample {
-    pub call_stack: Vec<FunctionName>,
+pub struct Sample {
+    pub call_stack: Vec<Function>,
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
 }
 
-impl ContractCallSample {
+#[derive(PartialEq, Eq, Hash, Clone)]
+pub enum Function {
+    Entrypoint(FunctionName),
+    InternalFunction(InternalFunction),
+}
+
+#[derive(PartialEq, Eq, Hash, Clone)]
+pub enum InternalFunction {
+    _Inlined(FunctionName),
+    NonInlined(FunctionName),
+}
+
+impl Sample {
     pub fn from(
-        call_stack: Vec<FunctionName>,
+        call_stack: Vec<Function>,
         resources: &ExecutionResources,
         l1_resources: &L1Resources,
     ) -> Self {
@@ -85,103 +93,46 @@ impl ContractCallSample {
             MeasurementValue(i64::try_from(summarized_payload).unwrap()),
         );
 
-        ContractCallSample {
+        Sample {
             call_stack,
             measurements,
         }
     }
 }
 
-/// `contract_name` and `function_name` are always present (in case they are not in trace we just
-/// set `<unknown>` string)
-/// `address` and `selector` are optional and set if `--show-details` flag is enabled
-/// or names are unknown
-pub struct EntryPointId {
-    address: Option<String>,
-    selector: Option<String>,
-    contract_name: String,
-    function_name: String,
-}
-
-impl EntryPointId {
-    fn from(
-        contract_name: Option<String>,
-        function_name: Option<String>,
-        contract_address: ContractAddress,
-        function_selector: EntryPointSelector,
-        show_details: bool,
-    ) -> Self {
-        let (contract_name, address) = match contract_name {
-            Some(name) if show_details => (name, Some(contract_address.0)),
-            Some(name) => (name, None),
-            None => (String::from("<unknown>"), Some(contract_address.0)),
-        };
-
-        let (function_name, selector) = match function_name {
-            Some(name) if show_details => (name, Some(function_selector.0)),
-            Some(name) => (name, None),
-            None => (String::from("<unknown>"), Some(function_selector.0)),
-        };
-
-        EntryPointId {
-            address,
-            selector,
-            contract_name,
-            function_name,
-        }
-    }
-}
-
-impl Display for EntryPointId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let contract_address = match &self.address {
-            None => String::new(),
-            Some(address) => format!("Address: {address}\n"),
-        };
-        let selector = match &self.selector {
-            None => String::new(),
-            Some(selector) => format!("Selector: {selector}\n"),
-        };
-
-        write!(
-            f,
-            "Contract: {}\n{contract_address}Function: {}\n{selector}",
-            self.contract_name, self.function_name
-        )
-    }
-}
-
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
-    compiled_artifacts_path_map: &CompiledArtifactsPathMap,
+    compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
-) -> Result<Vec<ContractCallSample>> {
+) -> Result<Vec<Sample>> {
     let mut samples = vec![];
-    let mut current_path = vec![];
+    let mut current_entrypoint_call_stack = vec![];
 
     collect_samples(
         &mut samples,
-        &mut current_path,
+        &mut current_entrypoint_call_stack,
         trace,
-        compiled_artifacts_path_map,
+        compiled_artifacts_cache,
         profiler_config,
     )?;
     Ok(samples)
 }
 
 fn collect_samples<'a>(
-    samples: &mut Vec<ContractCallSample>,
-    current_call_stack: &mut Vec<EntryPointId>,
+    samples: &mut Vec<Sample>,
+    current_entrypoint_call_stack: &mut Vec<Function>,
     trace: &'a CallTrace,
-    compiled_artifacts_path_map: &CompiledArtifactsPathMap,
+    compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
 ) -> Result<&'a ExecutionResources> {
-    current_call_stack.push(EntryPointId::from(
-        trace.entry_point.contract_name.clone(),
-        trace.entry_point.function_name.clone(),
-        trace.entry_point.contract_address.clone(),
-        trace.entry_point.entry_point_selector.clone(),
-        profiler_config.show_details,
+    current_entrypoint_call_stack.push(Function::Entrypoint(
+        FunctionName::from_entry_point_params(
+            trace.entry_point.contract_name.clone(),
+            trace.entry_point.function_name.clone(),
+            trace.entry_point.contract_address.clone(),
+            trace.entry_point.entry_point_selector.clone(),
+            profiler_config.show_details,
+        ),
     ));
 
     let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
@@ -195,32 +146,32 @@ fn collect_samples<'a>(
                 )
             })?;
 
-        let compiled_artifacts = compiled_artifacts_path_map
-            .get_sierra_casm_artifacts_for_path(&absolute_source_sierra_path);
+        let compiled_artifacts =
+            compiled_artifacts_cache.get_compiled_artifacts_for_path(&absolute_source_sierra_path);
 
         let function_level_profiling_info = collect_function_level_profiling_info(
             &cairo_execution_info.casm_level_info.vm_trace,
-            compiled_artifacts.sierra.get_program_artifact(),
+            compiled_artifacts.sierra_program.get_program(),
             &compiled_artifacts.casm_debug_info,
             cairo_execution_info.casm_level_info.run_with_call_header,
             &FunctionLevelConfig::from(profiler_config),
         );
 
-        for mut function_stack_trace in function_level_profiling_info.functions_stack_traces {
-            let mut function_trace = current_call_stack
-                .iter()
-                .map(FunctionName::from)
-                .collect_vec();
-            function_trace.append(&mut function_stack_trace.stack_trace);
+        let mut function_samples = function_level_profiling_info
+            .functions_samples
+            .into_iter()
+            .map(
+                |Sample {
+                     measurements,
+                     call_stack,
+                 }| Sample {
+                    measurements,
+                    call_stack: chain!(current_entrypoint_call_stack.clone(), call_stack).collect(),
+                },
+            )
+            .collect();
 
-            samples.push(ContractCallSample {
-                call_stack: function_trace,
-                measurements: HashMap::from([(
-                    MeasurementUnit::from("steps".to_string()),
-                    MeasurementValue(i64::try_from(function_stack_trace.steps.0).unwrap()),
-                )]),
-            });
-        }
+        samples.append(&mut function_samples);
         Some(function_level_profiling_info.header_steps)
     } else {
         None
@@ -232,9 +183,9 @@ fn collect_samples<'a>(
         if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
             children_resources += collect_samples(
                 samples,
-                current_call_stack,
+                current_entrypoint_call_stack,
                 sub_trace,
-                compiled_artifacts_path_map,
+                compiled_artifacts_cache,
                 profiler_config,
             )?;
         }
@@ -246,13 +197,13 @@ fn collect_samples<'a>(
         call_resources.vm_resources.n_steps = entrypoint_steps.0;
     }
 
-    samples.push(ContractCallSample::from(
-        current_call_stack.iter().map(FunctionName::from).collect(),
+    samples.push(Sample::from(
+        current_entrypoint_call_stack.clone(),
         &call_resources,
         &trace.used_l1_resources,
     ));
 
-    current_call_stack.pop();
+    current_entrypoint_call_stack.pop();
 
     Ok(&trace.cumulative_resources)
 }
