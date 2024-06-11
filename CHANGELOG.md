@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `--max-function-stack-trace-depth` allowing to specify maximum depth of the function tree in function level profiling
 - `--split-generics` flag allowing to differentiate between non-inlined generics monomorphised with different types
+- `--show-inlined-functions` flag to show inlined functions in the profile. Requires Scarb >= 2.7.0 and setting
+  `unstable-add-statements-functions-debug-info = true` in `[cairo]` section of Scarb.toml.
  
 ## [0.3.0] - 2024-04-20
 
