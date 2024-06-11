@@ -13,7 +13,7 @@ pub struct AggregatedSample {
 
 impl From<Sample> for AggregatedSample {
     fn from(sample: Sample) -> Self {
-        // This vector represent stacks of functions corresponding to single locations.
+        // This vector represent stacks of function calls corresponding to single locations.
         // It contains tuples of form (start_index, end_index).
         // A single stack is `&call_stack[start_index..=end_index]`.
         let mut function_stacks_indexes = vec![];
