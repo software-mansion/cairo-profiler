@@ -6,7 +6,7 @@ use crate::sierra_loader::CompiledArtifactsCache;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
 
-use crate::trace_reader::sample::{AggregatedSample, Function, InternalFunction, Sample};
+use crate::trace_reader::sample::{AggregatedSample, FunctionCall, Sample};
 
 use trace_data::{CallTrace, CallTraceNode, ExecutionResources};
 
@@ -30,17 +30,17 @@ pub fn collect_samples_from_trace(
         profiler_config,
     )?;
 
-    Ok(samples.into_iter().map(aggregate_sample).collect())
+    Ok(samples.into_iter().map(Into::into).collect())
 }
 
 fn collect_samples<'a>(
     samples: &mut Vec<Sample>,
-    current_entrypoint_call_stack: &mut Vec<Function>,
+    current_entrypoint_call_stack: &mut Vec<FunctionCall>,
     trace: &'a CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
 ) -> Result<&'a ExecutionResources> {
-    current_entrypoint_call_stack.push(Function::Entrypoint(
+    current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(
         FunctionName::from_entry_point_params(
             trace.entry_point.contract_name.clone(),
             trace.entry_point.function_name.clone(),
@@ -121,46 +121,4 @@ fn collect_samples<'a>(
     current_entrypoint_call_stack.pop();
 
     Ok(&trace.cumulative_resources)
-}
-
-fn aggregate_sample(sample: Sample) -> AggregatedSample {
-    // This vector represent stacks of functions corresponding to single locations.
-    // It contains tuples of form (start_index, end_index).
-    // A single stack is `&call_stack[start_index..=end_index]`.
-    let mut function_stacks_indexes = vec![];
-
-    let mut current_function_stack_start_index = 0;
-    for (index, function) in sample.call_stack.iter().enumerate() {
-        match function {
-            Function::InternalFunction(InternalFunction::NonInlined(_))
-            | Function::Entrypoint(_) => {
-                if index != 0 {
-                    function_stacks_indexes.push((current_function_stack_start_index, index - 1));
-                }
-                current_function_stack_start_index = index;
-            }
-            Function::InternalFunction(InternalFunction::Inlined(_)) => {}
-        }
-    }
-
-    function_stacks_indexes.push((
-        current_function_stack_start_index,
-        sample.call_stack.len() - 1,
-    ));
-
-    let mut aggregated_call_stack = vec![];
-    let call_stack_iter = sample.call_stack.into_iter();
-    for (start_index, end_index) in function_stacks_indexes {
-        aggregated_call_stack.push(
-            call_stack_iter
-                .clone()
-                .take(end_index - start_index + 1)
-                .collect(),
-        );
-    }
-
-    AggregatedSample {
-        aggregated_call_stack,
-        measurements: sample.measurements,
-    }
 }

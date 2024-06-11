@@ -2,20 +2,69 @@ use crate::trace_reader::function_name::FunctionName;
 use std::collections::HashMap;
 use trace_data::{ExecutionResources, L1Resources};
 
+// In pprof inlining is signalised by locations having multiple lines.
+// A sample with stack [A, B_inlined, C, D, E_inlined, F_inlined] has 3 pprof locations
+// (instead of 6 if all function calls were not inlined) corresponding to the following stacks:
+// [A, B_inlined], [C] and [D, E_inlined, F_inlined].
 pub struct AggregatedSample {
-    pub aggregated_call_stack: Vec<Vec<Function>>,
+    pub aggregated_call_stack: Vec<Vec<FunctionCall>>,
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
 }
 
+impl From<Sample> for AggregatedSample {
+    fn from(sample: Sample) -> Self {
+        // This vector represent stacks of functions corresponding to single locations.
+        // It contains tuples of form (start_index, end_index).
+        // A single stack is `&call_stack[start_index..=end_index]`.
+        let mut function_stacks_indexes = vec![];
+
+        let mut current_function_stack_start_index = 0;
+        for (index, function_call) in sample.call_stack.iter().enumerate() {
+            match function_call {
+                FunctionCall::InternalFunctionCall(InternalFunction::NonInlined(_))
+                | FunctionCall::EntrypointCall(_) => {
+                    if index != 0 {
+                        function_stacks_indexes
+                            .push((current_function_stack_start_index, index - 1));
+                    }
+                    current_function_stack_start_index = index;
+                }
+                FunctionCall::InternalFunctionCall(InternalFunction::Inlined(_)) => {}
+            }
+        }
+
+        function_stacks_indexes.push((
+            current_function_stack_start_index,
+            sample.call_stack.len() - 1,
+        ));
+
+        let mut aggregated_call_stack = vec![];
+        let call_stack_iter = sample.call_stack.into_iter();
+        for (start_index, end_index) in function_stacks_indexes {
+            aggregated_call_stack.push(
+                call_stack_iter
+                    .clone()
+                    .take(end_index - start_index + 1)
+                    .collect(),
+            );
+        }
+
+        AggregatedSample {
+            aggregated_call_stack,
+            measurements: sample.measurements,
+        }
+    }
+}
+
 pub(super) struct Sample {
-    pub call_stack: Vec<Function>,
+    pub call_stack: Vec<FunctionCall>,
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone)]
-pub enum Function {
-    Entrypoint(FunctionName),
-    InternalFunction(InternalFunction),
+pub enum FunctionCall {
+    EntrypointCall(FunctionName),
+    InternalFunctionCall(InternalFunction),
 }
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -39,7 +88,7 @@ pub struct MeasurementValue(pub i64);
 
 impl Sample {
     pub fn from(
-        call_stack: Vec<Function>,
+        call_stack: Vec<FunctionCall>,
         resources: &ExecutionResources,
         l1_resources: &L1Resources,
     ) -> Self {

@@ -4,7 +4,7 @@ use crate::trace_reader::function_trace_builder::function_stack_trace::{
     CallStack, CurrentCallType,
 };
 use crate::trace_reader::sample::{
-    Function, InternalFunction, MeasurementUnit, MeasurementValue, Sample,
+    FunctionCall, InternalFunction, MeasurementUnit, MeasurementValue, Sample,
 };
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
@@ -70,7 +70,7 @@ pub fn collect_function_level_profiling_info(
 
     // The value is the steps of the stack trace so far, not including the pending steps being
     // tracked at the time. The key is a function stack trace.
-    let mut functions_stack_traces: HashMap<Vec<Function>, Steps> = HashMap::new();
+    let mut functions_stack_traces: HashMap<Vec<FunctionCall>, Steps> = HashMap::new();
 
     // Header steps are counted separately and then displayed as steps of the entrypoint in the
     // profile tree. It is because technically they don't belong to any function, but still increase
@@ -138,7 +138,7 @@ pub fn collect_function_level_profiling_info(
                         let call_stack = names_call_stack
                             .into_iter()
                             .map(|function_name| {
-                                Function::InternalFunction(InternalFunction::NonInlined(
+                                FunctionCall::InternalFunctionCall(InternalFunction::NonInlined(
                                     function_name,
                                 ))
                             })
@@ -152,7 +152,7 @@ pub fn collect_function_level_profiling_info(
                 } else {
                     end_of_program_reached = true;
 
-                    let call_stack = vec![Function::InternalFunction(
+                    let call_stack = vec![FunctionCall::InternalFunctionCall(
                         InternalFunction::NonInlined(current_function_name),
                     )];
 

@@ -12,7 +12,7 @@ pub use perftools::profiles as pprof;
 
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::sample::{
-    AggregatedSample, Function, InternalFunction, MeasurementUnit, MeasurementValue,
+    AggregatedSample, FunctionCall, InternalFunction, MeasurementUnit, MeasurementValue,
 };
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
@@ -45,7 +45,7 @@ impl From<FunctionId> for u64 {
 struct ProfilerContext {
     strings: HashMap<String, StringId>,
     functions: HashMap<FunctionName, pprof::Function>,
-    locations: HashMap<Vec<Function>, pprof::Location>,
+    locations: HashMap<Vec<FunctionCall>, pprof::Location>,
 }
 
 impl ProfilerContext {
@@ -68,7 +68,7 @@ impl ProfilerContext {
         }
     }
 
-    fn locations_ids(&mut self, aggregated_call_stacks: &[Vec<Function>]) -> Vec<LocationId> {
+    fn locations_ids(&mut self, aggregated_call_stacks: &[Vec<FunctionCall>]) -> Vec<LocationId> {
         let mut locations_ids = vec![];
 
         for call_stack in aggregated_call_stacks {
@@ -76,7 +76,7 @@ impl ProfilerContext {
                 locations_ids.push(LocationId(location.id));
             } else {
                 let mut location = match &call_stack[0] {
-                    Function::Entrypoint(function_name) | Function::InternalFunction(InternalFunction::NonInlined(function_name)) => {
+                    FunctionCall::EntrypointCall(function_name) | FunctionCall::InternalFunctionCall(InternalFunction::NonInlined(function_name)) => {
                         let line = pprof::Line {
                             function_id: self.function_id(function_name).into(),
                             line: 0,
@@ -89,20 +89,22 @@ impl ProfilerContext {
                             is_folded: true,
                         }
                     }
-                    Function::InternalFunction(InternalFunction::Inlined(_)) => unreachable!("First function in a call stack corresponding to a single location cannot be inlined")
+                    FunctionCall::InternalFunctionCall(InternalFunction::Inlined(_)) => unreachable!("First function in a call stack corresponding to a single location cannot be inlined")
                 };
 
-                for function in call_stack.get(1..).unwrap_or_default() {
-                    match function {
-                        Function::InternalFunction(InternalFunction::Inlined(function_name)) => {
+                for function_call in call_stack.get(1..).unwrap_or_default() {
+                    match function_call {
+                        FunctionCall::InternalFunctionCall(InternalFunction::Inlined(
+                            function_name,
+                        )) => {
                             let line = pprof::Line {
                                 function_id: self.function_id(function_name).into(),
                                 line: 0,
                             };
                             location.line.push(line);
                         }
-                        Function::Entrypoint(_)
-                        | Function::InternalFunction(InternalFunction::NonInlined(_)) => {
+                        FunctionCall::EntrypointCall(_)
+                        | FunctionCall::InternalFunctionCall(InternalFunction::NonInlined(_)) => {
                             unreachable!("Only first function in a call stack corresponding to a single location can be not inlined")
                         }
                     }
