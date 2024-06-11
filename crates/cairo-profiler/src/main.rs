@@ -44,6 +44,11 @@ struct Cli {
     /// E.g. treat `function<felt252>` as different from `function<u8>`.
     #[arg(long)]
     split_generics: bool,
+
+    /// Show inlined function in a trace tree. Requires Scarb >= 2.7.0 and setting
+    /// `unstable-add-statements-functions-debug-info = true` in `[cairo]` section of Scarb.toml.
+    #[arg(long)]
+    show_inlined_functions: bool,
 }
 
 fn main() -> Result<()> {

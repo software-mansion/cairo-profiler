@@ -1,8 +1,10 @@
 use crate::profiler_config::FunctionLevelConfig;
+use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
     CallStack, CurrentCallType,
 };
+use crate::trace_reader::function_trace_builder::inlining::add_inlined_functions_info;
 use crate::trace_reader::sample::{
     FunctionCall, InternalFunction, MeasurementUnit, MeasurementValue, Sample,
 };
@@ -12,10 +14,11 @@ use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::{chain, Itertools};
 use std::collections::HashMap;
-use std::ops::AddAssign;
+use std::ops::{AddAssign, SubAssign};
 use trace_data::TraceEntry;
 
 mod function_stack_trace;
+mod inlining;
 
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,
@@ -37,17 +40,25 @@ impl AddAssign<usize> for Steps {
     }
 }
 
+impl SubAssign<usize> for Steps {
+    fn sub_assign(&mut self, rhs: usize) {
+        self.0 -= rhs;
+    }
+}
+
 enum MaybeSierraStatementIndex {
     SierraStatementIndex(StatementIdx),
     PcOutOfFunctionArea,
 }
 
 /// Collects profiling info of the current run using the trace.
+#[allow(clippy::too_many_lines)]
 pub fn collect_function_level_profiling_info(
     trace: &[TraceEntry],
     program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
     run_with_call_header: bool,
+    maybe_statements_functions_map: &Option<StatementsFunctionsMap>,
     function_level_config: &FunctionLevelConfig,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
@@ -112,6 +123,17 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
+        if function_level_config.show_inlined_functions {
+            add_inlined_functions_info(
+                sierra_statement_idx,
+                maybe_statements_functions_map.as_ref(),
+                &call_stack,
+                &current_function_name,
+                &mut functions_stack_traces,
+                &mut current_function_steps,
+            );
+        }
+
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
         };
@@ -122,6 +144,7 @@ pub fn collect_function_level_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
+                    // TODO: check the original stack during function call and save it
                     call_stack
                         .enter_function_call(current_function_name, &mut current_function_steps);
                 }
