@@ -5,6 +5,7 @@ use crate::sierra_loader::CompiledArtifactsCache;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
 use anyhow::{Context, Result};
+use itertools::chain;
 use trace_data::{CallTrace, CallTraceNode, ExecutionResources, L1Resources};
 
 pub mod function_name;
@@ -148,7 +149,7 @@ fn collect_samples<'a>(
         let compiled_artifacts =
             compiled_artifacts_cache.get_compiled_artifacts_for_path(&absolute_source_sierra_path);
 
-        let mut function_level_profiling_info = collect_function_level_profiling_info(
+        let function_level_profiling_info = collect_function_level_profiling_info(
             &cairo_execution_info.casm_level_info.vm_trace,
             compiled_artifacts.sierra_program.get_program(),
             &compiled_artifacts.casm_debug_info,
@@ -156,7 +157,21 @@ fn collect_samples<'a>(
             &FunctionLevelConfig::from(profiler_config),
         );
 
-        samples.append(&mut function_level_profiling_info.functions_samples);
+        let mut function_samples = function_level_profiling_info
+            .functions_samples
+            .into_iter()
+            .map(
+                |Sample {
+                     measurements,
+                     call_stack,
+                 }| Sample {
+                    measurements,
+                    call_stack: chain!(current_entrypoint_call_stack.clone(), call_stack).collect(),
+                },
+            )
+            .collect();
+
+        samples.append(&mut function_samples);
         Some(function_level_profiling_info.header_steps)
     } else {
         None
