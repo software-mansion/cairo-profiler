@@ -2,7 +2,12 @@ use crate::trace_reader::function_name::FunctionName;
 use std::collections::HashMap;
 use trace_data::{ExecutionResources, L1Resources};
 
-pub struct Sample {
+pub struct AggregatedSample {
+    pub aggregated_call_stack: Vec<Vec<Function>>,
+    pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
+}
+
+pub(super) struct Sample {
     pub call_stack: Vec<Function>,
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
 }
