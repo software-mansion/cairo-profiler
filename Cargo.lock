@@ -430,7 +430,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-profiler"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -1969,7 +1969,7 @@ dependencies = [
 
 [[package]]
 name = "trace-data"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "camino",
  "serde",
