@@ -6,7 +6,7 @@ use crate::sierra_loader::CompiledArtifactsCache;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
 
-use crate::trace_reader::sample::{FunctionCall, Sample};
+use crate::trace_reader::sample::{AggregatedSample, FunctionCall, Sample};
 
 use trace_data::{CallTrace, CallTraceNode, ExecutionResources};
 
@@ -18,7 +18,7 @@ pub fn collect_samples_from_trace(
     trace: &CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
-) -> Result<Vec<Sample>> {
+) -> Result<Vec<AggregatedSample>> {
     let mut samples = vec![];
     let mut current_entrypoint_call_stack = vec![];
 
@@ -30,7 +30,7 @@ pub fn collect_samples_from_trace(
         profiler_config,
     )?;
 
-    Ok(samples)
+    Ok(samples.into_iter().map(Into::into).collect())
 }
 
 fn collect_samples<'a>(
