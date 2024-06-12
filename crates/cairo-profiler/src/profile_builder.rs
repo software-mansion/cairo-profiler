@@ -85,7 +85,7 @@ impl ProfilerContext {
         let mut current_function_stack_start_index = 0;
         for (index, function) in call_stack.iter().enumerate() {
             match function {
-                FunctionCall::InternalFunctionCall(InternalFunctionCall::Inlined(_))
+                FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(_))
                 | FunctionCall::EntrypointCall(_) => {
                     if index != 0 {
                         function_stacks_indexes
@@ -93,7 +93,7 @@ impl ProfilerContext {
                     }
                     current_function_stack_start_index = index;
                 }
-                FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(_)) => {}
+                FunctionCall::InternalFunctionCall(InternalFunctionCall::Inlined(_)) => {}
             }
         }
         function_stacks_indexes.push((current_function_stack_start_index, call_stack.len() - 1));

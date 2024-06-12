@@ -7,13 +7,13 @@ pub(crate) struct Sample {
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
 }
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum FunctionCall {
     EntrypointCall(FunctionName),
     InternalFunctionCall(InternalFunctionCall),
 }
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum InternalFunctionCall {
     #[allow(dead_code)]
     Inlined(FunctionName),
