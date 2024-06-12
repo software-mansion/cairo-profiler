@@ -7,7 +7,7 @@ use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::function_stack_trace::CallStack;
 use crate::trace_reader::function_trace_builder::Steps;
-use crate::trace_reader::sample::{FunctionCall, InternalFunction};
+use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall};
 
 pub(super) fn add_inlined_functions_info(
     sierra_statement_idx: StatementIdx,
@@ -62,7 +62,7 @@ fn build_original_function_stack(
 ) -> Vec<FunctionCall> {
     let mut result = VecDeque::from(vec![
         FunctionCall::InternalFunctionCall(
-            InternalFunction::NonInlined(FunctionName(String::new()))
+            InternalFunctionCall::NonInlined(FunctionName(String::new()))
         );
         original_function_names_stack.len()
     ]);
@@ -82,7 +82,7 @@ fn build_original_function_stack(
             .contains_key(sierra_function_names_stack[first_non_inlined_user_function_index])
     {
         result.push_front(FunctionCall::InternalFunctionCall(
-            InternalFunction::NonInlined(
+            InternalFunctionCall::NonInlined(
                 sierra_function_names_stack[first_non_inlined_user_function_index].clone(),
             ),
         ));
@@ -95,7 +95,7 @@ fn build_original_function_stack(
             .expect("Part of function stack from mappings should be a superset of sierra function stack. This is a bug, contact us");
 
         result[index + first_non_inlined_user_function_index] = FunctionCall::InternalFunctionCall(
-            InternalFunction::NonInlined(original_function_names_stack[index].clone()),
+            InternalFunctionCall::NonInlined(original_function_names_stack[index].clone()),
         );
     }
 
@@ -105,7 +105,7 @@ fn build_original_function_stack(
 
     for index in indices_of_inlined_functions {
         result[index + first_non_inlined_user_function_index] = FunctionCall::InternalFunctionCall(
-            InternalFunction::Inlined(original_function_names_stack[index].clone()),
+            InternalFunctionCall::Inlined(original_function_names_stack[index].clone()),
         );
     }
 
