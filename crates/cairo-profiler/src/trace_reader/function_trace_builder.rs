@@ -4,7 +4,7 @@ use crate::trace_reader::function_trace_builder::function_stack_trace::{
     CallStack, CurrentCallType,
 };
 use crate::trace_reader::sample::{
-    FunctionCall, InternalFunction, MeasurementUnit, MeasurementValue, Sample,
+    FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
@@ -138,9 +138,9 @@ pub fn collect_function_level_profiling_info(
                         let call_stack = names_call_stack
                             .into_iter()
                             .map(|function_name| {
-                                FunctionCall::InternalFunctionCall(InternalFunction::NonInlined(
-                                    function_name,
-                                ))
+                                FunctionCall::InternalFunctionCall(
+                                    InternalFunctionCall::NonInlined(function_name),
+                                )
                             })
                             .collect();
 
@@ -153,7 +153,7 @@ pub fn collect_function_level_profiling_info(
                     end_of_program_reached = true;
 
                     let call_stack = vec![FunctionCall::InternalFunctionCall(
-                        InternalFunction::NonInlined(current_function_name),
+                        InternalFunctionCall::NonInlined(current_function_name),
                     )];
 
                     *functions_stack_traces.entry(call_stack).or_insert(Steps(0)) +=
