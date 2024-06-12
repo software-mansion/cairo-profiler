@@ -1,104 +1,18 @@
-use std::collections::HashMap;
+use anyhow::{Context, Result};
+use itertools::chain;
 
 use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
 use crate::sierra_loader::CompiledArtifactsCache;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
-use anyhow::{Context, Result};
-use itertools::chain;
-use trace_data::{CallTrace, CallTraceNode, ExecutionResources, L1Resources};
+
+use crate::trace_reader::sample::{FunctionCall, Sample};
+
+use trace_data::{CallTrace, CallTraceNode, ExecutionResources};
 
 pub mod function_name;
 mod function_trace_builder;
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct MeasurementUnit(pub String);
-
-impl From<String> for MeasurementUnit {
-    fn from(value: String) -> Self {
-        MeasurementUnit(value)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct MeasurementValue(pub i64);
-
-pub struct Sample {
-    pub call_stack: Vec<Function>,
-    pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
-}
-
-#[derive(PartialEq, Eq, Hash, Clone)]
-pub enum Function {
-    Entrypoint(FunctionName),
-    InternalFunction(InternalFunction),
-}
-
-#[derive(PartialEq, Eq, Hash, Clone)]
-pub enum InternalFunction {
-    _Inlined(FunctionName),
-    NonInlined(FunctionName),
-}
-
-impl Sample {
-    pub fn from(
-        call_stack: Vec<Function>,
-        resources: &ExecutionResources,
-        l1_resources: &L1Resources,
-    ) -> Self {
-        let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
-            (
-                MeasurementUnit::from("calls".to_string()),
-                MeasurementValue(1),
-            ),
-            (
-                MeasurementUnit::from("steps".to_string()),
-                MeasurementValue(i64::try_from(resources.vm_resources.n_steps).unwrap()),
-            ),
-            (
-                MeasurementUnit::from("memory_holes".to_string()),
-                MeasurementValue(i64::try_from(resources.vm_resources.n_memory_holes).unwrap()),
-            ),
-        ]
-        .into_iter()
-        .collect();
-
-        for (builtin, count) in &resources.vm_resources.builtin_instance_counter {
-            assert!(!measurements.contains_key(&MeasurementUnit::from(builtin.to_string())));
-            measurements.insert(
-                MeasurementUnit::from(builtin.to_string()),
-                MeasurementValue(i64::try_from(*count).unwrap()),
-            );
-        }
-
-        let syscall_counter_with_string: Vec<_> = resources
-            .syscall_counter
-            .iter()
-            .map(|(syscall, count)| (format!("{syscall:?}"), *count))
-            .collect();
-        for (syscall, count) in &syscall_counter_with_string {
-            assert!(!measurements.contains_key(&MeasurementUnit::from(syscall.to_string())));
-            measurements.insert(
-                MeasurementUnit::from(syscall.to_string()),
-                MeasurementValue(i64::try_from(*count).unwrap()),
-            );
-        }
-
-        assert!(
-            !measurements.contains_key(&MeasurementUnit::from("l2_l1_message_sizes".to_string()))
-        );
-        let summarized_payload: usize = l1_resources.l2_l1_message_sizes.iter().sum();
-        measurements.insert(
-            MeasurementUnit::from("l2_l1_message_sizes".to_string()),
-            MeasurementValue(i64::try_from(summarized_payload).unwrap()),
-        );
-
-        Sample {
-            call_stack,
-            measurements,
-        }
-    }
-}
+pub mod sample;
 
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
@@ -115,17 +29,18 @@ pub fn collect_samples_from_trace(
         compiled_artifacts_cache,
         profiler_config,
     )?;
+
     Ok(samples)
 }
 
 fn collect_samples<'a>(
     samples: &mut Vec<Sample>,
-    current_entrypoint_call_stack: &mut Vec<Function>,
+    current_entrypoint_call_stack: &mut Vec<FunctionCall>,
     trace: &'a CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
 ) -> Result<&'a ExecutionResources> {
-    current_entrypoint_call_stack.push(Function::Entrypoint(
+    current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(
         FunctionName::from_entry_point_params(
             trace.entry_point.contract_name.clone(),
             trace.entry_point.function_name.clone(),
