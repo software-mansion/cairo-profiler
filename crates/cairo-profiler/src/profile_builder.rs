@@ -12,7 +12,7 @@ pub use perftools::profiles as pprof;
 
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::sample::{
-    AggregatedSample, FunctionCall, InternalFunction, MeasurementUnit, MeasurementValue,
+    FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
@@ -68,20 +68,48 @@ impl ProfilerContext {
         }
     }
 
-    fn locations_ids(&mut self, aggregated_call_stacks: &[Vec<FunctionCall>]) -> Vec<LocationId> {
+    // This function aggregates function calls and extracts locations from them.
+    // Aggregation is done because locations with multiple lines are the only way to tell pprof
+    // about inlined functions (each line after the first one symbolizes inlined function).
+    // E.g. a sample with stack [A, B_inlined, C, D, E_inlined, F_inlined] has 3 pprof locations
+    // (instead of 6 if all function calls were not inlined) corresponding to the following stacks:
+    // [A, B_inlined], [C] and [D, E_inlined, F_inlined].
+    fn locations_ids(&mut self, call_stack: &[FunctionCall]) -> Vec<LocationId> {
         let mut locations_ids = vec![];
 
-        for call_stack in aggregated_call_stacks {
-            if let Some(location) = self.locations.get(call_stack) {
+        // This vector represent stacks of functions corresponding to single locations.
+        // It contains tuples of form (start_index, end_index).
+        // A single stack is `&call_stack[start_index..=end_index]`.
+        let mut function_stacks_indexes = vec![];
+
+        let mut current_function_stack_start_index = 0;
+        for (index, function) in call_stack.iter().enumerate() {
+            match function {
+                FunctionCall::InternalFunctionCall(InternalFunctionCall::Inlined(_))
+                | FunctionCall::EntrypointCall(_) => {
+                    if index != 0 {
+                        function_stacks_indexes
+                            .push((current_function_stack_start_index, index - 1));
+                    }
+                    current_function_stack_start_index = index;
+                }
+                FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(_)) => {}
+            }
+        }
+        function_stacks_indexes.push((current_function_stack_start_index, call_stack.len() - 1));
+
+        for (start_index, end_index) in function_stacks_indexes {
+            let function_stack = &call_stack[start_index..=end_index];
+            if let Some(location) = self.locations.get(function_stack) {
                 locations_ids.push(LocationId(location.id));
             } else {
-                let mut location = match &call_stack[0] {
-                    FunctionCall::EntrypointCall(function_name) | FunctionCall::InternalFunctionCall(InternalFunction::NonInlined(function_name)) => {
+                let mut location = match &function_stack[0] {
+                    FunctionCall::EntrypointCall(function_name) | FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(function_name)) => {
                         let line = pprof::Line {
                             function_id: self.function_id(function_name).into(),
                             line: 0,
                         };
-                         pprof::Location {
+                        pprof::Location {
                             id: (self.locations.len() + 1) as u64,
                             mapping_id: 0,
                             address: 0,
@@ -89,12 +117,12 @@ impl ProfilerContext {
                             is_folded: true,
                         }
                     }
-                    FunctionCall::InternalFunctionCall(InternalFunction::Inlined(_)) => unreachable!("First function in a call stack corresponding to a single location cannot be inlined")
+                    FunctionCall::InternalFunctionCall(InternalFunctionCall::Inlined(_)) => unreachable!("First function in a function stack corresponding to a single location cannot be inlined")
                 };
 
-                for function_call in call_stack.get(1..).unwrap_or_default() {
-                    match function_call {
-                        FunctionCall::InternalFunctionCall(InternalFunction::Inlined(
+                for function in function_stack.get(1..).unwrap_or_default() {
+                    match function {
+                        FunctionCall::InternalFunctionCall(InternalFunctionCall::Inlined(
                             function_name,
                         )) => {
                             let line = pprof::Line {
@@ -104,8 +132,9 @@ impl ProfilerContext {
                             location.line.push(line);
                         }
                         FunctionCall::EntrypointCall(_)
-                        | FunctionCall::InternalFunctionCall(InternalFunction::NonInlined(_)) => {
-                            unreachable!("Only first function in a call stack corresponding to a single location can be not inlined")
+                        | FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(_)) =>
+                        {
+                            unreachable!("Only first function in a function stack corresponding to a single location can be not inlined")
                         }
                     }
                 }
@@ -114,7 +143,7 @@ impl ProfilerContext {
                 location.line.reverse();
                 locations_ids.push(LocationId(location.id));
 
-                self.locations.insert(call_stack.clone(), location);
+                self.locations.insert(function_stack.to_vec(), location);
             }
         }
 
@@ -175,14 +204,14 @@ fn build_value_types(
 
 fn build_samples(
     context: &mut ProfilerContext,
-    aggregated_samples: &[AggregatedSample],
+    samples: &[Sample],
     all_measurements_units: &[MeasurementUnit],
 ) -> Vec<pprof::Sample> {
-    let samples = aggregated_samples
+    let samples = samples
         .iter()
         .map(|s| pprof::Sample {
             location_id: context
-                .locations_ids(&s.aggregated_call_stack)
+                .locations_ids(&s.call_stack)
                 .into_iter()
                 .map(Into::into)
                 .rev() // pprof format represents callstack from the least meaningful element
@@ -204,19 +233,17 @@ fn build_samples(
     samples
 }
 
-fn collect_all_measurements_units(aggregated_samples: &[AggregatedSample]) -> Vec<MeasurementUnit> {
-    let units_set: HashSet<&MeasurementUnit> = aggregated_samples
-        .iter()
-        .flat_map(|m| m.measurements.keys())
-        .collect();
+fn collect_all_measurements_units(samples: &[Sample]) -> Vec<MeasurementUnit> {
+    let units_set: HashSet<&MeasurementUnit> =
+        samples.iter().flat_map(|m| m.measurements.keys()).collect();
     units_set.into_iter().cloned().collect()
 }
 
-pub fn build_profile(aggregated_samples: &[AggregatedSample]) -> pprof::Profile {
+pub fn build_profile(samples: &[Sample]) -> pprof::Profile {
     let mut context = ProfilerContext::new();
-    let all_measurements_units = collect_all_measurements_units(aggregated_samples);
+    let all_measurements_units = collect_all_measurements_units(samples);
     let value_types = build_value_types(&all_measurements_units, &mut context);
-    let pprof_samples = build_samples(&mut context, aggregated_samples, &all_measurements_units);
+    let pprof_samples = build_samples(&mut context, samples, &all_measurements_units);
     let (string_table, functions, locations) = context.context_data();
 
     pprof::Profile {
