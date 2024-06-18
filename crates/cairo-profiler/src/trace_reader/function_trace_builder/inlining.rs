@@ -1,113 +1,72 @@
-use itertools::{chain, Itertools};
-use std::collections::{HashMap, VecDeque};
+use std::cmp::max;
 
 use cairo_lang_sierra::program::StatementIdx;
+use itertools::Itertools;
 
 use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::function_trace_builder::function_stack_trace::CallStack;
-use crate::trace_reader::function_trace_builder::Steps;
 use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall};
 
-pub(super) fn add_inlined_functions_info(
+// TODO: add comments + better names
+pub(super) fn build_original_function_stack(
     sierra_statement_idx: StatementIdx,
     maybe_statements_functions_map: Option<&StatementsFunctionsMap>,
-    function_stack: &CallStack,
-    current_function_name: &FunctionName,
-    functions_traces: &mut HashMap<Vec<FunctionCall>, Steps>,
-    current_function_steps: &mut Steps,
-) {
-    let current_function_names_stack = function_stack.current_function_names_stack();
-    let sierra_function_names_stack = chain!(
-        current_function_names_stack.iter().collect_vec(),
-        [current_function_name]
-    )
-    .collect_vec();
-
-    // If names on the stack are not unique it means that there is some sort of non-trivial
-    // recursiveness that won't be reflected in the mappings.
-    if sierra_function_names_stack.iter().unique().count() != sierra_function_names_stack.len() {
-        return;
-    }
-
+    original_call_stack_of_last_non_inlined_function_call: Vec<FunctionCall>,
+) -> Vec<FunctionCall> {
     let maybe_original_function_names_stack = maybe_statements_functions_map
         .as_ref()
         .and_then(|statements_functions_map| statements_functions_map.get(sierra_statement_idx));
 
-    if let Some(original_function_names_stack) = maybe_original_function_names_stack {
-        let original_function_names_stack = original_function_names_stack
-            .iter()
-            .rev() // The mappings from `statements_functions_map` represent callstack from the least meaningful element.
-            .dedup()
-            .collect_vec();
-
-        let original_function_stack = build_original_function_stack(
-            &original_function_names_stack,
-            &sierra_function_names_stack,
-        );
-
-        *functions_traces
-            .entry(original_function_stack)
-            .or_insert(Steps(0)) += 1;
-
-        *current_function_steps -= 1;
+    if let Some(mappings) = maybe_original_function_names_stack {
+        // Statements functions map represents callstack from the least meaningful elements.
+        let mappings = mappings.iter().rev().collect_vec();
+        construct_original_function_stack(
+            original_call_stack_of_last_non_inlined_function_call,
+            &mappings,
+        )
+    } else {
+        original_call_stack_of_last_non_inlined_function_call
     }
 }
 
-/// Compares original (before inlining) function names stack with sierra function names stack to
-/// find out which functions were inlined.
-fn build_original_function_stack(
-    original_function_names_stack: &[&FunctionName],
-    sierra_function_names_stack: &[&FunctionName],
+fn construct_original_function_stack(
+    original_call_stack_of_last_non_inlined_function_call: Vec<FunctionCall>,
+    mappings: &[&FunctionName],
 ) -> Vec<FunctionCall> {
-    let mut result = VecDeque::from(vec![
-        FunctionCall::InternalFunctionCall(
-            InternalFunctionCall::NonInlined(FunctionName(String::new()))
-        );
-        original_function_names_stack.len()
-    ]);
+    let start_index = max(
+        original_call_stack_of_last_non_inlined_function_call.len() as i128
+            - mappings.len() as i128,
+        0,
+    )
+    .try_into()
+    .expect("Non-negative i128 to usize cast should never fail");
+    let mut num_of_overlapping_functions = 0;
+    for i in start_index..original_call_stack_of_last_non_inlined_function_call.len() {
+        let mut overlapped = true;
 
-    let mut function_name_to_index_in_original_stack: HashMap<_, _> = original_function_names_stack
-        .iter()
-        .enumerate()
-        .map(|(index, name)| (*name, index))
-        .collect();
+        for j in 0..original_call_stack_of_last_non_inlined_function_call.len() - i {
+            if mappings[j]
+                != original_call_stack_of_last_non_inlined_function_call[i + j].function_name()
+            {
+                overlapped = false;
+                break;
+            }
+        }
 
-    // The first common element in original stack and sierra stack is the first non-inlined
-    // original cairo function, so we have to put the previous functions in the result separately.
-    let mut first_non_inlined_user_function_index = 0;
+        if overlapped {
+            num_of_overlapping_functions =
+                original_call_stack_of_last_non_inlined_function_call.len() - i;
+            break;
+        }
+    }
 
-    while first_non_inlined_user_function_index < sierra_function_names_stack.len()
-        && !function_name_to_index_in_original_stack
-            .contains_key(sierra_function_names_stack[first_non_inlined_user_function_index])
-    {
-        result.push_front(FunctionCall::InternalFunctionCall(
-            InternalFunctionCall::NonInlined(
-                sierra_function_names_stack[first_non_inlined_user_function_index].clone(),
-            ),
+    let mut result = original_call_stack_of_last_non_inlined_function_call;
+
+    for &function_name in &mappings[num_of_overlapping_functions..mappings.len()] {
+        result.push(FunctionCall::InternalFunctionCall(
+            InternalFunctionCall::Inlined(function_name.clone()),
         ));
-        first_non_inlined_user_function_index += 1;
     }
 
-    for &function_name in &sierra_function_names_stack[first_non_inlined_user_function_index..] {
-        let index = function_name_to_index_in_original_stack
-            .remove(function_name)
-            .expect("Part of function stack from mappings should be a superset of sierra function stack. This is a bug, contact us");
-
-        result[index + first_non_inlined_user_function_index] = FunctionCall::InternalFunctionCall(
-            InternalFunctionCall::NonInlined(original_function_names_stack[index].clone()),
-        );
-    }
-
-    let indices_of_inlined_functions = function_name_to_index_in_original_stack
-        .into_values()
-        .collect_vec();
-
-    for index in indices_of_inlined_functions {
-        result[index + first_non_inlined_user_function_index] = FunctionCall::InternalFunctionCall(
-            InternalFunctionCall::Inlined(original_function_names_stack[index].clone()),
-        );
-    }
-
-    result.into()
+    result
 }

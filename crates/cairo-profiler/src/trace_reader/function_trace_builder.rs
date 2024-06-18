@@ -1,10 +1,8 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::function_trace_builder::function_stack_trace::{
-    CallStack, CurrentCallType,
-};
-use crate::trace_reader::function_trace_builder::inlining::add_inlined_functions_info;
+use crate::trace_reader::function_trace_builder::function_stack_trace::CallStack;
+use crate::trace_reader::function_trace_builder::inlining::build_original_function_stack;
 use crate::trace_reader::sample::{
     FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
@@ -14,7 +12,7 @@ use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::{chain, Itertools};
 use std::collections::HashMap;
-use std::ops::{AddAssign, SubAssign};
+use std::ops::AddAssign;
 use trace_data::TraceEntry;
 
 mod function_stack_trace;
@@ -40,19 +38,12 @@ impl AddAssign<usize> for Steps {
     }
 }
 
-impl SubAssign<usize> for Steps {
-    fn sub_assign(&mut self, rhs: usize) {
-        self.0 -= rhs;
-    }
-}
-
 enum MaybeSierraStatementIndex {
     SierraStatementIndex(StatementIdx),
     PcOutOfFunctionArea,
 }
 
 /// Collects profiling info of the current run using the trace.
-#[allow(clippy::too_many_lines)]
 pub fn collect_function_level_profiling_info(
     trace: &[TraceEntry],
     program: &Program,
@@ -78,6 +69,7 @@ pub fn collect_function_level_profiling_info(
     };
 
     let mut call_stack = CallStack::new(function_level_config.max_function_stack_trace_depth);
+    let mut original_call_stacks_of_non_inlined_functions_calls = vec![];
 
     // The value is the steps of the stack trace so far, not including the pending steps being
     // tracked at the time. The key is a function stack trace.
@@ -87,7 +79,6 @@ pub fn collect_function_level_profiling_info(
     // profile tree. It is because technically they don't belong to any function, but still increase
     // the number of total steps. The value is different from zero only for functions run with header.
     let mut header_steps = Steps(0);
-    let mut current_function_steps = Steps(0);
     let mut end_of_program_reached = false;
 
     for step in trace {
@@ -103,8 +94,6 @@ pub fn collect_function_level_profiling_info(
         if end_of_program_reached {
             unreachable!("End of program reached, but trace continues.");
         }
-
-        current_function_steps += 1;
 
         let maybe_sierra_statement_idx =
             maybe_sierra_statement_index_by_pc(casm_debug_info, real_pc_code_offset);
@@ -123,16 +112,31 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
-        if function_level_config.show_inlined_functions {
-            add_inlined_functions_info(
+        // TODO: optimize clones
+        let original_function_stack_of_last_non_inlined_function_call = chain!(
+            original_call_stacks_of_non_inlined_functions_calls
+                .last()
+                .cloned()
+                .unwrap_or_default(),
+            [FunctionCall::InternalFunctionCall(
+                InternalFunctionCall::NonInlined(current_function_name.clone())
+            )]
+        )
+        .collect();
+
+        let original_function_stack = if function_level_config.show_inlined_functions {
+            build_original_function_stack(
                 sierra_statement_idx,
                 maybe_statements_functions_map.as_ref(),
-                &call_stack,
-                &current_function_name,
-                &mut functions_stack_traces,
-                &mut current_function_steps,
-            );
-        }
+                original_function_stack_of_last_non_inlined_function_call,
+            )
+        } else {
+            original_function_stack_of_last_non_inlined_function_call
+        };
+
+        *functions_stack_traces
+            .entry(original_function_stack.clone())
+            .or_insert(Steps(0)) += 1;
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
@@ -144,43 +148,17 @@ pub fn collect_function_level_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
-                    // TODO: check the original stack during function call and save it
-                    call_stack
-                        .enter_function_call(current_function_name, &mut current_function_steps);
+                    // TODO: hide this logic in CallStack
+                    original_call_stacks_of_non_inlined_functions_calls
+                        .push(original_function_stack);
+                    call_stack.enter_function_call(current_function_name);
                 }
             }
             GenStatement::Return(_) => {
-                if let Some(exited_call) = call_stack.exit_function_call() {
-                    if let CurrentCallType::Regular((function_name, steps)) = exited_call {
-                        let names_call_stack = chain!(
-                            call_stack.current_function_names_stack(),
-                            [function_name, current_function_name]
-                        )
-                        .collect_vec();
-
-                        let call_stack = names_call_stack
-                            .into_iter()
-                            .map(|function_name| {
-                                FunctionCall::InternalFunctionCall(
-                                    InternalFunctionCall::NonInlined(function_name),
-                                )
-                            })
-                            .collect();
-
-                        *functions_stack_traces.entry(call_stack).or_insert(Steps(0)) +=
-                            current_function_steps;
-                        // Set to the caller function steps to continue counting its cost.
-                        current_function_steps = steps;
-                    }
-                } else {
+                // TODO: hide this logic in CallStack
+                original_call_stacks_of_non_inlined_functions_calls.pop();
+                if call_stack.exit_function_call().is_none() {
                     end_of_program_reached = true;
-
-                    let call_stack = vec![FunctionCall::InternalFunctionCall(
-                        InternalFunctionCall::NonInlined(current_function_name),
-                    )];
-
-                    *functions_stack_traces.entry(call_stack).or_insert(Steps(0)) +=
-                        current_function_steps;
                 }
             }
         }

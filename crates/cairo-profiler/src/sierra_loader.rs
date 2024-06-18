@@ -37,11 +37,9 @@ impl SierraProgram {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Default, Clone)]
 pub struct StatementsFunctionsMap(HashMap<StatementIdx, Vec<FunctionName>>);
 
-#[allow(dead_code)]
 impl StatementsFunctionsMap {
     pub fn get(&self, key: StatementIdx) -> Option<&Vec<FunctionName>> {
         self.0.get(&key)

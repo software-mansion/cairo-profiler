@@ -1,10 +1,7 @@
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::function_trace_builder::Steps;
 
 struct CallStackElement {
     pub function_name: FunctionName,
-    /// Steps of the function at the moment of putting it on the stack.
-    pub function_steps: Steps,
     /// Consecutive recursive calls to this function that are currently on the stack.
     recursive_calls_count: usize,
 }
@@ -20,16 +17,6 @@ pub(super) struct CallStack {
     max_function_stack_trace_depth: usize,
 }
 
-/// Call that we moved to by exiting a call.
-pub(super) enum CurrentCallType {
-    /// Regular function call.
-    Regular((FunctionName, Steps)),
-    /// Function call that has stack trace depth exceeding the limit.
-    Hidden,
-    /// Recursive function call.
-    Recursive,
-}
-
 impl CallStack {
     pub fn new(max_function_stack_trace_depth: usize) -> Self {
         Self {
@@ -39,11 +26,7 @@ impl CallStack {
         }
     }
 
-    pub fn enter_function_call(
-        &mut self,
-        function_name: FunctionName,
-        current_function_steps: &mut Steps,
-    ) {
+    pub fn enter_function_call(&mut self, function_name: FunctionName) {
         if let Some(stack_element) = self.stack.last_mut() {
             if function_name == stack_element.function_name {
                 stack_element.recursive_calls_count += 1;
@@ -54,41 +37,31 @@ impl CallStack {
         if self.real_function_stack_depth < self.max_function_stack_trace_depth {
             self.stack.push(CallStackElement {
                 function_name,
-                function_steps: *current_function_steps,
                 recursive_calls_count: 0,
             });
-            // Reset steps to count new function's steps.
-            *current_function_steps = Steps(0);
         }
         self.real_function_stack_depth += 1;
     }
 
-    pub fn exit_function_call(&mut self) -> Option<CurrentCallType> {
+    pub fn exit_function_call(&mut self) -> Option<()> {
         if self.real_function_stack_depth <= self.max_function_stack_trace_depth {
             let mut stack_element = self.stack.pop()?;
 
             if stack_element.recursive_calls_count > 0 {
+                // Recursive function exited.
                 stack_element.recursive_calls_count -= 1;
                 self.stack.push(stack_element);
 
-                Some(CurrentCallType::Recursive)
+                Some(())
             } else {
+                // Regular function exited.
                 self.real_function_stack_depth -= 1;
-                Some(CurrentCallType::Regular((
-                    stack_element.function_name,
-                    stack_element.function_steps,
-                )))
+                Some(())
             }
         } else {
+            // Hidden function exited.
             self.real_function_stack_depth -= 1;
-            Some(CurrentCallType::Hidden)
+            Some(())
         }
-    }
-
-    pub fn current_function_names_stack(&self) -> Vec<FunctionName> {
-        self.stack
-            .iter()
-            .map(|stack_element| stack_element.function_name.clone())
-            .collect()
     }
 }

@@ -13,11 +13,30 @@ pub enum FunctionCall {
     InternalFunctionCall(InternalFunctionCall),
 }
 
+impl FunctionCall {
+    pub fn function_name(&self) -> &FunctionName {
+        match self {
+            FunctionCall::EntrypointCall(function_name) => function_name,
+            FunctionCall::InternalFunctionCall(internal_function_call) => {
+                internal_function_call.function_name()
+            }
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum InternalFunctionCall {
-    #[allow(dead_code)]
     Inlined(FunctionName),
     NonInlined(FunctionName),
+}
+
+impl InternalFunctionCall {
+    pub fn function_name(&self) -> &FunctionName {
+        match self {
+            InternalFunctionCall::Inlined(function_name)
+            | InternalFunctionCall::NonInlined(function_name) => function_name,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
