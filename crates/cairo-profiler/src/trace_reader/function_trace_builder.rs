@@ -68,6 +68,7 @@ pub fn collect_function_level_profiling_info(
         1
     };
 
+    // TODO: make sure the `max_function_stack_trace_depth` flag works with inlines
     let mut call_stack = CallStack::new(function_level_config.max_function_stack_trace_depth);
     let mut original_call_stacks_of_non_inlined_functions_calls = vec![];
 
@@ -149,6 +150,7 @@ pub fn collect_function_level_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
                     // TODO: hide this logic in CallStack
+                    //  and test with recursive functions.
                     original_call_stacks_of_non_inlined_functions_calls
                         .push(original_function_stack);
                     call_stack.enter_function_call(current_function_name);
@@ -156,6 +158,7 @@ pub fn collect_function_level_profiling_info(
             }
             GenStatement::Return(_) => {
                 // TODO: hide this logic in CallStack
+                //  and test with recursive functions
                 original_call_stacks_of_non_inlined_functions_calls.pop();
                 if call_stack.exit_function_call().is_none() {
                     end_of_program_reached = true;

@@ -29,6 +29,7 @@ pub(super) fn build_original_function_stack(
     }
 }
 
+// TODO: test mutually recursive functions (+ inline always with 3 funcs) - add tests!!!
 fn construct_original_function_stack(
     original_call_stack_of_last_non_inlined_function_call: Vec<FunctionCall>,
     mappings: &[&FunctionName],
