@@ -1,16 +1,16 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::function_trace_builder::function_stack_trace::CallStack;
-use crate::trace_reader::function_trace_builder::inlining::build_original_function_stack;
-use crate::trace_reader::sample::{
-    FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
+use crate::trace_reader::function_trace_builder::function_stack_trace::{
+    CallStack, VecWithLimitedCapacity,
 };
+use crate::trace_reader::function_trace_builder::inlining::build_original_call_stack_with_inlined_calls;
+use crate::trace_reader::sample::{FunctionCall, MeasurementUnit, MeasurementValue, Sample};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
-use itertools::{chain, Itertools};
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::ops::AddAssign;
 use trace_data::TraceEntry;
@@ -68,9 +68,7 @@ pub fn collect_function_level_profiling_info(
         1
     };
 
-    // TODO: make sure the `max_function_stack_trace_depth` flag works with inlines
     let mut call_stack = CallStack::new(function_level_config.max_function_stack_trace_depth);
-    let mut original_call_stacks_of_non_inlined_functions_calls = vec![];
 
     // The value is the steps of the stack trace so far, not including the pending steps being
     // tracked at the time. The key is a function stack trace.
@@ -83,8 +81,8 @@ pub fn collect_function_level_profiling_info(
     let mut end_of_program_reached = false;
 
     for step in trace {
-        // Skip the header. This only makes sense when a header was added to CASM program.
-        if step.pc < real_minimal_pc && run_with_call_header {
+        // Skip the header.
+        if step.pc < real_minimal_pc {
             header_steps += 1;
             continue;
         }
@@ -113,30 +111,16 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
-        // TODO: optimize clones
-        let original_function_stack_of_last_non_inlined_function_call = chain!(
-            original_call_stacks_of_non_inlined_functions_calls
-                .last()
-                .cloned()
-                .unwrap_or_default(),
-            [FunctionCall::InternalFunctionCall(
-                InternalFunctionCall::NonInlined(current_function_name.clone())
-            )]
-        )
-        .collect();
-
-        let original_function_stack = if function_level_config.show_inlined_functions {
-            build_original_function_stack(
-                sierra_statement_idx,
-                maybe_statements_functions_map.as_ref(),
-                original_function_stack_of_last_non_inlined_function_call,
-            )
-        } else {
-            original_function_stack_of_last_non_inlined_function_call
-        };
+        let current_call_stack = build_current_call_stack(
+            &call_stack,
+            current_function_name.clone(),
+            function_level_config.show_inlined_functions,
+            sierra_statement_idx,
+            maybe_statements_functions_map.as_ref(),
+        );
 
         *functions_stack_traces
-            .entry(original_function_stack.clone())
+            .entry(current_call_stack.into())
             .or_insert(Steps(0)) += 1;
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
@@ -149,17 +133,18 @@ pub fn collect_function_level_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
-                    // TODO: hide this logic in CallStack
-                    //  and test with recursive functions.
-                    original_call_stacks_of_non_inlined_functions_calls
-                        .push(original_function_stack);
-                    call_stack.enter_function_call(current_function_name);
+                    let current_call_stack = build_current_call_stack(
+                        &call_stack,
+                        current_function_name.clone(),
+                        function_level_config.show_inlined_functions,
+                        sierra_statement_idx,
+                        maybe_statements_functions_map.as_ref(),
+                    );
+
+                    call_stack.enter_function_call(current_call_stack);
                 }
             }
             GenStatement::Return(_) => {
-                // TODO: hide this logic in CallStack
-                //  and test with recursive functions
-                original_call_stacks_of_non_inlined_functions_calls.pop();
                 if call_stack.exit_function_call().is_none() {
                     end_of_program_reached = true;
                 }
@@ -210,5 +195,27 @@ fn maybe_sierra_statement_index_by_pc(
         MaybeSierraStatementIndex::PcOutOfFunctionArea
     } else {
         MaybeSierraStatementIndex::SierraStatementIndex(statement_index)
+    }
+}
+
+fn build_current_call_stack(
+    call_stack: &CallStack,
+    current_function_name: FunctionName,
+    show_inlined_functions: bool,
+    sierra_statement_idx: StatementIdx,
+    maybe_statements_functions_map: Option<&StatementsFunctionsMap>,
+) -> VecWithLimitedCapacity<FunctionCall> {
+    let current_call_stack = call_stack.current_call_stack(current_function_name);
+
+    if show_inlined_functions {
+        let (current_call_stack, max_capacity) = current_call_stack.deconstruct();
+        let current_call_stack_with_inlined_calls = build_original_call_stack_with_inlined_calls(
+            sierra_statement_idx,
+            maybe_statements_functions_map,
+            current_call_stack,
+        );
+        VecWithLimitedCapacity::from(current_call_stack_with_inlined_calls, max_capacity)
+    } else {
+        current_call_stack
     }
 }
