@@ -3,7 +3,6 @@ use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall};
 
 /// The function call stack of the current function, excluding the current function call.
 pub(super) struct CallStack {
-    /// This stack is guaranteed to have maximum of `max_function_stack_trace_depth` elements.
     stack: VecWithLimitedCapacity<FunctionCall>,
     /// The last element of this vector is always a number of elements of the stack before the last
     /// function call.
