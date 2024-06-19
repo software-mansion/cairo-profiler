@@ -37,6 +37,10 @@ impl SierraProgram {
     }
 }
 
+/// This struct maps sierra statement index to a stack of fully qualified paths of cairo functions
+/// consisting of a function which caused the statement to be generated and all functions that were
+/// inlined or generated along the way, up to the first non-inlined function from the original code.
+/// The map represents the stack from the least meaningful elements.
 #[derive(Default, Clone)]
 pub struct StatementsFunctionsMap(HashMap<StatementIdx, Vec<FunctionName>>);
 

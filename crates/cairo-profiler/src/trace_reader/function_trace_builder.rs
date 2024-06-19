@@ -205,17 +205,17 @@ fn build_current_call_stack(
     sierra_statement_idx: StatementIdx,
     maybe_statements_functions_map: Option<&StatementsFunctionsMap>,
 ) -> VecWithLimitedCapacity<FunctionCall> {
-    let current_call_stack = call_stack.current_call_stack(current_function_name);
+    let current_function_call_stack = call_stack.current_function_call_stack(current_function_name);
 
     if show_inlined_functions {
-        let (current_call_stack, max_capacity) = current_call_stack.deconstruct();
+        let (current_function_call_stack, max_capacity) = current_function_call_stack.deconstruct();
         let current_call_stack_with_inlined_calls = build_original_call_stack_with_inlined_calls(
             sierra_statement_idx,
             maybe_statements_functions_map,
-            current_call_stack,
+            current_function_call_stack,
         );
         VecWithLimitedCapacity::from(current_call_stack_with_inlined_calls, max_capacity)
     } else {
-        current_call_stack
+        current_function_call_stack
     }
 }

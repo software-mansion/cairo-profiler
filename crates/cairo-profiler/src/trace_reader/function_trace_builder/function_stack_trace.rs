@@ -30,7 +30,7 @@ impl CallStack {
     }
 
     /// Returns current call stack truncated to `max_function_stack_trace_depth`.
-    pub fn current_call_stack(
+    pub fn current_function_call_stack(
         &self,
         current_function_name: FunctionName,
     ) -> VecWithLimitedCapacity<FunctionCall> {
