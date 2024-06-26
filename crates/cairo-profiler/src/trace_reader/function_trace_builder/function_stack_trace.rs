@@ -1,5 +1,4 @@
-use crate::trace_reader::function_name::FunctionName;
-use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall};
+use crate::trace_reader::sample::FunctionCall;
 
 /// The function call stack of the current function, excluding the current function call.
 pub(super) struct CallStack {
@@ -29,18 +28,8 @@ impl CallStack {
         Some(())
     }
 
-    /// Returns current call stack truncated to `max_function_stack_trace_depth`.
-    pub fn current_function_call_stack(
-        &self,
-        current_function_name: FunctionName,
-    ) -> VecWithLimitedCapacity<FunctionCall> {
-        let mut current_call_stack = self.stack.clone();
-
-        current_call_stack.push(FunctionCall::InternalFunctionCall(
-            InternalFunctionCall::NonInlined(current_function_name),
-        ));
-
-        current_call_stack
+    pub fn current_call_stack(&self) -> &VecWithLimitedCapacity<FunctionCall> {
+        &self.stack
     }
 }
 

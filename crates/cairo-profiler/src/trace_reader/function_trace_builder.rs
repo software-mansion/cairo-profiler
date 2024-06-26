@@ -5,7 +5,9 @@ use crate::trace_reader::function_trace_builder::function_stack_trace::{
     CallStack, VecWithLimitedCapacity,
 };
 use crate::trace_reader::function_trace_builder::inlining::build_original_call_stack_with_inlined_calls;
-use crate::trace_reader::sample::{FunctionCall, MeasurementUnit, MeasurementValue, Sample};
+use crate::trace_reader::sample::{
+    FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
+};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
@@ -49,7 +51,7 @@ pub fn collect_function_level_profiling_info(
     program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
     run_with_call_header: bool,
-    maybe_statements_functions_map: &Option<StatementsFunctionsMap>,
+    statements_functions_map: &Option<StatementsFunctionsMap>,
     function_level_config: &FunctionLevelConfig,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
@@ -116,11 +118,11 @@ pub fn collect_function_level_profiling_info(
             current_function_name.clone(),
             function_level_config.show_inlined_functions,
             sierra_statement_idx,
-            maybe_statements_functions_map.as_ref(),
+            statements_functions_map.as_ref(),
         );
 
         *functions_stack_traces
-            .entry(current_call_stack.into())
+            .entry(current_call_stack.clone().into())
             .or_insert(Steps(0)) += 1;
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
@@ -133,14 +135,6 @@ pub fn collect_function_level_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
-                    let current_call_stack = build_current_call_stack(
-                        &call_stack,
-                        current_function_name.clone(),
-                        function_level_config.show_inlined_functions,
-                        sierra_statement_idx,
-                        maybe_statements_functions_map.as_ref(),
-                    );
-
                     call_stack.enter_function_call(current_call_stack);
                 }
             }
@@ -203,19 +197,22 @@ fn build_current_call_stack(
     current_function_name: FunctionName,
     show_inlined_functions: bool,
     sierra_statement_idx: StatementIdx,
-    maybe_statements_functions_map: Option<&StatementsFunctionsMap>,
+    statements_functions_map: Option<&StatementsFunctionsMap>,
 ) -> VecWithLimitedCapacity<FunctionCall> {
-    let current_function_call_stack = call_stack.current_function_call_stack(current_function_name);
+    let mut current_call_stack = call_stack.current_call_stack().clone();
+    current_call_stack.push(FunctionCall::InternalFunctionCall(
+        InternalFunctionCall::NonInlined(current_function_name),
+    ));
 
     if show_inlined_functions {
-        let (current_function_call_stack, max_capacity) = current_function_call_stack.deconstruct();
+        let (current_function_call_stack, max_capacity) = current_call_stack.deconstruct();
         let current_call_stack_with_inlined_calls = build_original_call_stack_with_inlined_calls(
             sierra_statement_idx,
-            maybe_statements_functions_map,
+            statements_functions_map,
             current_function_call_stack,
         );
         VecWithLimitedCapacity::from(current_call_stack_with_inlined_calls, max_capacity)
     } else {
-        current_function_call_stack
+        current_call_stack
     }
 }

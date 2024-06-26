@@ -69,7 +69,7 @@ fn collect_samples<'a>(
             compiled_artifacts.sierra_program.get_program(),
             &compiled_artifacts.casm_debug_info,
             cairo_execution_info.casm_level_info.run_with_call_header,
-            &compiled_artifacts.maybe_statements_functions_map,
+            &compiled_artifacts.statements_functions_map,
             &FunctionLevelConfig::from(profiler_config),
         );
 
