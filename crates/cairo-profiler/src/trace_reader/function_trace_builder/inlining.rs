@@ -12,14 +12,14 @@ pub(super) fn build_original_call_stack_with_inlined_calls(
     statements_functions_map: Option<&StatementsFunctionsMap>,
     current_call_stack: Vec<FunctionCall>,
 ) -> Vec<FunctionCall> {
-    let maybe_original_call_stack_postfix = statements_functions_map
+    let maybe_original_call_stack_suffix = statements_functions_map
         .as_ref()
         .and_then(|statements_functions_map| statements_functions_map.get(sierra_statement_idx));
 
-    if let Some(original_call_stack_postfix) = maybe_original_call_stack_postfix {
+    if let Some(original_call_stack_suffix) = maybe_original_call_stack_suffix {
         // Statements functions map represents callstack from the most nested elements.
-        let original_call_stack_postfix = original_call_stack_postfix.iter().rev().collect_vec();
-        extend_call_stack_with_inlined_calls(current_call_stack, &original_call_stack_postfix)
+        let original_call_stack_suffix = original_call_stack_suffix.iter().rev().collect_vec();
+        extend_call_stack_with_inlined_calls(current_call_stack, &original_call_stack_suffix)
     } else {
         current_call_stack
     }
@@ -27,15 +27,15 @@ pub(super) fn build_original_call_stack_with_inlined_calls(
 
 fn extend_call_stack_with_inlined_calls(
     current_call_stack: Vec<FunctionCall>,
-    original_call_stack_postfix: &[&FunctionName],
+    original_call_stack_suffix: &[&FunctionName],
 ) -> Vec<FunctionCall> {
     let num_of_overlapping_calls =
-        find_number_of_overlapping_calls(&current_call_stack, original_call_stack_postfix);
+        find_number_of_overlapping_calls(&current_call_stack, original_call_stack_suffix);
 
     let mut result = current_call_stack;
 
     for &function_name in
-        &original_call_stack_postfix[num_of_overlapping_calls..original_call_stack_postfix.len()]
+        &original_call_stack_suffix[num_of_overlapping_calls..original_call_stack_suffix.len()]
     {
         result.push(FunctionCall::InternalFunctionCall(
             InternalFunctionCall::Inlined(function_name.clone()),
@@ -47,10 +47,10 @@ fn extend_call_stack_with_inlined_calls(
 
 fn find_number_of_overlapping_calls(
     current_call_stack: &[FunctionCall],
-    original_call_stack_postfix: &[&FunctionName],
+    original_call_stack_suffix: &[&FunctionName],
 ) -> usize {
     let start_index = max(
-        current_call_stack.len() as i128 - original_call_stack_postfix.len() as i128,
+        current_call_stack.len() as i128 - original_call_stack_suffix.len() as i128,
         0,
     )
     .try_into()
@@ -64,7 +64,7 @@ fn find_number_of_overlapping_calls(
         let mut overlap_found = true;
 
         for j in 0..current_call_stack.len() - i {
-            if original_call_stack_postfix[j] != current_call_stack[i + j].function_name() {
+            if original_call_stack_suffix[j] != current_call_stack[i + j].function_name() {
                 overlap_found = false;
                 break;
             }
