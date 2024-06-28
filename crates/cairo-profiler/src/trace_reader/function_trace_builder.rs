@@ -115,7 +115,7 @@ pub fn collect_function_level_profiling_info(
 
         let current_call_stack = build_current_call_stack(
             &call_stack,
-            current_function_name.clone(),
+            current_function_name,
             function_level_config.show_inlined_functions,
             sierra_statement_idx,
             statements_functions_map.as_ref(),

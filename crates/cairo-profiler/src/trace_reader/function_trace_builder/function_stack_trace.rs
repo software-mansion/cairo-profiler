@@ -17,6 +17,7 @@ impl CallStack {
         }
     }
 
+    // The current call stack is always a prefix of the new call stack.
     pub fn enter_function_call(&mut self, new_call_stack: VecWithLimitedCapacity<FunctionCall>) {
         self.previous_stack_lengths.push(self.stack.len());
 
