@@ -1,4 +1,5 @@
 use crate::trace_reader::sample::FunctionCall;
+use std::ops::Index;
 
 /// The function call stack of the current function, excluding the current function call.
 pub(super) struct CallStack {
@@ -47,14 +48,6 @@ impl<T> VecWithLimitedCapacity<T> {
         }
     }
 
-    pub fn from(mut vector: Vec<T>, max_capacity: usize) -> Self {
-        vector.truncate(max_capacity);
-        Self {
-            vector,
-            max_capacity,
-        }
-    }
-
     pub fn push(&mut self, el: T) {
         if self.vector.len() < self.max_capacity {
             self.vector.push(el);
@@ -68,14 +61,18 @@ impl<T> VecWithLimitedCapacity<T> {
     pub fn len(&self) -> usize {
         self.vector.len()
     }
-
-    pub fn deconstruct(self) -> (Vec<T>, usize) {
-        (self.vector, self.max_capacity)
-    }
 }
 
 impl<T> From<VecWithLimitedCapacity<T>> for Vec<T> {
     fn from(value: VecWithLimitedCapacity<T>) -> Self {
         value.vector
+    }
+}
+
+impl<T> Index<usize> for VecWithLimitedCapacity<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.vector[index]
     }
 }

@@ -5,13 +5,14 @@ use itertools::Itertools;
 
 use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_name::FunctionName;
+use crate::trace_reader::function_trace_builder::function_stack_trace::VecWithLimitedCapacity;
 use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall};
 
 pub(super) fn build_original_call_stack_with_inlined_calls(
     sierra_statement_idx: StatementIdx,
     statements_functions_map: Option<&StatementsFunctionsMap>,
-    current_call_stack: Vec<FunctionCall>,
-) -> Vec<FunctionCall> {
+    current_call_stack: VecWithLimitedCapacity<FunctionCall>,
+) -> VecWithLimitedCapacity<FunctionCall> {
     let maybe_original_call_stack_suffix = statements_functions_map
         .as_ref()
         .and_then(|statements_functions_map| statements_functions_map.get(sierra_statement_idx));
@@ -26,9 +27,9 @@ pub(super) fn build_original_call_stack_with_inlined_calls(
 }
 
 fn extend_call_stack_with_inlined_calls(
-    current_call_stack: Vec<FunctionCall>,
+    current_call_stack: VecWithLimitedCapacity<FunctionCall>,
     original_call_stack_suffix: &[&FunctionName],
-) -> Vec<FunctionCall> {
+) -> VecWithLimitedCapacity<FunctionCall> {
     let num_of_overlapping_calls =
         find_number_of_overlapping_calls(&current_call_stack, original_call_stack_suffix);
 
@@ -46,7 +47,7 @@ fn extend_call_stack_with_inlined_calls(
 }
 
 fn find_number_of_overlapping_calls(
-    current_call_stack: &[FunctionCall],
+    current_call_stack: &VecWithLimitedCapacity<FunctionCall>,
     original_call_stack_suffix: &[&FunctionName],
 ) -> usize {
     let start_index = max(
