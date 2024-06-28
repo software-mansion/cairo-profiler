@@ -200,9 +200,15 @@ fn build_current_call_stack(
     statements_functions_map: Option<&StatementsFunctionsMap>,
 ) -> VecWithLimitedCapacity<FunctionCall> {
     let mut current_call_stack = call_stack.current_call_stack().clone();
-    current_call_stack.push(FunctionCall::InternalFunctionCall(
-        InternalFunctionCall::NonInlined(current_function_name),
-    ));
+
+    if current_call_stack.len() == 0
+        || *current_call_stack[current_call_stack.len() - 1].function_name()
+            != current_function_name
+    {
+        current_call_stack.push(FunctionCall::InternalFunctionCall(
+            InternalFunctionCall::NonInlined(current_function_name),
+        ));
+    }
 
     if show_inlined_functions {
         build_original_call_stack_with_inlined_calls(
