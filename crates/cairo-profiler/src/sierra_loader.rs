@@ -19,7 +19,7 @@ pub struct CompiledArtifactsCache(HashMap<Utf8PathBuf, CompiledArtifacts>);
 pub struct CompiledArtifacts {
     pub sierra_program: SierraProgram,
     pub casm_debug_info: CairoProgramDebugInfo,
-    pub maybe_statements_functions_map: Option<StatementsFunctionsMap>,
+    pub statements_functions_map: Option<StatementsFunctionsMap>,
 }
 
 pub enum SierraProgram {
@@ -37,11 +37,13 @@ impl SierraProgram {
     }
 }
 
-#[allow(dead_code)]
+/// This struct maps sierra statement index to a stack of fully qualified paths of cairo functions
+/// consisting of a function which caused the statement to be generated and all functions that were
+/// inlined or generated along the way, up to the first non-inlined function from the original code.
+/// The map represents the stack from the least meaningful elements.
 #[derive(Default, Clone)]
 pub struct StatementsFunctionsMap(HashMap<StatementIdx, Vec<FunctionName>>);
 
-#[allow(dead_code)]
 impl StatementsFunctionsMap {
     pub fn get(&self, key: StatementIdx) -> Option<&Vec<FunctionName>> {
         self.0.get(&key)
@@ -79,7 +81,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 .extract_sierra_program()
                 .context("Failed to extract sierra program from contract code")?;
 
-            let maybe_statements_functions_map =
+            let statements_functions_map =
                 maybe_get_statements_functions_map(contract_class.sierra_program_debug_info);
 
             let contract_class = ContractClass {
@@ -101,7 +103,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 CompiledArtifacts {
                     sierra_program: SierraProgram::ContractClass(program),
                     casm_debug_info,
-                    maybe_statements_functions_map,
+                    statements_functions_map,
                 },
             );
 
@@ -113,7 +115,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 .into_v1()
                 .context("Failed to extract program artifact from versioned program. Make sure your versioned program is of version 1")?;
 
-            let maybe_statements_functions_map = maybe_get_statements_functions_map(debug_info);
+            let statements_functions_map = maybe_get_statements_functions_map(debug_info);
 
             let casm = cairo_lang_sierra_to_casm::compiler::compile(
                 &program,
@@ -131,7 +133,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 CompiledArtifacts {
                     sierra_program: SierraProgram::VersionedProgram(program),
                     casm_debug_info: casm.debug_info,
-                    maybe_statements_functions_map,
+                    statements_functions_map,
                 },
             );
 

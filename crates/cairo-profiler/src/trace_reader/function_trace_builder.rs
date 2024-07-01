@@ -1,8 +1,10 @@
 use crate::profiler_config::FunctionLevelConfig;
+use crate::sierra_loader::StatementsFunctionsMap;
 use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
-    CallStack, CurrentCallType,
+    CallStack, VecWithLimitedCapacity,
 };
+use crate::trace_reader::function_trace_builder::inlining::build_original_call_stack_with_inlined_calls;
 use crate::trace_reader::sample::{
     FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
@@ -10,12 +12,13 @@ use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, Core
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
-use itertools::{chain, Itertools};
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::ops::AddAssign;
 use trace_data::TraceEntry;
 
 mod function_stack_trace;
+mod inlining;
 
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,
@@ -48,6 +51,7 @@ pub fn collect_function_level_profiling_info(
     program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
     run_with_call_header: bool,
+    statements_functions_map: &Option<StatementsFunctionsMap>,
     function_level_config: &FunctionLevelConfig,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
@@ -76,12 +80,11 @@ pub fn collect_function_level_profiling_info(
     // profile tree. It is because technically they don't belong to any function, but still increase
     // the number of total steps. The value is different from zero only for functions run with header.
     let mut header_steps = Steps(0);
-    let mut current_function_steps = Steps(0);
     let mut end_of_program_reached = false;
 
     for step in trace {
-        // Skip the header. This only makes sense when a header was added to CASM program.
-        if step.pc < real_minimal_pc && run_with_call_header {
+        // Skip the header.
+        if step.pc < real_minimal_pc {
             header_steps += 1;
             continue;
         }
@@ -92,8 +95,6 @@ pub fn collect_function_level_profiling_info(
         if end_of_program_reached {
             unreachable!("End of program reached, but trace continues.");
         }
-
-        current_function_steps += 1;
 
         let maybe_sierra_statement_idx =
             maybe_sierra_statement_index_by_pc(casm_debug_info, real_pc_code_offset);
@@ -112,6 +113,18 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
+        let current_call_stack = build_current_call_stack(
+            &call_stack,
+            current_function_name,
+            function_level_config.show_inlined_functions,
+            sierra_statement_idx,
+            statements_functions_map.as_ref(),
+        );
+
+        *functions_stack_traces
+            .entry(current_call_stack.clone().into())
+            .or_insert(Steps(0)) += 1;
+
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
         };
@@ -122,42 +135,12 @@ pub fn collect_function_level_profiling_info(
                     sierra_program_registry.get_libfunc(&invocation.libfunc_id),
                     Ok(CoreConcreteLibfunc::FunctionCall(_))
                 ) {
-                    call_stack
-                        .enter_function_call(current_function_name, &mut current_function_steps);
+                    call_stack.enter_function_call(current_call_stack);
                 }
             }
             GenStatement::Return(_) => {
-                if let Some(exited_call) = call_stack.exit_function_call() {
-                    if let CurrentCallType::Regular((function_name, steps)) = exited_call {
-                        let names_call_stack = chain!(
-                            call_stack.current_function_names_stack(),
-                            [function_name, current_function_name]
-                        )
-                        .collect_vec();
-
-                        let call_stack = names_call_stack
-                            .into_iter()
-                            .map(|function_name| {
-                                FunctionCall::InternalFunctionCall(
-                                    InternalFunctionCall::NonInlined(function_name),
-                                )
-                            })
-                            .collect();
-
-                        *functions_stack_traces.entry(call_stack).or_insert(Steps(0)) +=
-                            current_function_steps;
-                        // Set to the caller function steps to continue counting its cost.
-                        current_function_steps = steps;
-                    }
-                } else {
+                if call_stack.exit_function_call().is_none() {
                     end_of_program_reached = true;
-
-                    let call_stack = vec![FunctionCall::InternalFunctionCall(
-                        InternalFunctionCall::NonInlined(current_function_name),
-                    )];
-
-                    *functions_stack_traces.entry(call_stack).or_insert(Steps(0)) +=
-                        current_function_steps;
                 }
             }
         }
@@ -206,5 +189,34 @@ fn maybe_sierra_statement_index_by_pc(
         MaybeSierraStatementIndex::PcOutOfFunctionArea
     } else {
         MaybeSierraStatementIndex::SierraStatementIndex(statement_index)
+    }
+}
+
+fn build_current_call_stack(
+    call_stack: &CallStack,
+    current_function_name: FunctionName,
+    show_inlined_functions: bool,
+    sierra_statement_idx: StatementIdx,
+    statements_functions_map: Option<&StatementsFunctionsMap>,
+) -> VecWithLimitedCapacity<FunctionCall> {
+    let mut current_call_stack = call_stack.current_call_stack().clone();
+
+    if current_call_stack.len() == 0
+        || *current_call_stack[current_call_stack.len() - 1].function_name()
+            != current_function_name
+    {
+        current_call_stack.push(FunctionCall::InternalFunctionCall(
+            InternalFunctionCall::NonInlined(current_function_name),
+        ));
+    }
+
+    if show_inlined_functions {
+        build_original_call_stack_with_inlined_calls(
+            sierra_statement_idx,
+            statements_functions_map,
+            current_call_stack,
+        )
+    } else {
+        current_call_stack
     }
 }
