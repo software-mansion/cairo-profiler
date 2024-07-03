@@ -61,7 +61,7 @@ impl CompiledArtifactsCache {
             .unwrap_or_else(|| panic!("Compiled artifacts not found for path {path}"))
     }
 
-    pub fn has_statements_functions_map(&self) -> bool {
+    pub fn statements_functions_maps_are_present(&self) -> bool {
         self.0
             .iter()
             .fold(true, |acc, (_path, compiled_artifacts)| {

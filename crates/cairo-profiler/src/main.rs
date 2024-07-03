@@ -63,7 +63,7 @@ fn main() -> Result<()> {
     let profiler_config = ProfilerConfig::from(&cli);
 
     if profiler_config.show_inlined_functions
-        && !compiled_artifacts_cache.has_statements_functions_map()
+        && !compiled_artifacts_cache.statements_functions_maps_are_present()
     {
         println!(
             "[\x1b[0;33mWARNING\x1b[0m] Mappings used for generating information about \
