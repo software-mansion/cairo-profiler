@@ -45,7 +45,7 @@ struct Cli {
     #[arg(long)]
     split_generics: bool,
 
-    /// Show inlined function in a trace tree. Requires Scarb >= 2.7.0 and setting
+    /// Show inlined function in a trace tree. Requires Scarb >= 2.7.0-rc.0 and setting
     /// `unstable-add-statements-functions-debug-info = true` in `[cairo]` section of Scarb.toml.
     #[arg(long)]
     show_inlined_functions: bool,
