@@ -60,10 +60,22 @@ fn main() -> Result<()> {
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
     let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(&serialized_trace)?;
+    let profiler_config = ProfilerConfig::from(&cli);
+
+    if profiler_config.show_inlined_functions
+        && !compiled_artifacts_cache.has_statements_functions_map()
+    {
+        println!(
+            "[\x1b[0;33mWARNING\x1b[0m] Mappings used for generating information about \
+        inlined functions are missing. Make sure to add this to your Scarb.toml:\n\
+        [cairo]\nunstable-add-statements-functions-debug-info = true"
+        );
+    }
+
     let samples = collect_samples_from_trace(
         &serialized_trace,
         &compiled_artifacts_cache,
-        &ProfilerConfig::from(&cli),
+        &profiler_config,
     )?;
 
     let profile = build_profile(&samples);
