@@ -93,7 +93,7 @@ You can learn more about pprof usage options [here](https://github.com/google/pp
   - [x] Steps profiling
   - [ ] Builtins profiling
   - [ ] Memory holes profiling
-  - [x] Information about inlined functions
+  - [ ] Information about inlined functions
 - [ ] Integrating with other tools:
   - [x] Exposing `cairo-profiler` library to allow other tools to integrate
   - [x] Integrating with [`snforge`](https://github.com/foundry-rs/starknet-foundry)
