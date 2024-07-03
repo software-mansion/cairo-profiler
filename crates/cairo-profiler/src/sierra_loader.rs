@@ -60,6 +60,14 @@ impl CompiledArtifactsCache {
             .get(path)
             .unwrap_or_else(|| panic!("Compiled artifacts not found for path {path}"))
     }
+
+    pub fn statements_functions_maps_are_present(&self) -> bool {
+        self.0
+            .iter()
+            .fold(true, |acc, (_path, compiled_artifacts)| {
+                acc && compiled_artifacts.statements_functions_map.is_some()
+            })
+    }
 }
 
 pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
