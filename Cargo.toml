@@ -6,7 +6,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.5.0-rc.0"
+version = "0.5.0"
 edition = "2021"
 
 
@@ -32,6 +32,6 @@ tempfile = "3.10.1"
 regex = "1.10"
 lazy_static = "1.4.0"
 
-cairo-lang-sierra = "2.7.0-rc.0"
-cairo-lang-sierra-to-casm = "2.7.0-rc.0"
-cairo-lang-starknet-classes = "2.7.0-rc.0"
+cairo-lang-sierra = "2.7.0"
+cairo-lang-sierra-to-casm = "2.7.0"
+cairo-lang-starknet-classes = "2.7.0"
