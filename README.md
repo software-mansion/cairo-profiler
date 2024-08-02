@@ -52,7 +52,7 @@ Usage flow consists of two steps:
 ### Generating output file
 
 To generate the file run `cairo-profiler` with the `<PATH_TO_TRACE_DATA>` argument containing
-the path to the json file with the trace to be profiled. You can also specify the `--output-path <OUTPUT_PATH>` -
+the path to the json file with the trace to be profiled. You can also specify the path to the output file via `--output-path <OUTPUT_PATH>` -
 if not specified, the output file will be saved as `profile.pb.gz`.
 
 #### Example
