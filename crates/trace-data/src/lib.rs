@@ -143,6 +143,7 @@ pub enum DeprecatedSyscallSelector {
     SendMessageToL1,
     StorageRead,
     StorageWrite,
+    Sha256ProcessBlock,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
