@@ -68,7 +68,7 @@ fn main() -> Result<()> {
         eprintln!(
             "[\x1b[0;33mWARNING\x1b[0m] Mappings used for generating information about \
         inlined functions are missing. Make sure to add this to your Scarb.toml:\n\
-        [cairo]\nunstable-add-statements-functions-debug-info = true"
+        [profile.dev.cairo]\nunstable-add-statements-functions-debug-info = true"
         );
     }
 
