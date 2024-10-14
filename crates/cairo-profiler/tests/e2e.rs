@@ -28,6 +28,7 @@ fn output_path() {
 #[test_case(&["call.json", "--max-function-stack-trace-depth", "5"]; "with max function trace depth")]
 #[test_case(&["call.json", "--show-details"]; "with details")]
 #[test_case(&["call.json"]; "without details")]
+#[test_case(&["call.json", "--versioned-constants-path", "test_versioned_constants.json"]; "with custom versioned constants file")]
 fn simple_package(args: &[&str]) {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
