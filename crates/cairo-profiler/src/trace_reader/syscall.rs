@@ -9,8 +9,8 @@ use trace_data::{DeprecatedSyscallSelector, OsResources};
 
 pub fn collect_syscall_sample(
     mut call_stack: Vec<FunctionCall>,
-    syscall: &DeprecatedSyscallSelector,
-    count: &usize,
+    syscall: DeprecatedSyscallSelector,
+    count: usize,
     os_resources_map: &OsResources,
 ) -> Sample {
     call_stack.push(FunctionCall::InternalFunctionCall(Syscall(FunctionName(
@@ -18,8 +18,8 @@ pub fn collect_syscall_sample(
     ))));
     let resources = os_resources_map
         .execute_syscalls
-        .get(syscall)
-        .expect(format!("Missing syscall {syscall:?} from versioned constants file").as_str());
+        .get(&syscall)
+        .unwrap_or_else(|| panic!("Missing syscall {syscall:?} from versioned constants file"));
     Sample {
         call_stack,
         measurements: {
@@ -27,7 +27,7 @@ pub fn collect_syscall_sample(
                 (
                     MeasurementUnit::from("calls".to_string()),
                     MeasurementValue(
-                        (*count)
+                        (count)
                             .try_into()
                             .expect("Overflow while converting to i64"),
                     ),
@@ -37,7 +37,7 @@ pub fn collect_syscall_sample(
                     MeasurementValue(
                         resources
                             .n_steps
-                            .checked_mul(*count)
+                            .checked_mul(count)
                             .expect("Multiplication overflow")
                             .try_into()
                             .expect("Overflow while converting to i64"),
@@ -48,7 +48,7 @@ pub fn collect_syscall_sample(
                     MeasurementValue(
                         resources
                             .n_memory_holes
-                            .checked_mul(*count)
+                            .checked_mul(count)
                             .expect("Multiplication overflow")
                             .try_into()
                             .expect("Overflow while converting to i64"),
@@ -61,7 +61,7 @@ pub fn collect_syscall_sample(
                     MeasurementUnit::from(builtin.to_string()),
                     MeasurementValue(
                         b_count
-                            .checked_mul(*count)
+                            .checked_mul(count)
                             .expect("Multiplication overflow")
                             .try_into()
                             .expect("Overflow while converting to i64"),

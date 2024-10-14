@@ -108,7 +108,7 @@ fn collect_samples<'a>(
                 sub_trace,
                 compiled_artifacts_cache,
                 profiler_config,
-                &os_resources_map,
+                os_resources_map,
             )?;
         }
     }
@@ -132,8 +132,8 @@ fn collect_samples<'a>(
         .for_each(|(syscall, count)| {
             samples.push(collect_syscall_sample(
                 current_entrypoint_call_stack.clone(),
-                syscall,
-                count,
+                *syscall,
+                *count,
                 os_resources_map,
             ));
         });
