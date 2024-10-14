@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- show syscalls as nodes in trace tree rather than samples
+
 ## [0.6.0] - 2024-08-22
 
 - support for `sha256_process_block_syscall`
