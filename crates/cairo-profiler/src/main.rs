@@ -77,7 +77,7 @@ fn main() -> Result<()> {
     }
 
     let os_resources_map = read_and_parse_versioned_constants_file(&cli.versioned_constants_path)
-        .expect("Failed to parse os_resources_map from a file");
+        .expect("Failed to parse versioned constants file");
 
     let samples = collect_samples_from_trace(
         &serialized_trace,

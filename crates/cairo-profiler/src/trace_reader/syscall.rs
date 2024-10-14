@@ -19,7 +19,7 @@ pub fn collect_syscall_sample(
     let resources = os_resources_map
         .execute_syscalls
         .get(syscall)
-        .expect("Failed to find syscall in resources map");
+        .expect(format!("Missing syscall {syscall:?} from versioned constants file").as_str());
     Sample {
         call_stack,
         measurements: {
@@ -29,7 +29,7 @@ pub fn collect_syscall_sample(
                     MeasurementValue(
                         (*count)
                             .try_into()
-                            .expect("overflow while converting to i64"),
+                            .expect("Overflow while converting to i64"),
                     ),
                 ),
                 (
@@ -38,9 +38,9 @@ pub fn collect_syscall_sample(
                         resources
                             .n_steps
                             .checked_mul(*count)
-                            .expect("multiplication overflow")
+                            .expect("Multiplication overflow")
                             .try_into()
-                            .expect("overflow while converting to i64"),
+                            .expect("Overflow while converting to i64"),
                     ),
                 ),
                 (
@@ -49,9 +49,9 @@ pub fn collect_syscall_sample(
                         resources
                             .n_memory_holes
                             .checked_mul(*count)
-                            .expect("multiplication overflow")
+                            .expect("Multiplication overflow")
                             .try_into()
-                            .expect("overflow while converting to i64"),
+                            .expect("Overflow while converting to i64"),
                     ),
                 ),
             ];
@@ -62,9 +62,9 @@ pub fn collect_syscall_sample(
                     MeasurementValue(
                         b_count
                             .checked_mul(*count)
-                            .expect("multiplication overflow")
+                            .expect("Multiplication overflow")
                             .try_into()
-                            .expect("overflow while converting to i64"),
+                            .expect("Overflow while converting to i64"),
                     ),
                 ));
             }
