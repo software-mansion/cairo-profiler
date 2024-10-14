@@ -6,6 +6,7 @@ use std::{
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
+use crate::trace_reader::syscall::read_and_parse_versioned_constants_file;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
@@ -49,6 +50,9 @@ struct Cli {
     /// `unstable-add-statements-functions-debug-info = true` in `[cairo]` section of Scarb.toml.
     #[arg(long)]
     show_inlined_functions: bool,
+
+    #[arg(long)]
+    versioned_constants_path: Option<Utf8PathBuf>,
 }
 
 fn main() -> Result<()> {
@@ -72,10 +76,14 @@ fn main() -> Result<()> {
         );
     }
 
+    let os_resources_map = read_and_parse_versioned_constants_file(&cli.versioned_constants_path)
+        .expect("Failed to parse os_resources_map from a file");
+
     let samples = collect_samples_from_trace(
         &serialized_trace,
         &compiled_artifacts_cache,
         &profiler_config,
+        &os_resources_map,
     )?;
 
     let profile = build_profile(&samples);

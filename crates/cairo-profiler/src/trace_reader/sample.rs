@@ -28,13 +28,15 @@ impl FunctionCall {
 pub enum InternalFunctionCall {
     Inlined(FunctionName),
     NonInlined(FunctionName),
+    Syscall(FunctionName),
 }
 
 impl InternalFunctionCall {
     pub fn function_name(&self) -> &FunctionName {
         match self {
             InternalFunctionCall::Inlined(function_name)
-            | InternalFunctionCall::NonInlined(function_name) => function_name,
+            | InternalFunctionCall::NonInlined(function_name)
+            | InternalFunctionCall::Syscall(function_name) => function_name,
         }
     }
 }
@@ -78,19 +80,6 @@ impl Sample {
             assert!(!measurements.contains_key(&MeasurementUnit::from(builtin.to_string())));
             measurements.insert(
                 MeasurementUnit::from(builtin.to_string()),
-                MeasurementValue(i64::try_from(*count).unwrap()),
-            );
-        }
-
-        let syscall_counter_with_string: Vec<_> = resources
-            .syscall_counter
-            .iter()
-            .map(|(syscall, count)| (format!("{syscall:?}"), *count))
-            .collect();
-        for (syscall, count) in &syscall_counter_with_string {
-            assert!(!measurements.contains_key(&MeasurementUnit::from(syscall.to_string())));
-            measurements.insert(
-                MeasurementUnit::from(syscall.to_string()),
                 MeasurementValue(i64::try_from(*count).unwrap()),
             );
         }

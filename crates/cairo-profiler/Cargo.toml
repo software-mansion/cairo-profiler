@@ -3,6 +3,9 @@ name = "cairo-profiler"
 version.workspace = true
 edition.workspace = true
 
+[package.metadata]
+include = ["resources/*"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

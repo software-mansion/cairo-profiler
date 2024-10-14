@@ -7,17 +7,20 @@ use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
 
 use crate::trace_reader::sample::{FunctionCall, Sample};
+use crate::trace_reader::syscall::collect_syscall_sample;
 
-use trace_data::{CallTrace, CallTraceNode, ExecutionResources};
+use trace_data::{CallTrace, CallTraceNode, ExecutionResources, OsResources};
 
 pub mod function_name;
 mod function_trace_builder;
 pub mod sample;
+pub mod syscall;
 
 pub fn collect_samples_from_trace(
     trace: &CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
+    os_resources_map: &OsResources,
 ) -> Result<Vec<Sample>> {
     let mut samples = vec![];
     let mut current_entrypoint_call_stack = vec![];
@@ -28,6 +31,7 @@ pub fn collect_samples_from_trace(
         trace,
         compiled_artifacts_cache,
         profiler_config,
+        os_resources_map,
     )?;
 
     Ok(samples)
@@ -39,6 +43,7 @@ fn collect_samples<'a>(
     trace: &'a CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
+    os_resources_map: &OsResources,
 ) -> Result<&'a ExecutionResources> {
     current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(
         FunctionName::from_entry_point_params(
@@ -103,6 +108,7 @@ fn collect_samples<'a>(
                 sub_trace,
                 compiled_artifacts_cache,
                 profiler_config,
+                &os_resources_map,
             )?;
         }
     }
@@ -118,6 +124,19 @@ fn collect_samples<'a>(
         &call_resources,
         &trace.used_l1_resources,
     ));
+
+    call_resources
+        .syscall_counter
+        .iter()
+        .filter(|(_, count)| **count != 0)
+        .for_each(|(syscall, count)| {
+            samples.push(collect_syscall_sample(
+                current_entrypoint_call_stack.clone(),
+                syscall,
+                count,
+                os_resources_map,
+            ));
+        });
 
     current_entrypoint_call_stack.pop();
 

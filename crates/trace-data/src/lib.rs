@@ -213,3 +213,8 @@ impl ExecutionResources {
 pub struct L1Resources {
     pub l2_l1_message_sizes: Vec<usize>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OsResources {
+    pub execute_syscalls: HashMap<DeprecatedSyscallSelector, VmExecutionResources>,
+}
