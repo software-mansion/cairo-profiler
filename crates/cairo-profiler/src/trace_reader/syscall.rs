@@ -25,14 +25,6 @@ pub fn collect_syscall_sample(
         measurements: {
             let mut measurements = vec![
                 (
-                    MeasurementUnit::from("calls".to_string()),
-                    MeasurementValue(
-                        (count)
-                            .try_into()
-                            .expect("Overflow while converting to i64"),
-                    ),
-                ),
-                (
                     MeasurementUnit::from("steps".to_string()),
                     MeasurementValue(
                         resources
