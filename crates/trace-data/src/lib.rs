@@ -41,7 +41,7 @@ pub struct CasmLevelInfo {
 /// Enum representing node of a trace of a call.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CallTraceNode {
-    EntryPointCall(CallTrace),
+    EntryPointCall(Box<CallTrace>),
     DeployWithoutConstructor,
 }
 
