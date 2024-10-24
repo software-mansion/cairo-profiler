@@ -6,7 +6,7 @@ use std::{
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
-use crate::trace_reader::syscall::read_and_parse_versioned_constants_file;
+use crate::versioned_constants_reader::read_and_parse_versioned_constants_file;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
@@ -20,6 +20,7 @@ mod profile_builder;
 mod profiler_config;
 mod sierra_loader;
 mod trace_reader;
+mod versioned_constants_reader;
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -51,6 +52,10 @@ struct Cli {
     #[arg(long)]
     show_inlined_functions: bool,
 
+    /// Path to `versioned_constants.json` file, that includes resource cost map
+    /// If not provided, 0.13.2.1 version will be used.
+    /// Versioned files can be found in sequencer repo:
+    /// <https://github.com/starkware-libs/sequencer/blob/main/crates/blockifier/resources/>
     #[arg(long)]
     versioned_constants_path: Option<Utf8PathBuf>,
 }
@@ -60,6 +65,8 @@ fn main() -> Result<()> {
 
     let data = fs::read_to_string(&cli.path_to_trace_data)
         .context("Failed to read call trace from a file")?;
+    let os_resources_map = read_and_parse_versioned_constants_file(&cli.versioned_constants_path)
+        .context("Failed to parse versioned constants file")?;
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
@@ -75,9 +82,6 @@ fn main() -> Result<()> {
         [cairo]\nunstable-add-statements-functions-debug-info = true"
         );
     }
-
-    let os_resources_map = read_and_parse_versioned_constants_file(&cli.versioned_constants_path)
-        .expect("Failed to parse versioned constants file");
 
     let samples = collect_samples_from_trace(
         &serialized_trace,

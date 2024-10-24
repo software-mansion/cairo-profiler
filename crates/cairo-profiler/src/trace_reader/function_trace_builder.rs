@@ -8,6 +8,7 @@ use crate::trace_reader::function_trace_builder::inlining::build_original_call_s
 use crate::trace_reader::sample::{
     FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
+use crate::versioned_constants_reader::{map_syscall_name_to_selector, OsResources};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
@@ -53,6 +54,7 @@ pub fn collect_function_level_profiling_info(
     run_with_call_header: bool,
     statements_functions_map: &Option<StatementsFunctionsMap>,
     function_level_config: &FunctionLevelConfig,
+    os_resources_map: &OsResources,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
@@ -81,6 +83,10 @@ pub fn collect_function_level_profiling_info(
     // the number of total steps. The value is different from zero only for functions run with header.
     let mut header_steps = Steps(0);
     let mut end_of_program_reached = false;
+    // Syscalls cannot be mapped using pc offsets
+    // They can be recognised by GenStatement::Invocation but they do not have GenStatement::Return
+    // That's why we must track entry to a syscall, and leave as soon as we're out of given GenStatement::Invocation
+    let mut in_syscall = false;
 
     for step in trace {
         // Skip the header.
@@ -115,10 +121,11 @@ pub fn collect_function_level_profiling_info(
 
         let current_call_stack = build_current_call_stack(
             &call_stack,
-            current_function_name,
+            current_function_name.clone(),
             function_level_config.show_inlined_functions,
             sierra_statement_idx,
             statements_functions_map.as_ref(),
+            in_syscall,
         );
 
         *functions_stack_traces
@@ -131,11 +138,42 @@ pub fn collect_function_level_profiling_info(
 
         match gen_statement {
             GenStatement::Invocation(invocation) => {
-                if matches!(
-                    sierra_program_registry.get_libfunc(&invocation.libfunc_id),
-                    Ok(CoreConcreteLibfunc::FunctionCall(_))
-                ) {
-                    call_stack.enter_function_call(current_call_stack);
+                match sierra_program_registry.get_libfunc(&invocation.libfunc_id) {
+                    Ok(CoreConcreteLibfunc::FunctionCall(_)) => {
+                        call_stack.enter_function_call(current_call_stack);
+                    }
+                    Ok(CoreConcreteLibfunc::StarkNet(_)) => {
+                        if invocation.libfunc_id.debug_name.is_none() {
+                            // this libfunc is not included in the artifact file
+                            // it is likely to be a libfunc from the test itself
+                            continue;
+                        }
+
+                        if !in_syscall {
+                            in_syscall = true;
+                            let mut new_current_call_stack = current_call_stack.clone();
+                            new_current_call_stack.push(FunctionCall::InternalFunctionCall(
+                                InternalFunctionCall::Syscall(FunctionName(
+                                    invocation
+                                        .libfunc_id
+                                        .debug_name
+                                        .clone()
+                                        .unwrap()
+                                        .to_string(),
+                                )),
+                            ));
+
+                            call_stack.enter_function_call(new_current_call_stack);
+                        }
+                    }
+                    _ => {
+                        // If we were in a syscall this is the time we go out of it, as pcs no longer
+                        // belong to GenStatement::Invocation of CoreConcreteLibfunc::StarkNet
+                        if in_syscall {
+                            call_stack.exit_function_call();
+                            in_syscall = false;
+                        }
+                    }
                 }
             }
             GenStatement::Return(_) => {
@@ -146,16 +184,7 @@ pub fn collect_function_level_profiling_info(
         }
     }
 
-    let functions_samples = functions_stack_traces
-        .into_iter()
-        .map(|(call_stack, steps)| Sample {
-            call_stack,
-            measurements: HashMap::from([(
-                MeasurementUnit::from("steps".to_string()),
-                MeasurementValue(i64::try_from(steps.0).unwrap()),
-            )]),
-        })
-        .collect_vec();
+    let functions_samples = stack_trace_to_samples(functions_stack_traces, os_resources_map);
 
     FunctionLevelProfilingInfo {
         functions_samples,
@@ -198,12 +227,14 @@ fn build_current_call_stack(
     show_inlined_functions: bool,
     sierra_statement_idx: StatementIdx,
     statements_functions_map: Option<&StatementsFunctionsMap>,
+    in_syscall: bool,
 ) -> VecWithLimitedCapacity<FunctionCall> {
     let mut current_call_stack = call_stack.current_call_stack().clone();
 
     if current_call_stack.len() == 0
         || *current_call_stack[current_call_stack.len() - 1].function_name()
             != current_function_name
+            && !in_syscall
     {
         current_call_stack.push(FunctionCall::InternalFunctionCall(
             InternalFunctionCall::NonInlined(current_function_name),
@@ -219,4 +250,63 @@ fn build_current_call_stack(
     } else {
         current_call_stack
     }
+}
+
+fn stack_trace_to_samples(
+    functions_stack_traces: HashMap<Vec<FunctionCall>, Steps>,
+    os_resources_map: &OsResources,
+) -> Vec<Sample> {
+    functions_stack_traces
+        .into_iter()
+        .map(|(call_stack, steps)| {
+            let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![(
+                MeasurementUnit::from("steps".to_string()),
+                MeasurementValue(i64::try_from(steps.0).unwrap()),
+            )]
+            .into_iter()
+            .collect();
+
+            if let Some(FunctionCall::InternalFunctionCall(InternalFunctionCall::Syscall(
+                function_name,
+            ))) = call_stack.last()
+            {
+                let Ok(syscall) = map_syscall_name_to_selector(function_name.0.as_str()) else {
+                    // todo: print the error in debug mode
+                    return Sample {
+                        call_stack,
+                        measurements,
+                    };
+                };
+                let resources = os_resources_map
+                    .execute_syscalls
+                    .get(&syscall)
+                    .unwrap_or_else(|| {
+                        panic!("Missing syscall {syscall:?} from versioned constants file")
+                    });
+
+                if let Some(value) =
+                    measurements.get_mut(&MeasurementUnit::from("steps".to_string()))
+                {
+                    *value += MeasurementValue(i64::try_from(resources.n_steps).unwrap());
+                }
+
+                measurements.insert(
+                    MeasurementUnit::from("memory_holes".to_string()),
+                    MeasurementValue(i64::try_from(resources.n_memory_holes).unwrap()),
+                );
+
+                for (builtin, b_count) in &resources.builtin_instance_counter {
+                    measurements.insert(
+                        MeasurementUnit::from(builtin.to_string()),
+                        MeasurementValue(i64::try_from(*b_count).unwrap()),
+                    );
+                }
+            }
+
+            Sample {
+                call_stack,
+                measurements,
+            }
+        })
+        .collect_vec()
 }
