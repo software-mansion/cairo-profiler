@@ -8,7 +8,8 @@ use crate::trace_reader::function_trace_builder::inlining::build_original_call_s
 use crate::trace_reader::sample::{
     FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
-use crate::versioned_constants_reader::{map_syscall_name_to_selector, OsResources};
+use crate::versioned_constants_reader::OsResources;
+use anyhow::{anyhow, Result};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
@@ -16,7 +17,7 @@ use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::ops::AddAssign;
-use trace_data::TraceEntry;
+use trace_data::{DeprecatedSyscallSelector, TraceEntry};
 
 mod function_stack_trace;
 mod inlining;
@@ -83,10 +84,9 @@ pub fn collect_function_level_profiling_info(
     // the number of total steps. The value is different from zero only for functions run with header.
     let mut header_steps = Steps(0);
     let mut end_of_program_reached = false;
-    // Syscalls cannot be mapped using pc offsets
-    // They can be recognised by GenStatement::Invocation but they do not have GenStatement::Return
+    // Syscalls can be recognised by GenStatement::Invocation but they do not have GenStatement::Return
     // That's why we must track entry to a syscall, and leave as soon as we're out of given GenStatement::Invocation
-    let mut in_syscall = false;
+    let mut in_syscall_idx: Option<StatementIdx> = None;
 
     for step in trace {
         // Skip the header.
@@ -121,11 +121,11 @@ pub fn collect_function_level_profiling_info(
 
         let current_call_stack = build_current_call_stack(
             &call_stack,
-            current_function_name.clone(),
+            current_function_name,
             function_level_config.show_inlined_functions,
             sierra_statement_idx,
             statements_functions_map.as_ref(),
-            in_syscall,
+            in_syscall_idx,
         );
 
         *functions_stack_traces
@@ -149,8 +149,14 @@ pub fn collect_function_level_profiling_info(
                             continue;
                         }
 
-                        if !in_syscall {
-                            in_syscall = true;
+                        if in_syscall_idx.as_ref() != Some(&sierra_statement_idx) {
+                            // if we were in a syscall, but the idx do not match
+                            // we exit from previous syscall before entering a new one
+                            if in_syscall_idx.is_some() {
+                                call_stack.exit_function_call();
+                            }
+
+                            in_syscall_idx = Some(sierra_statement_idx);
                             let mut new_current_call_stack = current_call_stack.clone();
                             new_current_call_stack.push(FunctionCall::InternalFunctionCall(
                                 InternalFunctionCall::Syscall(FunctionName(
@@ -169,9 +175,9 @@ pub fn collect_function_level_profiling_info(
                     _ => {
                         // If we were in a syscall this is the time we go out of it, as pcs no longer
                         // belong to GenStatement::Invocation of CoreConcreteLibfunc::StarkNet
-                        if in_syscall {
+                        if in_syscall_idx.is_some() {
                             call_stack.exit_function_call();
-                            in_syscall = false;
+                            in_syscall_idx = None;
                         }
                     }
                 }
@@ -227,14 +233,14 @@ fn build_current_call_stack(
     show_inlined_functions: bool,
     sierra_statement_idx: StatementIdx,
     statements_functions_map: Option<&StatementsFunctionsMap>,
-    in_syscall: bool,
+    in_syscall_idx: Option<StatementIdx>,
 ) -> VecWithLimitedCapacity<FunctionCall> {
     let mut current_call_stack = call_stack.current_call_stack().clone();
 
-    if current_call_stack.len() == 0
+    if (current_call_stack.len() == 0
         || *current_call_stack[current_call_stack.len() - 1].function_name()
-            != current_function_name
-            && !in_syscall
+            != current_function_name)
+        && in_syscall_idx.is_none()
     {
         current_call_stack.push(FunctionCall::InternalFunctionCall(
             InternalFunctionCall::NonInlined(current_function_name),
@@ -309,4 +315,26 @@ fn stack_trace_to_samples(
             }
         })
         .collect_vec()
+}
+
+fn map_syscall_name_to_selector(syscall: &str) -> Result<DeprecatedSyscallSelector> {
+    match syscall {
+        "call_contract_syscall" => Ok(DeprecatedSyscallSelector::CallContract),
+        "deploy_syscall" => Ok(DeprecatedSyscallSelector::Deploy),
+        "emit_event_syscall" => Ok(DeprecatedSyscallSelector::EmitEvent),
+        "get_block_hash_syscall" => Ok(DeprecatedSyscallSelector::GetBlockHash),
+        "get_execution_info_syscall" | "get_execution_info_v2_syscall" => {
+            Ok(DeprecatedSyscallSelector::GetExecutionInfo)
+        }
+        "keccak_syscall" => Ok(DeprecatedSyscallSelector::Keccak),
+        "library_call_syscall" => Ok(DeprecatedSyscallSelector::LibraryCall),
+        "replace_class_syscall" => Ok(DeprecatedSyscallSelector::ReplaceClass),
+        "send_message_to_l1_syscall" => Ok(DeprecatedSyscallSelector::SendMessageToL1),
+        "storage_read_syscall" => Ok(DeprecatedSyscallSelector::StorageRead),
+        "storage_write_syscall" => Ok(DeprecatedSyscallSelector::StorageWrite),
+        "sha256_process_block_syscall" => Ok(DeprecatedSyscallSelector::Sha256ProcessBlock),
+        _ => Err(anyhow!(
+            "Missing mapping for {syscall:?} - used resources values may not be complete"
+        )),
+    }
 }

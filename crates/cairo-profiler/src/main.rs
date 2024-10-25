@@ -52,9 +52,9 @@ struct Cli {
     #[arg(long)]
     show_inlined_functions: bool,
 
-    /// Path to `versioned_constants.json` file, that includes resource cost map
-    /// If not provided, 0.13.2.1 version will be used.
-    /// Versioned files can be found in sequencer repo:
+    /// Path to a file, that includes a map with cost of resources like syscalls.
+    /// If not provided, the cost map will default to the one used on Starknet 0.13.2.1.
+    /// Files for different Starknet versions can be found in the sequencer repo:
     /// <https://github.com/starkware-libs/sequencer/blob/main/crates/blockifier/resources/>
     #[arg(long)]
     versioned_constants_path: Option<Utf8PathBuf>,
