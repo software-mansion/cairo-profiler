@@ -21,5 +21,34 @@ pub fn read_and_parse_versioned_constants_file(path: &Option<Utf8PathBuf>) -> Re
         .get("os_resources")
         .context("Field 'os_resources' not found in versioned constants file")?;
     let os_resources: OsResources = serde_json::from_value(parsed_resources.clone())?;
+
+    let required_syscalls: Vec<DeprecatedSyscallSelector> = vec![
+        DeprecatedSyscallSelector::CallContract,
+        DeprecatedSyscallSelector::Deploy,
+        DeprecatedSyscallSelector::EmitEvent,
+        DeprecatedSyscallSelector::GetBlockHash,
+        DeprecatedSyscallSelector::GetExecutionInfo,
+        DeprecatedSyscallSelector::Keccak,
+        DeprecatedSyscallSelector::LibraryCall,
+        DeprecatedSyscallSelector::ReplaceClass,
+        DeprecatedSyscallSelector::SendMessageToL1,
+        DeprecatedSyscallSelector::StorageRead,
+        DeprecatedSyscallSelector::StorageWrite,
+        DeprecatedSyscallSelector::Sha256ProcessBlock,
+    ];
+
+    let missing_syscalls: Vec<_> = required_syscalls
+        .iter()
+        .filter(|&syscall| !os_resources.execute_syscalls.contains_key(syscall))
+        .copied()
+        .collect();
+
+    if !missing_syscalls.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Missing syscalls in versioned constants file: {:?}",
+            missing_syscalls
+        ));
+    }
+
     Ok(os_resources)
 }

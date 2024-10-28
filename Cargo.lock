@@ -370,6 +370,7 @@ dependencies = [
  "clap",
  "flate2",
  "hex",
+ "indoc",
  "itertools 0.11.0",
  "lazy_static",
  "project-root",

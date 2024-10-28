@@ -62,6 +62,10 @@ impl<T> VecWithLimitedCapacity<T> {
     pub fn len(&self) -> usize {
         self.vector.len()
     }
+
+    pub fn entries(&self) -> &[T] {
+        &self.vector
+    }
 }
 
 impl<T> From<VecWithLimitedCapacity<T>> for Vec<T> {

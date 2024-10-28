@@ -5,22 +5,21 @@ use crate::trace_reader::function_trace_builder::function_stack_trace::{
     CallStack, VecWithLimitedCapacity,
 };
 use crate::trace_reader::function_trace_builder::inlining::build_original_call_stack_with_inlined_calls;
-use crate::trace_reader::sample::{
-    FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
-};
+use crate::trace_reader::function_trace_builder::syscall_trace::stack_trace_to_samples;
+use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall, Sample};
 use crate::versioned_constants_reader::OsResources;
-use anyhow::{anyhow, Result};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::ops::AddAssign;
-use trace_data::{DeprecatedSyscallSelector, TraceEntry};
+use trace_data::TraceEntry;
 
 mod function_stack_trace;
 mod inlining;
+mod syscall_trace;
 
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,
@@ -48,6 +47,7 @@ enum MaybeSierraStatementIndex {
 }
 
 /// Collects profiling info of the current run using the trace.
+#[allow(clippy::too_many_lines)]
 pub fn collect_function_level_profiling_info(
     trace: &[TraceEntry],
     program: &Program,
@@ -119,7 +119,7 @@ pub fn collect_function_level_profiling_info(
             function_level_config.split_generics,
         );
 
-        let current_call_stack = build_current_call_stack(
+        let mut current_call_stack = build_current_call_stack(
             &call_stack,
             current_function_name,
             function_level_config.show_inlined_functions,
@@ -128,8 +128,24 @@ pub fn collect_function_level_profiling_info(
             in_syscall_idx,
         );
 
+        // Syscalls have fixed step count, as taken from versioned constants file
+        // That's why we need to add all the steps counted from its trace to the function
+        // that calls the syscall rather than have them added to the syscall itself
+        let calling_function: Vec<FunctionCall> = if in_syscall_idx.is_some() {
+            functions_stack_traces.insert(current_call_stack.clone().into(), Steps(0));
+            match current_call_stack
+                .entries()
+                .get(current_call_stack.len().wrapping_sub(2))
+            {
+                Some(entry) => vec![entry.clone()],
+                None => current_call_stack.clone().into(),
+            }
+        } else {
+            current_call_stack.clone().into()
+        };
+
         *functions_stack_traces
-            .entry(current_call_stack.clone().into())
+            .entry(calling_function)
             .or_insert(Steps(0)) += 1;
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
@@ -142,7 +158,21 @@ pub fn collect_function_level_profiling_info(
                     Ok(CoreConcreteLibfunc::FunctionCall(_)) => {
                         call_stack.enter_function_call(current_call_stack);
                     }
-                    Ok(CoreConcreteLibfunc::StarkNet(_)) => {
+                    Ok(CoreConcreteLibfunc::StarkNet(
+                        StarkNetConcreteLibfunc::CallContract(_)
+                        | StarkNetConcreteLibfunc::Deploy(_)
+                        | StarkNetConcreteLibfunc::EmitEvent(_)
+                        | StarkNetConcreteLibfunc::GetBlockHash(_)
+                        | StarkNetConcreteLibfunc::GetExecutionInfo(_)
+                        | StarkNetConcreteLibfunc::GetExecutionInfoV2(_)
+                        | StarkNetConcreteLibfunc::Keccak(_)
+                        | StarkNetConcreteLibfunc::LibraryCall(_)
+                        | StarkNetConcreteLibfunc::ReplaceClass(_)
+                        | StarkNetConcreteLibfunc::SendMessageToL1(_)
+                        | StarkNetConcreteLibfunc::StorageRead(_)
+                        | StarkNetConcreteLibfunc::StorageWrite(_)
+                        | StarkNetConcreteLibfunc::Sha256ProcessBlock(_),
+                    )) => {
                         if invocation.libfunc_id.debug_name.is_none() {
                             // this libfunc is not included in the artifact file
                             // it is likely to be a libfunc from the test itself
@@ -157,8 +187,7 @@ pub fn collect_function_level_profiling_info(
                             }
 
                             in_syscall_idx = Some(sierra_statement_idx);
-                            let mut new_current_call_stack = current_call_stack.clone();
-                            new_current_call_stack.push(FunctionCall::InternalFunctionCall(
+                            current_call_stack.push(FunctionCall::InternalFunctionCall(
                                 InternalFunctionCall::Syscall(FunctionName(
                                     invocation
                                         .libfunc_id
@@ -169,7 +198,7 @@ pub fn collect_function_level_profiling_info(
                                 )),
                             ));
 
-                            call_stack.enter_function_call(new_current_call_stack);
+                            call_stack.enter_function_call(current_call_stack);
                         }
                     }
                     _ => {
@@ -255,86 +284,5 @@ fn build_current_call_stack(
         )
     } else {
         current_call_stack
-    }
-}
-
-fn stack_trace_to_samples(
-    functions_stack_traces: HashMap<Vec<FunctionCall>, Steps>,
-    os_resources_map: &OsResources,
-) -> Vec<Sample> {
-    functions_stack_traces
-        .into_iter()
-        .map(|(call_stack, steps)| {
-            let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![(
-                MeasurementUnit::from("steps".to_string()),
-                MeasurementValue(i64::try_from(steps.0).unwrap()),
-            )]
-            .into_iter()
-            .collect();
-
-            if let Some(FunctionCall::InternalFunctionCall(InternalFunctionCall::Syscall(
-                function_name,
-            ))) = call_stack.last()
-            {
-                let Ok(syscall) = map_syscall_name_to_selector(function_name.0.as_str()) else {
-                    // todo: print the error in debug mode
-                    return Sample {
-                        call_stack,
-                        measurements,
-                    };
-                };
-                let resources = os_resources_map
-                    .execute_syscalls
-                    .get(&syscall)
-                    .unwrap_or_else(|| {
-                        panic!("Missing syscall {syscall:?} from versioned constants file")
-                    });
-
-                if let Some(value) =
-                    measurements.get_mut(&MeasurementUnit::from("steps".to_string()))
-                {
-                    *value += MeasurementValue(i64::try_from(resources.n_steps).unwrap());
-                }
-
-                measurements.insert(
-                    MeasurementUnit::from("memory_holes".to_string()),
-                    MeasurementValue(i64::try_from(resources.n_memory_holes).unwrap()),
-                );
-
-                for (builtin, b_count) in &resources.builtin_instance_counter {
-                    measurements.insert(
-                        MeasurementUnit::from(builtin.to_string()),
-                        MeasurementValue(i64::try_from(*b_count).unwrap()),
-                    );
-                }
-            }
-
-            Sample {
-                call_stack,
-                measurements,
-            }
-        })
-        .collect_vec()
-}
-
-fn map_syscall_name_to_selector(syscall: &str) -> Result<DeprecatedSyscallSelector> {
-    match syscall {
-        "call_contract_syscall" => Ok(DeprecatedSyscallSelector::CallContract),
-        "deploy_syscall" => Ok(DeprecatedSyscallSelector::Deploy),
-        "emit_event_syscall" => Ok(DeprecatedSyscallSelector::EmitEvent),
-        "get_block_hash_syscall" => Ok(DeprecatedSyscallSelector::GetBlockHash),
-        "get_execution_info_syscall" | "get_execution_info_v2_syscall" => {
-            Ok(DeprecatedSyscallSelector::GetExecutionInfo)
-        }
-        "keccak_syscall" => Ok(DeprecatedSyscallSelector::Keccak),
-        "library_call_syscall" => Ok(DeprecatedSyscallSelector::LibraryCall),
-        "replace_class_syscall" => Ok(DeprecatedSyscallSelector::ReplaceClass),
-        "send_message_to_l1_syscall" => Ok(DeprecatedSyscallSelector::SendMessageToL1),
-        "storage_read_syscall" => Ok(DeprecatedSyscallSelector::StorageRead),
-        "storage_write_syscall" => Ok(DeprecatedSyscallSelector::StorageWrite),
-        "sha256_process_block_syscall" => Ok(DeprecatedSyscallSelector::Sha256ProcessBlock),
-        _ => Err(anyhow!(
-            "Missing mapping for {syscall:?} - used resources values may not be complete"
-        )),
     }
 }
