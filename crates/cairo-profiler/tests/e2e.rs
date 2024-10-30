@@ -76,7 +76,7 @@ fn missing_syscall_from_versioned_constants_file() {
             Error: Failed to parse versioned constants file
 
             Caused by:
-                Missing syscalls in versioned constants file: [CallContract]
+                Missing libfuncs in versioned constants file: [CallContract]
             "
         ));
 }

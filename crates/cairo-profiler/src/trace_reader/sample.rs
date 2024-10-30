@@ -1,6 +1,5 @@
 use crate::trace_reader::function_name::FunctionName;
 use std::collections::HashMap;
-use std::ops::AddAssign;
 use trace_data::{ExecutionResources, L1Resources};
 
 pub(crate) struct Sample {
@@ -53,12 +52,6 @@ impl From<String> for MeasurementUnit {
 
 #[derive(Debug, Clone)]
 pub struct MeasurementValue(pub i64);
-
-impl AddAssign for MeasurementValue {
-    fn add_assign(&mut self, other: Self) {
-        self.0 += other.0;
-    }
-}
 
 impl Sample {
     pub fn from(

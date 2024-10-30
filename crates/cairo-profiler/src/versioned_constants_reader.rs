@@ -11,6 +11,8 @@ pub struct OsResources {
     pub execute_syscalls: HashMap<DeprecatedSyscallSelector, VmExecutionResources>,
 }
 
+/// Reads and parses the resource map file at given path
+/// It also checks that the file have cost information about all required libfuncs (syscalls)
 pub fn read_and_parse_versioned_constants_file(path: &Option<Utf8PathBuf>) -> Result<OsResources> {
     let file_content = match path {
         Some(path) => fs::read_to_string(path)?,
@@ -22,31 +24,16 @@ pub fn read_and_parse_versioned_constants_file(path: &Option<Utf8PathBuf>) -> Re
         .context("Field 'os_resources' not found in versioned constants file")?;
     let os_resources: OsResources = serde_json::from_value(parsed_resources.clone())?;
 
-    let required_syscalls: Vec<DeprecatedSyscallSelector> = vec![
-        DeprecatedSyscallSelector::CallContract,
-        DeprecatedSyscallSelector::Deploy,
-        DeprecatedSyscallSelector::EmitEvent,
-        DeprecatedSyscallSelector::GetBlockHash,
-        DeprecatedSyscallSelector::GetExecutionInfo,
-        DeprecatedSyscallSelector::Keccak,
-        DeprecatedSyscallSelector::LibraryCall,
-        DeprecatedSyscallSelector::ReplaceClass,
-        DeprecatedSyscallSelector::SendMessageToL1,
-        DeprecatedSyscallSelector::StorageRead,
-        DeprecatedSyscallSelector::StorageWrite,
-        DeprecatedSyscallSelector::Sha256ProcessBlock,
-    ];
-
-    let missing_syscalls: Vec<_> = required_syscalls
+    let missing_libfuncs: Vec<_> = DeprecatedSyscallSelector::all()
         .iter()
         .filter(|&syscall| !os_resources.execute_syscalls.contains_key(syscall))
         .copied()
         .collect();
 
-    if !missing_syscalls.is_empty() {
+    if !missing_libfuncs.is_empty() {
         return Err(anyhow::anyhow!(
-            "Missing syscalls in versioned constants file: {:?}",
-            missing_syscalls
+            "Missing libfuncs in versioned constants file: {:?}",
+            missing_libfuncs
         ));
     }
 
