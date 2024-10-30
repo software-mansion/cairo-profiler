@@ -73,10 +73,11 @@ fn missing_syscall_from_versioned_constants_file() {
         .failure()
         .stderr_eq(indoc!(
             r"
-            Error: Failed to parse versioned constants file
+            Error: Failed to get resource map from versioned constants file
 
             Caused by:
-                Missing libfuncs in versioned constants file: [CallContract]
+                Missing libfuncs cost in versioned constants file: [CallContract].
+                Make sure to include costs of these libfuncs in the aforementioned file.
             "
         ));
 }

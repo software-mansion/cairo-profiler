@@ -11,12 +11,12 @@ pub fn trace_to_samples(
     syscall_stack_traces: HashMap<Vec<FunctionCall>, i64>,
     os_resources_map: &OsResources,
 ) -> Vec<Sample> {
-    fn multiply_resource_by_invocations(resource: usize, invocations: i64) -> i64 {
+    let multiply_resource_by_invocations = |resource: usize, invocations: i64| -> i64 {
         let resource = i64::try_from(resource).expect("Overflow while converting resource to i64");
         resource
             .checked_mul(invocations)
             .expect("Multiplication overflow")
-    }
+    };
 
     let mut function_samples = functions_stack_traces
         .into_iter()

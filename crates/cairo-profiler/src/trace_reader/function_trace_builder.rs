@@ -186,9 +186,7 @@ pub fn collect_function_level_profiling_info(
                     _ => {
                         // If we were in a syscall this is the time we go out of it, as pcs no longer
                         // belong to GenStatement::Invocation of CoreConcreteLibfunc::StarkNet
-                        if in_syscall_idx.is_some() {
-                            in_syscall_idx = None;
-                        }
+                        in_syscall_idx = None;
                     }
                 }
             }
