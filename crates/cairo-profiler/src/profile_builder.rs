@@ -11,6 +11,7 @@ use std::collections::{HashMap, HashSet};
 pub use perftools::profiles as pprof;
 
 use crate::trace_reader::function_name::FunctionName;
+use crate::trace_reader::sample::InternalFunctionCall::Syscall;
 use crate::trace_reader::sample::{
     FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
@@ -85,7 +86,9 @@ impl ProfilerContext {
         let mut current_function_stack_start_index = 0;
         for (index, function) in call_stack.iter().enumerate() {
             match function {
-                FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(_))
+                FunctionCall::InternalFunctionCall(
+                    InternalFunctionCall::NonInlined(_) | Syscall(_),
+                )
                 | FunctionCall::EntrypointCall(_) => {
                     if index != 0 {
                         function_stacks_indexes
@@ -104,7 +107,7 @@ impl ProfilerContext {
                 locations_ids.push(LocationId(location.id));
             } else {
                 let mut location = match &function_stack[0] {
-                    FunctionCall::EntrypointCall(function_name) | FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(function_name)) => {
+                    FunctionCall::EntrypointCall(function_name) | FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(function_name) | Syscall(function_name)) => {
                         let line = pprof::Line {
                             function_id: self.function_id(function_name).into(),
                             line: 0,
@@ -132,8 +135,9 @@ impl ProfilerContext {
                             location.line.push(line);
                         }
                         FunctionCall::EntrypointCall(_)
-                        | FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(_)) =>
-                        {
+                        | FunctionCall::InternalFunctionCall(
+                            InternalFunctionCall::NonInlined(_) | Syscall(_),
+                        ) => {
                             unreachable!("Only first function in a function stack corresponding to a single location can be not inlined")
                         }
                     }

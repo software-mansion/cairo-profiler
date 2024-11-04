@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 serde.workspace = true
 camino.workspace = true
+anyhow.workspace = true

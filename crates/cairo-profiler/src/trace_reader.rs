@@ -8,6 +8,7 @@ use crate::trace_reader::function_trace_builder::collect_function_level_profilin
 
 use crate::trace_reader::sample::{FunctionCall, Sample};
 
+use crate::versioned_constants_reader::OsResources;
 use trace_data::{CallTrace, CallTraceNode, ExecutionResources};
 
 pub mod function_name;
@@ -18,6 +19,7 @@ pub fn collect_samples_from_trace(
     trace: &CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
+    os_resources_map: &OsResources,
 ) -> Result<Vec<Sample>> {
     let mut samples = vec![];
     let mut current_entrypoint_call_stack = vec![];
@@ -28,6 +30,7 @@ pub fn collect_samples_from_trace(
         trace,
         compiled_artifacts_cache,
         profiler_config,
+        os_resources_map,
     )?;
 
     Ok(samples)
@@ -39,6 +42,7 @@ fn collect_samples<'a>(
     trace: &'a CallTrace,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
+    os_resources_map: &OsResources,
 ) -> Result<&'a ExecutionResources> {
     current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(
         FunctionName::from_entry_point_params(
@@ -71,6 +75,7 @@ fn collect_samples<'a>(
             cairo_execution_info.casm_level_info.run_with_call_header,
             &compiled_artifacts.statements_functions_map,
             &FunctionLevelConfig::from(profiler_config),
+            os_resources_map,
         );
 
         let mut function_samples = function_level_profiling_info
@@ -103,6 +108,7 @@ fn collect_samples<'a>(
                 sub_trace,
                 compiled_artifacts_cache,
                 profiler_config,
+                os_resources_map,
             )?;
         }
     }

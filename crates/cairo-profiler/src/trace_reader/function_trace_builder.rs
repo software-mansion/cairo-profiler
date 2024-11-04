@@ -5,20 +5,23 @@ use crate::trace_reader::function_trace_builder::function_stack_trace::{
     CallStack, VecWithLimitedCapacity,
 };
 use crate::trace_reader::function_trace_builder::inlining::build_original_call_stack_with_inlined_calls;
-use crate::trace_reader::sample::{
-    FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
+use crate::trace_reader::function_trace_builder::stack_trace::{
+    map_syscall_to_selector, trace_to_samples,
 };
+use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall, Sample};
+use crate::versioned_constants_reader::OsResources;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::ops::AddAssign;
 use trace_data::TraceEntry;
 
 mod function_stack_trace;
 mod inlining;
+mod stack_trace;
 
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,
@@ -46,6 +49,7 @@ enum MaybeSierraStatementIndex {
 }
 
 /// Collects profiling info of the current run using the trace.
+#[allow(clippy::too_many_lines)]
 pub fn collect_function_level_profiling_info(
     trace: &[TraceEntry],
     program: &Program,
@@ -53,6 +57,7 @@ pub fn collect_function_level_profiling_info(
     run_with_call_header: bool,
     statements_functions_map: &Option<StatementsFunctionsMap>,
     function_level_config: &FunctionLevelConfig,
+    os_resources_map: &OsResources,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
@@ -76,11 +81,18 @@ pub fn collect_function_level_profiling_info(
     // tracked at the time. The key is a function stack trace.
     let mut functions_stack_traces: HashMap<Vec<FunctionCall>, Steps> = HashMap::new();
 
+    // The value is the number of invocations of the syscall in the trace.
+    // The key is a syscall stack trace.
+    let mut syscall_stack_traces: HashMap<Vec<FunctionCall>, i64> = HashMap::new();
+
     // Header steps are counted separately and then displayed as steps of the entrypoint in the
     // profile tree. It is because technically they don't belong to any function, but still increase
     // the number of total steps. The value is different from zero only for functions run with header.
     let mut header_steps = Steps(0);
     let mut end_of_program_reached = false;
+    // Syscalls can be recognised by GenStatement::Invocation but they do not have GenStatement::Return
+    // That's why we must track entry to a syscall, and leave as soon as we're out of given GenStatement::Invocation
+    let mut in_syscall_idx: Option<StatementIdx> = None;
 
     for step in trace {
         // Skip the header.
@@ -131,11 +143,51 @@ pub fn collect_function_level_profiling_info(
 
         match gen_statement {
             GenStatement::Invocation(invocation) => {
-                if matches!(
-                    sierra_program_registry.get_libfunc(&invocation.libfunc_id),
-                    Ok(CoreConcreteLibfunc::FunctionCall(_))
-                ) {
-                    call_stack.enter_function_call(current_call_stack);
+                match sierra_program_registry.get_libfunc(&invocation.libfunc_id) {
+                    Ok(CoreConcreteLibfunc::FunctionCall(_)) => {
+                        call_stack.enter_function_call(current_call_stack);
+                    }
+                    Ok(CoreConcreteLibfunc::StarkNet(libfunc)) => {
+                        let syscall = match libfunc {
+                            StarkNetConcreteLibfunc::CallContract(_)
+                            | StarkNetConcreteLibfunc::Deploy(_)
+                            | StarkNetConcreteLibfunc::EmitEvent(_)
+                            | StarkNetConcreteLibfunc::GetBlockHash(_)
+                            | StarkNetConcreteLibfunc::GetExecutionInfo(_)
+                            | StarkNetConcreteLibfunc::GetExecutionInfoV2(_)
+                            | StarkNetConcreteLibfunc::Keccak(_)
+                            | StarkNetConcreteLibfunc::LibraryCall(_)
+                            | StarkNetConcreteLibfunc::ReplaceClass(_)
+                            | StarkNetConcreteLibfunc::SendMessageToL1(_)
+                            | StarkNetConcreteLibfunc::StorageRead(_)
+                            | StarkNetConcreteLibfunc::StorageWrite(_)
+                            | StarkNetConcreteLibfunc::Sha256ProcessBlock(_) => libfunc,
+                            _ => {
+                                if in_syscall_idx.is_some() {
+                                    in_syscall_idx = None;
+                                }
+                                continue;
+                            }
+                        };
+                        if in_syscall_idx.as_ref() != Some(&sierra_statement_idx) {
+                            in_syscall_idx = Some(sierra_statement_idx);
+
+                            let mut current_call_stack_with_syscall = current_call_stack.clone();
+                            current_call_stack_with_syscall.push(
+                                FunctionCall::InternalFunctionCall(InternalFunctionCall::Syscall(
+                                    FunctionName(map_syscall_to_selector(syscall).into()),
+                                )),
+                            );
+                            *syscall_stack_traces
+                                .entry(current_call_stack_with_syscall.clone().into())
+                                .or_insert(0) += 1;
+                        }
+                    }
+                    _ => {
+                        // If we were in a syscall this is the time we go out of it, as pcs no longer
+                        // belong to GenStatement::Invocation of CoreConcreteLibfunc::StarkNet
+                        in_syscall_idx = None;
+                    }
                 }
             }
             GenStatement::Return(_) => {
@@ -146,16 +198,11 @@ pub fn collect_function_level_profiling_info(
         }
     }
 
-    let functions_samples = functions_stack_traces
-        .into_iter()
-        .map(|(call_stack, steps)| Sample {
-            call_stack,
-            measurements: HashMap::from([(
-                MeasurementUnit::from("steps".to_string()),
-                MeasurementValue(i64::try_from(steps.0).unwrap()),
-            )]),
-        })
-        .collect_vec();
+    let functions_samples = trace_to_samples(
+        functions_stack_traces,
+        syscall_stack_traces,
+        os_resources_map,
+    );
 
     FunctionLevelProfilingInfo {
         functions_samples,

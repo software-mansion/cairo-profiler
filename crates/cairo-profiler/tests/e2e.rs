@@ -1,4 +1,5 @@
 use assert_fs::fixture::PathCopy;
+use indoc::indoc;
 use snapbox::cmd::{cargo_bin, Command as SnapboxCommand};
 use test_case::test_case;
 
@@ -28,6 +29,7 @@ fn output_path() {
 #[test_case(&["call.json", "--max-function-stack-trace-depth", "5"]; "with max function trace depth")]
 #[test_case(&["call.json", "--show-details"]; "with details")]
 #[test_case(&["call.json"]; "without details")]
+#[test_case(&["call.json", "--versioned-constants-path", "test_versioned_constants.json"]; "with custom versioned constants file")]
 fn simple_package(args: &[&str]) {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
@@ -47,4 +49,35 @@ fn simple_package(args: &[&str]) {
     assert!(temp_dir.join("profile.pb.gz").exists());
 
     // TODO run pprof here
+}
+
+#[test]
+fn missing_syscall_from_versioned_constants_file() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/data/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .args([
+            "call.json",
+            "--versioned-constants-path",
+            "invalid_versioned_constants.json",
+        ])
+        .assert()
+        .failure()
+        .stderr_eq(indoc!(
+            r"
+            Error: Failed to get resource map from versioned constants file
+
+            Caused by:
+                Missing libfuncs cost in versioned constants file: [CallContract].
+                Make sure to include costs of these libfuncs in the aforementioned file.
+            "
+        ));
 }

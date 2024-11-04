@@ -6,6 +6,7 @@ use std::{
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
+use crate::versioned_constants_reader::read_and_parse_versioned_constants_file;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
@@ -19,6 +20,7 @@ mod profile_builder;
 mod profiler_config;
 mod sierra_loader;
 mod trace_reader;
+mod versioned_constants_reader;
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -49,6 +51,13 @@ struct Cli {
     /// `unstable-add-statements-functions-debug-info = true` in `[cairo]` section of Scarb.toml.
     #[arg(long)]
     show_inlined_functions: bool,
+
+    /// Path to a file, that includes a map with cost of resources like syscalls.
+    /// If not provided, the cost map will default to the one used on Starknet 0.13.2.1.
+    /// Files for different Starknet versions can be found in the sequencer repo:
+    /// <https://github.com/starkware-libs/sequencer/blob/main/crates/blockifier/resources/>
+    #[arg(long)]
+    versioned_constants_path: Option<Utf8PathBuf>,
 }
 
 fn main() -> Result<()> {
@@ -56,6 +65,8 @@ fn main() -> Result<()> {
 
     let data = fs::read_to_string(&cli.path_to_trace_data)
         .context("Failed to read call trace from a file")?;
+    let os_resources_map = read_and_parse_versioned_constants_file(&cli.versioned_constants_path)
+        .context("Failed to get resource map from versioned constants file")?;
     let serialized_trace: CallTrace =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
@@ -76,6 +87,7 @@ fn main() -> Result<()> {
         &serialized_trace,
         &compiled_artifacts_cache,
         &profiler_config,
+        &os_resources_map,
     )?;
 
     let profile = build_profile(&samples);
