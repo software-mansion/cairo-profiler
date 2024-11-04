@@ -14,21 +14,21 @@ edition = "2021"
 prost = "0.12"
 # Only necessary if using Protobuf well-known types:
 prost-types = "0.12"
-bytes = "1.5.0"
-flate2 = "1.0.28"
+bytes = "1.8.0"
+flate2 = "1.0.34"
 hex = "0.4.3"
 clap = { version = "4.4.7", features = ["derive"] }
-serde = { version = "1.0.195", features = ["derive"] }
-serde_json = "1.0.111"
-camino = { version = "1.1.4", features = ["serde1"] }
+serde = { version = "1.0.214", features = ["derive"] }
+serde_json = "1.0.132"
+camino = { version = "1.1.9", features = ["serde1"] }
 anyhow = "1.0"
-assert_fs = "1.1.1"
+assert_fs = "1.1.2"
 project-root = "0.2.2"
 snapbox = "0.4.16"
 prost-build = { version = "0.12" }
 test-case = "3.3.1"
-itertools = "0.11.0"
-tempfile = "3.10.1"
+itertools = "0.12.1"
+tempfile = "3.13.0"
 regex = "1.10"
 lazy_static = "1.4.0"
 indoc = "2"
