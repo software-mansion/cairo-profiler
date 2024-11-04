@@ -18,7 +18,7 @@ jobs:
 
       - name: Get version from Cargo.toml
         id: lookupVersion
-        uses: mikefarah/yq@dd648994340a5d03225d97abf19c9bf1086c3f07
+        uses: mikefarah/yq@bbdd97482f2d439126582a59689eb1c855944955
         with:
           cmd: yq -oy '"v" + .workspace.package.version' 'Cargo.toml'
 
@@ -68,12 +68,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@439cf607258077187679211f12aa6f19af4a0af7
+      - uses: dtolnay/rust-toolchain@7b1c307e0dcbda6122208f10795a713336a9b35a
         with:
           toolchain: stable
           target: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84
+      - uses: Swatinem/rust-cache@82a92a6e8fbeee089604da2575dc567ae9ddeaab
 
       - name: Install cross
         if: matrix.cross
@@ -147,7 +147,7 @@ jobs:
 
       - name: Create GitHub release
         id: create-release
-        uses: taiki-e/create-gh-release-action@8df4de6534ceacdaed10a08f73418ca751f31793
+        uses: taiki-e/create-gh-release-action@72d65cee1f8033ef0c8b5d79eaf0c45c7c578ce3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           changelog: CHANGELOG.md
