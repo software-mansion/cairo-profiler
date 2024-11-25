@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/trace-data",
     "crates/cairo-profiler",
 ]
 
@@ -29,9 +28,8 @@ prost-build = { version = "0.12" }
 test-case = "3.3.1"
 itertools = "0.12.1"
 tempfile = "3.13.0"
-regex = "1.10"
-lazy_static = "1.4.0"
 indoc = "2"
+cairo-annotations = { path = "/Users/wojciech/git-repos/starkware/cairo-annotations/crates/cairo-annotations" }
 
 cairo-lang-sierra = "2.7.0"
 cairo-lang-sierra-to-casm = "2.7.0"

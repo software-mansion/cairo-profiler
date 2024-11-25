@@ -21,9 +21,7 @@ camino.workspace = true
 anyhow.workspace = true
 itertools.workspace = true
 tempfile.workspace = true
-regex.workspace = true
-lazy_static.workspace = true
-trace-data = { path = "../trace-data" }
+cairo-annotations.workspace = true
 
 cairo-lang-sierra.workspace = true
 cairo-lang-sierra-to-casm.workspace = true

@@ -9,12 +9,12 @@ use crate::trace_reader::collect_samples_from_trace;
 use crate::versioned_constants_reader::read_and_parse_versioned_constants_file;
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
+use cairo_annotations::trace_data::VersionedCallTrace;
 use camino::Utf8PathBuf;
 use clap::Parser;
 use flate2::{bufread::GzEncoder, Compression};
 use profile_builder::build_profile;
 use prost::Message;
-use trace_data::CallTrace;
 
 mod profile_builder;
 mod profiler_config;
@@ -67,7 +67,7 @@ fn main() -> Result<()> {
         .context("Failed to read call trace from a file")?;
     let os_resources_map = read_and_parse_versioned_constants_file(&cli.versioned_constants_path)
         .context("Failed to get resource map from versioned constants file")?;
-    let serialized_trace: CallTrace =
+    let VersionedCallTrace::V1(serialized_trace) =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
     let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(&serialized_trace)?;

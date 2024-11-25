@@ -10,11 +10,11 @@ use std::collections::{HashMap, HashSet};
 
 pub use perftools::profiles as pprof;
 
-use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::sample::InternalFunctionCall::Syscall;
 use crate::trace_reader::sample::{
     FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
+use cairo_annotations::annotations::profiler::FunctionName;
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 struct StringId(u64);

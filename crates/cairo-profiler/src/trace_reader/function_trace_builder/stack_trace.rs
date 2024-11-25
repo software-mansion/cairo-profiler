@@ -1,10 +1,10 @@
 use crate::trace_reader::function_trace_builder::Steps;
 use crate::trace_reader::sample::{FunctionCall, MeasurementUnit, MeasurementValue, Sample};
 use crate::versioned_constants_reader::OsResources;
+use cairo_annotations::trace_data::DeprecatedSyscallSelector;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use itertools::Itertools;
 use std::collections::HashMap;
-use trace_data::DeprecatedSyscallSelector;
 
 pub fn trace_to_samples(
     functions_stack_traces: HashMap<Vec<FunctionCall>, Steps>,

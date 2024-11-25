@@ -1,10 +1,10 @@
 use anyhow::{Context, Result};
+use cairo_annotations::trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
 use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
-use trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OsResources {
