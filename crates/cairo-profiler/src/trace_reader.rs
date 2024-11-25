@@ -3,6 +3,7 @@ use itertools::chain;
 
 use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
 use crate::sierra_loader::CompiledArtifactsCache;
+use crate::trace_reader::function_name::FunctionNameExt;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
 use cairo_annotations::annotations::profiler::FunctionName;
 
@@ -13,6 +14,7 @@ use cairo_annotations::trace_data::{
     CallTraceNode, CallTraceV1, CasmLevelInfo, ExecutionResources,
 };
 
+pub mod function_name;
 mod function_trace_builder;
 pub mod sample;
 
