@@ -1,6 +1,6 @@
-use crate::trace_reader::function_name::FunctionName;
+use cairo_annotations::annotations::profiler::FunctionName;
+use cairo_annotations::trace_data::{ExecutionResources, L1Resources};
 use std::collections::HashMap;
-use trace_data::{ExecutionResources, L1Resources};
 
 pub(crate) struct Sample {
     pub call_stack: Vec<FunctionCall>,

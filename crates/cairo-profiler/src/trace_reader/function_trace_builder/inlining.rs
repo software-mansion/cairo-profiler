@@ -3,19 +3,23 @@ use std::cmp::max;
 use cairo_lang_sierra::program::StatementIdx;
 use itertools::Itertools;
 
-use crate::sierra_loader::StatementsFunctionsMap;
-use crate::trace_reader::function_name::FunctionName;
 use crate::trace_reader::function_trace_builder::function_stack_trace::VecWithLimitedCapacity;
 use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall};
+use cairo_annotations::annotations::profiler::{FunctionName, ProfilerAnnotationsV1};
 
 pub(super) fn build_original_call_stack_with_inlined_calls(
     sierra_statement_idx: StatementIdx,
-    statements_functions_map: Option<&StatementsFunctionsMap>,
+    statements_functions_map: Option<&ProfilerAnnotationsV1>,
     current_call_stack: VecWithLimitedCapacity<FunctionCall>,
 ) -> VecWithLimitedCapacity<FunctionCall> {
-    let maybe_original_call_stack_suffix = statements_functions_map
-        .as_ref()
-        .and_then(|statements_functions_map| statements_functions_map.get(sierra_statement_idx));
+    let maybe_original_call_stack_suffix =
+        statements_functions_map
+            .as_ref()
+            .and_then(|statements_functions_map| {
+                statements_functions_map
+                    .statements_functions
+                    .get(&sierra_statement_idx)
+            });
 
     if let Some(original_call_stack_suffix) = maybe_original_call_stack_suffix {
         // Statements functions map represents callstack from the most nested elements.

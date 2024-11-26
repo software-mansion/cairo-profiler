@@ -3,20 +3,21 @@ use itertools::chain;
 
 use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
 use crate::sierra_loader::CompiledArtifactsCache;
-use crate::trace_reader::function_name::FunctionName;
+use crate::trace_reader::function_name::FunctionNameExt;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
+use cairo_annotations::annotations::profiler::FunctionName;
 
 use crate::trace_reader::sample::{FunctionCall, Sample};
 
 use crate::versioned_constants_reader::OsResources;
-use trace_data::{CallTrace, CallTraceNode, ExecutionResources};
+use cairo_annotations::trace_data::{CallTraceNode, CallTraceV1, ExecutionResources};
 
 pub mod function_name;
 mod function_trace_builder;
 pub mod sample;
 
 pub fn collect_samples_from_trace(
-    trace: &CallTrace,
+    trace: &CallTraceV1,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
     os_resources_map: &OsResources,
@@ -39,7 +40,7 @@ pub fn collect_samples_from_trace(
 fn collect_samples<'a>(
     samples: &mut Vec<Sample>,
     current_entrypoint_call_stack: &mut Vec<FunctionCall>,
-    trace: &'a CallTrace,
+    trace: &'a CallTraceV1,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
     os_resources_map: &OsResources,
@@ -69,10 +70,9 @@ fn collect_samples<'a>(
             compiled_artifacts_cache.get_compiled_artifacts_for_path(&absolute_source_sierra_path);
 
         let function_level_profiling_info = collect_function_level_profiling_info(
-            &cairo_execution_info.casm_level_info.vm_trace,
             compiled_artifacts.sierra_program.get_program(),
             &compiled_artifacts.casm_debug_info,
-            cairo_execution_info.casm_level_info.run_with_call_header,
+            &cairo_execution_info.casm_level_info,
             &compiled_artifacts.statements_functions_map,
             &FunctionLevelConfig::from(profiler_config),
             os_resources_map,

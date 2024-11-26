@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - show syscalls as nodes in trace tree rather than samples
 - add `--versioned-constants-path` flag to allow passing custom resource cost map
+- remove `trace-data` crate in favour of `cairo-annotations`
 
 ## [0.6.0] - 2024-08-22
 
