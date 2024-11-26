@@ -10,9 +10,7 @@ use cairo_annotations::annotations::profiler::FunctionName;
 use crate::trace_reader::sample::{FunctionCall, Sample};
 
 use crate::versioned_constants_reader::OsResources;
-use cairo_annotations::trace_data::{
-    CallTraceNode, CallTraceV1, CasmLevelInfo, ExecutionResources,
-};
+use cairo_annotations::trace_data::{CallTraceNode, CallTraceV1, ExecutionResources};
 
 pub mod function_name;
 mod function_trace_builder;
@@ -74,10 +72,7 @@ fn collect_samples<'a>(
         let function_level_profiling_info = collect_function_level_profiling_info(
             compiled_artifacts.sierra_program.get_program(),
             &compiled_artifacts.casm_debug_info,
-            &CasmLevelInfo {
-                vm_trace: cairo_execution_info.casm_level_info.vm_trace.clone(),
-                run_with_call_header: cairo_execution_info.casm_level_info.run_with_call_header,
-            },
+            &cairo_execution_info.casm_level_info,
             &compiled_artifacts.statements_functions_map,
             &FunctionLevelConfig::from(profiler_config),
             os_resources_map,

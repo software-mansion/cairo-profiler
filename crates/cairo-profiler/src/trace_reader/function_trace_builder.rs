@@ -44,6 +44,7 @@ impl AddAssign<usize> for Steps {
 }
 
 /// Collects profiling info of the current run using the trace.
+#[allow(clippy::too_many_lines)]
 pub fn collect_function_level_profiling_info(
     program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
@@ -68,6 +69,7 @@ pub fn collect_function_level_profiling_info(
     // profile tree. It is because technically they don't belong to any function, but still increase
     // the number of total steps. The value is different from zero only for functions run with header.
     let mut header_steps = Steps(0);
+    let mut end_of_program_reached = false;
     // Syscalls can be recognised by GenStatement::Invocation but they do not have GenStatement::Return
     // That's why we must track entry to a syscall, and leave as soon as we're out of given GenStatement::Invocation
     let mut in_syscall_idx: Option<StatementIdx> = None;
@@ -85,6 +87,10 @@ pub fn collect_function_level_profiling_info(
                 continue;
             }
         };
+
+        if end_of_program_reached {
+            unreachable!("End of program reached, but trace continues.");
+        }
 
         let current_function_name = FunctionName::from_sierra_statement_idx(
             sierra_statement_idx,
@@ -158,7 +164,9 @@ pub fn collect_function_level_profiling_info(
                 }
             }
             GenStatement::Return(_) => {
-                call_stack.exit_function_call();
+                if call_stack.exit_function_call().is_none() {
+                    end_of_program_reached = true;
+                }
             }
         }
     }

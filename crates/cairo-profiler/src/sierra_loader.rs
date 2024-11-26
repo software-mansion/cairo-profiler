@@ -149,13 +149,10 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
 fn maybe_get_statements_functions_map(
     maybe_sierra_program_debug_info: Option<DebugInfo>,
 ) -> Option<ProfilerAnnotationsV1> {
-    maybe_sierra_program_debug_info.and_then(|debug_info| {
-        VersionedProfilerAnnotations::try_from_debug_info(&debug_info)
-            .ok()
-            .map(|version_annotations| match version_annotations {
-                VersionedProfilerAnnotations::V1(annotations) => annotations,
-            })
-    })
+    let VersionedProfilerAnnotations::V1(annotations) =
+        VersionedProfilerAnnotations::try_from_debug_info(&maybe_sierra_program_debug_info?)
+            .ok()?;
+    Some(annotations)
 }
 
 pub fn collect_and_compile_all_sierra_programs(
