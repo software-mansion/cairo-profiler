@@ -53,7 +53,7 @@ struct Cli {
     show_inlined_functions: bool,
 
     /// Path to a file, that includes a map with cost of resources like syscalls.
-    /// If not provided, the cost map will default to the one used on Starknet 0.13.2.1.
+    /// If not provided, the cost map will default to the one used on Starknet 0.13.3.
     /// Files for different Starknet versions can be found in the sequencer repo:
     /// <https://github.com/starkware-libs/sequencer/blob/main/crates/blockifier/resources/>
     #[arg(long)]

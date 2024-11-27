@@ -213,6 +213,11 @@
                     "range_check_builtin": 1
                 },
                 "n_memory_holes": 0
+            },
+            "GetClassHashAt": {
+                "n_steps": 0,
+                "builtin_instance_counter": {},
+                "n_memory_holes": 0
             }
         }
     }
