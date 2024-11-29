@@ -65,8 +65,9 @@ fn main() -> Result<()> {
 
     let data = fs::read_to_string(&cli.path_to_trace_data)
         .context("Failed to read call trace from a file")?;
-    let os_resources_map = read_and_parse_versioned_constants_file(&cli.versioned_constants_path)
-        .context("Failed to get resource map from versioned constants file")?;
+    let os_resources_map =
+        read_and_parse_versioned_constants_file(cli.versioned_constants_path.as_ref())
+            .context("Failed to get resource map from versioned constants file")?;
     let VersionedCallTrace::V1(serialized_trace) =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
