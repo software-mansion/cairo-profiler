@@ -49,7 +49,7 @@ pub fn collect_function_level_profiling_info(
     program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
     casm_level_info: &CasmLevelInfo,
-    statements_functions_map: &Option<ProfilerAnnotationsV1>,
+    statements_functions_map: Option<&ProfilerAnnotationsV1>,
     function_level_config: &FunctionLevelConfig,
     os_resources_map: &OsResources,
 ) -> FunctionLevelProfilingInfo {
@@ -103,7 +103,7 @@ pub fn collect_function_level_profiling_info(
             current_function_name,
             function_level_config.show_inlined_functions,
             sierra_statement_idx,
-            statements_functions_map.as_ref(),
+            statements_functions_map,
         );
 
         *functions_stack_traces

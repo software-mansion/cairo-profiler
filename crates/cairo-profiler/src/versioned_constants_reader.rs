@@ -13,7 +13,7 @@ pub struct OsResources {
 
 /// Reads and parses the resource map file at given path
 /// It also checks that the file have cost information about all required libfuncs (syscalls)
-pub fn read_and_parse_versioned_constants_file(path: &Option<Utf8PathBuf>) -> Result<OsResources> {
+pub fn read_and_parse_versioned_constants_file(path: Option<&Utf8PathBuf>) -> Result<OsResources> {
     let file_content = match path {
         Some(path) => fs::read_to_string(path).with_context(|| {
             format!("Cannot read versioned constants file at specified path {path}")
