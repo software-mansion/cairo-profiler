@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `l2_l1_message_sizes` sample no longer is displayed when its value is zero
+
 ## [0.7.0] - 2024-11-27
 
 - show syscalls as nodes in trace tree rather than samples
