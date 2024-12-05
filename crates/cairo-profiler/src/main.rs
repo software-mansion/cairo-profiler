@@ -1,20 +1,15 @@
-use std::{
-    fs,
-    io::{Read, Write},
-};
+use std::fs;
 
+use crate::profile_builder::save_profile;
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
 use crate::versioned_constants_reader::read_and_parse_versioned_constants_file;
 use anyhow::{Context, Result};
-use bytes::{Buf, BytesMut};
 use cairo_annotations::trace_data::VersionedCallTrace;
 use clap::Parser;
 use cli::{Cli, Commands};
-use flate2::{bufread::GzEncoder, Compression};
 use profile_builder::build_profile;
-use prost::Message;
 
 mod cli;
 mod profile_builder;
@@ -59,27 +54,8 @@ fn main() -> Result<()> {
             )?;
 
             let profile = build_profile(&samples);
-
-            if let Some(parent) = build_cli.output_path.parent() {
-                fs::create_dir_all(parent)
-                    .context("Failed to create parent directories for the output file")?;
-            }
-            let mut file = fs::File::create(build_cli.output_path)
-                .context("Failed to create the output file")?;
-
-            let mut buffer = BytesMut::new();
-            profile
-                .encode(&mut buffer)
-                .expect("Failed to encode the profile to the buffer");
-
-            let mut buffer_reader = buffer.reader();
-            let mut encoder = GzEncoder::new(&mut buffer_reader, Compression::default());
-
-            let mut encoded = vec![];
-            encoder
-                .read_to_end(&mut encoded)
-                .context("Failed to read bytes from the encoder")?;
-            file.write_all(&encoded).unwrap();
+            save_profile(&build_cli.output_path, &profile)
+                .expect("Failed to write profile data to file");
 
             Ok(())
         }
