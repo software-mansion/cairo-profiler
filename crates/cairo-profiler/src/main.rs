@@ -1,7 +1,7 @@
 use std::fs;
 
 use crate::profile_builder::save_profile;
-use crate::profile_viewer::{load_profile, print_profile};
+use crate::profile_viewer::{get_samples, load_profile, print_profile};
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
@@ -69,6 +69,11 @@ fn main() -> Result<()> {
         }
         Commands::View(view_cli) => {
             let profile = load_profile(&view_cli.path_to_profile)?;
+            if view_cli.list_samples {
+                let samples = get_samples(&profile);
+                println!("{}", samples.join("\n"));
+                return Ok(());
+            }
             print_profile(&profile, &view_cli.sample, &view_cli.limit)?;
             Ok(())
         }

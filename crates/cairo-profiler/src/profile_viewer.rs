@@ -91,6 +91,14 @@ fn get_profile_data(
     Ok(sorted_profile_map)
 }
 
+pub fn get_samples(profile: &Profile) -> Vec<String> {
+    profile
+        .sample_type
+        .iter()
+        .map(|sample| profile.string_table[sample.unit as usize].clone())
+        .collect()
+}
+
 pub fn print_profile(profile: &Profile, sample: &str, limit: &usize) -> Result<()> {
     if *limit == 0usize {
         bail!("Limit cannot be set to 0")
