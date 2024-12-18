@@ -63,7 +63,7 @@ pub struct BuildProfile {
     pub limit: usize,
 }
 
-pub fn run_build_profile(args: BuildProfile) -> Result<()> {
+pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
     let data = fs::read_to_string(&args.path_to_trace_data)
         .context("Failed to read call trace from a file")?;
     let os_resources_map =
@@ -73,7 +73,7 @@ pub fn run_build_profile(args: BuildProfile) -> Result<()> {
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
     let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(&serialized_trace)?;
-    let profiler_config = ProfilerConfig::from(&args);
+    let profiler_config = ProfilerConfig::from(args);
 
     if profiler_config.show_inlined_functions
         && !compiled_artifacts_cache.statements_functions_maps_are_present()
@@ -96,7 +96,7 @@ pub fn run_build_profile(args: BuildProfile) -> Result<()> {
     save_profile(&args.output_path, &profile).context("Failed to write profile data to file")?;
 
     if args.view {
-        print_profile(&profile, &args.sample, &args.limit)?;
+        print_profile(&profile, &args.sample, args.limit)?;
     }
 
     Ok(())

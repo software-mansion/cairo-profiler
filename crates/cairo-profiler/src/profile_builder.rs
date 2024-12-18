@@ -292,11 +292,11 @@ pub fn save_profile(target_path: &Utf8PathBuf, profile: &pprof::Profile) -> Resu
     let mut buffer_reader = buffer.reader();
     let mut encoder = GzEncoder::new(&mut buffer_reader, Compression::default());
 
-    let mut encoded = vec![];
+    let mut encoded_buffer = vec![];
     encoder
-        .read_to_end(&mut encoded)
+        .read_to_end(&mut encoded_buffer)
         .context("Failed to read bytes from the encoder")?;
-    file.write_all(&encoded).unwrap();
+    file.write_all(&encoded_buffer).unwrap();
 
     Ok(())
 }

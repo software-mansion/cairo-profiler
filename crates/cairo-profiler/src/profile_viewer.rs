@@ -28,7 +28,11 @@ fn get_profile_data(
     let sample_type_idx = profile
         .sample_type
         .iter()
-        .position(|val_type| profile.string_table[val_type.unit as usize] == sample_label)
+        .position(|sample| {
+            profile.string_table[usize::try_from(sample.unit)
+                .expect("Overflow while converting samples id to usize")]
+                == sample_label
+        })
         .context("Failed to find sample in provided profile")?;
 
     let mut profile_map = HashMap::<String, FunctionProfile>::new();
@@ -56,7 +60,10 @@ fn get_profile_data(
                     .get(&loc_id)
                     .and_then(|location| location.line.first())
                     .and_then(|line| function_map.get(&line.function_id))
-                    .map(|function| &profile.string_table[function.name as usize])
+                    .map(|function| {
+                        &profile.string_table[usize::try_from(function.name)
+                            .expect("Overflow while converting function id to usize")]
+                    })
             })
             .enumerate()
             .for_each(|(idx, function_name)| {
@@ -95,12 +102,16 @@ pub fn get_samples(profile: &Profile) -> Vec<String> {
     profile
         .sample_type
         .iter()
-        .map(|sample| profile.string_table[sample.unit as usize].clone())
+        .map(|sample| {
+            profile.string_table[usize::try_from(sample.unit)
+                .expect("Overflow while converting samples id to usize")]
+            .clone()
+        })
         .collect()
 }
 
-pub fn print_profile(profile: &Profile, sample: &str, limit: &usize) -> Result<()> {
-    if *limit == 0usize {
+pub fn print_profile(profile: &Profile, sample: &str, limit: usize) -> Result<()> {
+    if limit == 0usize {
         bail!("Limit cannot be set to 0")
     }
     let data = get_profile_data(profile, sample).context("Failed to get data from profile")?;
@@ -112,8 +123,8 @@ pub fn print_profile(profile: &Profile, sample: &str, limit: &usize) -> Result<(
         .context("Failed to obtain total resource count from profile data")?;
 
     let profile_length = &data.len();
-    let effective_limit = std::cmp::min(&limit, &profile_length);
-    let sliced = data.iter().take(**effective_limit).collect::<Vec<_>>();
+    let effective_limit = std::cmp::min(&limit, profile_length);
+    let sliced = data.iter().take(*effective_limit).collect::<Vec<_>>();
 
     let summary_resource_cost: i64 = sliced.iter().map(|(_key, profile)| profile.flat).sum();
     let cost_percentage = format!(
@@ -150,8 +161,8 @@ pub fn load_profile(path: &Utf8PathBuf) -> Result<Profile> {
     let profile_data = fs::read(path).context("Failed to read call trace from a file")?;
 
     let mut decoder = GzDecoder::new(&profile_data[..]);
-    let mut decoded = vec![];
-    decoder.read_to_end(&mut decoded)?;
+    let mut decoded_buffer = vec![];
+    decoder.read_to_end(&mut decoded_buffer)?;
 
-    Profile::decode(&*decoded).context("Failed to decode profile data")
+    Profile::decode(&*decoded_buffer).context("Failed to decode profile data")
 }
