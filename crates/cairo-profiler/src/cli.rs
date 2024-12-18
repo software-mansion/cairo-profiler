@@ -56,20 +56,19 @@ pub(crate) struct BuildProfile {
     /// View the resulting profile.
     /// To view already-built profile run `cairo-profiler view`.
     #[arg(long)]
-    view: bool,
+    pub(crate) view: bool,
 
     /// Show the sample in the top view.
     /// Requires `--view` flag to be set.
     /// To view already-built profile run `cairo-profiler view`.
     #[arg(long, requires = "view", default_value = "steps")]
-    sample: String,
+    pub(crate) sample: String,
 
     /// Set a limit of viewed nodes.
-    /// To show all nodes set this to `0`.
     /// Requires `--view` flag to be set.
     /// To view already-built profile run `cairo-profiler view`.
     #[arg(long, requires = "view", default_value = "10")]
-    limit: i32,
+    pub(crate) limit: usize,
 }
 
 #[derive(Args)]
@@ -84,10 +83,9 @@ pub(crate) struct ViewProfile {
 
     /// List all the samples included in the profile.
     #[arg(short, long)]
-    list_samples: bool,
+    pub(crate) list_samples: bool,
 
     /// Set a limit of nodes showed in the top view.
-    /// To show all nodes set this to `0`.
     #[arg(long, default_value = "10")]
-    limit: i32,
+    pub(crate) limit: usize,
 }

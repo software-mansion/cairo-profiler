@@ -1,9 +1,13 @@
-use crate::profile_builder::pprof::{Function, Location, Profile};
-use crate::profiler_config::ProfilerConfig;
-
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
+use camino::Utf8PathBuf;
+use flate2::read::GzDecoder;
 use prettytable::{format, Table};
+use prost::Message;
 use std::collections::HashMap;
+use std::fs;
+use std::io::Read;
+
+use crate::profile_builder::pprof::{Function, Location, Profile};
 
 #[derive(Debug, Default)]
 struct FunctionProfile {
@@ -87,7 +91,10 @@ fn get_profile_data(
     Ok(sorted_profile_map)
 }
 
-pub fn print_profile(profile: &Profile, sample: &str, limit: usize) -> Result<()> {
+pub fn print_profile(profile: &Profile, sample: &str, limit: &usize) -> Result<()> {
+    if *limit == 0usize {
+        bail!("Limit cannot be set to 0")
+    }
     let data = get_profile_data(profile, sample).context("Failed to get data from profile")?;
 
     let total_resource_count = data
@@ -97,13 +104,10 @@ pub fn print_profile(profile: &Profile, sample: &str, limit: usize) -> Result<()
         .context("Failed to obtain total resource count from profile data")?;
 
     let profile_length = &data.len();
-    let effective_limit = std::cmp::min(&limit, profile_length);
-    let sliced = data.iter().take(*effective_limit).collect::<Vec<_>>();
+    let effective_limit = std::cmp::min(&limit, &profile_length);
+    let sliced = data.iter().take(**effective_limit).collect::<Vec<_>>();
 
-    let summary_resource_cost: i64 = sliced
-        .iter()
-        .map(|(_key, profile)| profile.cumulative)
-        .sum();
+    let summary_resource_cost: i64 = sliced.iter().map(|(_key, profile)| profile.flat).sum();
     let cost_percentage = format!(
         "{:.2}%",
         &sliced
@@ -132,4 +136,14 @@ pub fn print_profile(profile: &Profile, sample: &str, limit: usize) -> Result<()
 
     table.printstd();
     Ok(())
+}
+
+pub fn load_profile(path: &Utf8PathBuf) -> Result<Profile> {
+    let profile_data = fs::read(path).context("Failed to read call trace from a file")?;
+
+    let mut decoder = GzDecoder::new(&profile_data[..]);
+    let mut decoded = vec![];
+    decoder.read_to_end(&mut decoded)?;
+
+    Profile::decode(&*decoded).context("Failed to decode profile data")
 }

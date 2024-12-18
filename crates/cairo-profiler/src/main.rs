@@ -1,7 +1,7 @@
 use std::fs;
 
 use crate::profile_builder::save_profile;
-use crate::profile_viewer::view_top_profile;
+use crate::profile_viewer::{load_profile, print_profile};
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
@@ -9,12 +9,10 @@ use crate::versioned_constants_reader::read_and_parse_versioned_constants_file;
 use anyhow::{Context, Result};
 use cairo_annotations::trace_data::VersionedCallTrace;
 use clap::Parser;
-use flate2::read::GzDecoder;
-use std::io::{self, Read};
-use prost::Message;
-use crate::profile_builder::pprof::Profile;
 use cli::{Cli, Commands};
 use profile_builder::build_profile;
+#[macro_use]
+extern crate prettytable;
 
 mod cli;
 mod profile_builder;
@@ -61,36 +59,17 @@ fn main() -> Result<()> {
 
             let profile = build_profile(&samples);
             save_profile(&build_cli.output_path, &profile)
-                .expect("Failed to write profile data to file");
+                .context("Failed to write profile data to file")?;
 
-            // TODO: --view profile
+            if build_cli.view {
+                print_profile(&profile, &build_cli.sample, &build_cli.limit)?;
+            }
 
             Ok(())
         }
-        Commands::View(_) => {
-            let profile_data = fs::read("profile.pb.gz")
-                .context("Failed to read call trace from a file")?;
-
-            let mut decoder = GzDecoder::new(&profile_data[..]);
-            let mut decoded = vec![];
-            decoder.read_to_end(&mut decoded)?;
-
-            let profile = Profile::decode(&*decoded).context("dupa")?;
-            //dbg!(&profile);
-
-            // view profile
-
-            let cojes = view_top_profile(&profile, "steps").unwrap();
-            println!("{}", cojes);
-
-            //let cojes = build_hierarchy_and_calculate_cumulative(&profile);
-            // println!("{:?}", cojes);
-
-            // let function_chains = extract_function_chains(&profile);
-            // for chain in function_chains.iter() {
-            //     println!("{}", chain);
-            // }
-
+        Commands::View(view_cli) => {
+            let profile = load_profile(&view_cli.path_to_profile)?;
+            print_profile(&profile, &view_cli.sample, &view_cli.limit)?;
             Ok(())
         }
     }
