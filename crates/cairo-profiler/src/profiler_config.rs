@@ -1,4 +1,4 @@
-use crate::cli::BuildProfile;
+use crate::cli::build_profile::BuildProfile;
 
 pub struct ProfilerConfig {
     pub show_details: bool,
