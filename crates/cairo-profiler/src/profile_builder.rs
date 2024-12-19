@@ -12,10 +12,7 @@ use camino::Utf8PathBuf;
 use flate2::{bufread::GzEncoder, Compression};
 use prost::Message;
 use std::collections::{HashMap, HashSet};
-use std::{
-    fs,
-    io::{Read, Write},
-};
+use std::{fs, io::Read};
 
 pub use perftools::profiles as pprof;
 
@@ -282,7 +279,6 @@ pub fn save_profile(target_path: &Utf8PathBuf, profile: &pprof::Profile) -> Resu
         fs::create_dir_all(parent)
             .context("Failed to create parent directories for the output file")?;
     }
-    let mut file = fs::File::create(target_path).context("Failed to create the output file")?;
 
     let mut buffer = BytesMut::new();
     profile
@@ -296,7 +292,7 @@ pub fn save_profile(target_path: &Utf8PathBuf, profile: &pprof::Profile) -> Resu
     encoder
         .read_to_end(&mut encoded_buffer)
         .context("Failed to read bytes from the encoder")?;
-    file.write_all(&encoded_buffer).unwrap();
+    fs::write(target_path, &encoded_buffer)?;
 
     Ok(())
 }
