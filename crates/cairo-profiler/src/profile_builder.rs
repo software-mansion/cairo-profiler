@@ -6,7 +6,13 @@ mod perftools {
     }
 }
 
+use anyhow::{Context, Result};
+use bytes::{Buf, BytesMut};
+use camino::Utf8PathBuf;
+use flate2::{bufread::GzEncoder, Compression};
+use prost::Message;
 use std::collections::{HashMap, HashSet};
+use std::{fs, io::Read};
 
 pub use perftools::profiles as pprof;
 
@@ -266,4 +272,27 @@ pub fn build_profile(samples: &[Sample]) -> pprof::Profile {
         comment: vec![],
         default_sample_type: 0,
     }
+}
+
+pub fn save_profile(target_path: &Utf8PathBuf, profile: &pprof::Profile) -> Result<()> {
+    if let Some(parent) = target_path.parent() {
+        fs::create_dir_all(parent)
+            .context("Failed to create parent directories for the output file")?;
+    }
+
+    let mut buffer = BytesMut::new();
+    profile
+        .encode(&mut buffer)
+        .expect("Failed to encode the profile to the buffer");
+
+    let mut buffer_reader = buffer.reader();
+    let mut encoder = GzEncoder::new(&mut buffer_reader, Compression::default());
+
+    let mut encoded_buffer = vec![];
+    encoder
+        .read_to_end(&mut encoded_buffer)
+        .context("Failed to read bytes from the encoder")?;
+    fs::write(target_path, &encoded_buffer)?;
+
+    Ok(())
 }
