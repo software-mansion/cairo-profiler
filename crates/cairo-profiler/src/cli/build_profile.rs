@@ -1,4 +1,5 @@
 use crate::profile_builder::{build_profile, save_profile};
+use crate::profile_viewer::print_profile;
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
@@ -93,6 +94,10 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
 
     let profile = build_profile(&samples);
     save_profile(&args.output_path, &profile).context("Failed to write profile data to file")?;
+
+    if args.view {
+        print_profile(&profile, &args.sample, args.limit)?;
+    }
 
     Ok(())
 }

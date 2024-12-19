@@ -30,6 +30,7 @@ itertools = "0.12.1"
 tempfile = "3.13.0"
 indoc = "2"
 cairo-annotations = "0.2.1"
+prettytable-rs = "0.10.0"
 
 cairo-lang-sierra = "2.8.5"
 cairo-lang-sierra-to-casm = "2.8.5"
