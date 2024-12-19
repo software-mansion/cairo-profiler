@@ -120,10 +120,9 @@ pub fn print_profile(profile: &Profile, sample: &str, limit: NonZeroUsize) -> Re
         .map(|(_, profile)| profile.cumulative)
         .context("Failed to obtain total resource count from profile data")?;
 
-    let profile_length = &data.len();
-    let limit_binding = limit.into();
-    let effective_limit = std::cmp::min(&limit_binding, profile_length);
-    let sliced = data.iter().take(*effective_limit).collect::<Vec<_>>();
+    let profile_length = data.len();
+    let effective_limit = std::cmp::min(limit.get(), profile_length);
+    let sliced = data.iter().take(effective_limit).collect::<Vec<_>>();
 
     let summary_resource_cost: i64 = sliced.iter().map(|(_key, profile)| profile.flat).sum();
     let cost_percentage = format!(
