@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use camino::Utf8PathBuf;
 use flate2::read::GzDecoder;
 use prettytable::{format, Table};
@@ -6,6 +6,7 @@ use prost::Message;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
+use std::num::NonZeroUsize;
 
 use crate::profile_builder::pprof::{Function, Location, Profile};
 
@@ -18,6 +19,8 @@ struct FunctionProfile {
     sum_p: f64,
 }
 
+// we only care about two decimal places, so we do not really care about potential precision loss
+#[allow(clippy::cast_precision_loss)]
 fn get_profile_data(
     profile: &Profile,
     sample_name: &str,
@@ -56,14 +59,12 @@ fn get_profile_data(
             .location_id
             .iter()
             .filter_map(|&loc_id| {
-                location_map
-                    .get(&loc_id)
-                    .and_then(|location| location.line.first())
-                    .and_then(|line| function_map.get(&line.function_id))
-                    .map(|function| {
-                        &profile.string_table[usize::try_from(function.name)
-                            .expect("Overflow while converting function id to usize")]
-                    })
+                let line = location_map.get(&loc_id)?.line.first()?;
+                let function = function_map.get(&line.function_id)?;
+                Some(
+                    &profile.string_table[usize::try_from(function.name)
+                        .expect("Overflow while converting function id to usize")],
+                )
             })
             .enumerate()
             .for_each(|(idx, function_name)| {
@@ -98,22 +99,19 @@ fn get_profile_data(
     Ok(sorted_profile_map)
 }
 
-pub fn get_samples(profile: &Profile) -> Vec<String> {
+pub fn get_samples(profile: &Profile) -> Vec<&str> {
     profile
         .sample_type
         .iter()
         .map(|sample| {
             profile.string_table[usize::try_from(sample.unit)
                 .expect("Overflow while converting samples id to usize")]
-            .clone()
+            .as_str()
         })
         .collect()
 }
 
-pub fn print_profile(profile: &Profile, sample: &str, limit: usize) -> Result<()> {
-    if limit == 0usize {
-        bail!("Limit cannot be set to 0")
-    }
+pub fn print_profile(profile: &Profile, sample: &str, limit: NonZeroUsize) -> Result<()> {
     let data = get_profile_data(profile, sample).context("Failed to get data from profile")?;
 
     let total_resource_count = data
@@ -123,7 +121,8 @@ pub fn print_profile(profile: &Profile, sample: &str, limit: usize) -> Result<()
         .context("Failed to obtain total resource count from profile data")?;
 
     let profile_length = &data.len();
-    let effective_limit = std::cmp::min(&limit, profile_length);
+    let limit_binding = limit.into();
+    let effective_limit = std::cmp::min(&limit_binding, profile_length);
     let sliced = data.iter().take(*effective_limit).collect::<Vec<_>>();
 
     let summary_resource_cost: i64 = sliced.iter().map(|(_key, profile)| profile.flat).sum();

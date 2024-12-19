@@ -9,6 +9,7 @@ use cairo_annotations::trace_data::VersionedCallTrace;
 use camino::Utf8PathBuf;
 use clap::Args;
 use std::fs;
+use std::num::NonZeroUsize;
 
 #[derive(Args, Debug)]
 pub struct BuildProfile {
@@ -60,7 +61,7 @@ pub struct BuildProfile {
     /// Requires `--view` flag to be set.
     /// To view already-built profile run `cairo-profiler view`.
     #[arg(long, requires = "view", default_value = "10")]
-    pub limit: usize,
+    pub limit: NonZeroUsize,
 }
 
 pub fn run_build_profile(args: &BuildProfile) -> Result<()> {

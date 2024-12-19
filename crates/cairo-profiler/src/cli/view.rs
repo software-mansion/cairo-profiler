@@ -2,6 +2,7 @@ use crate::profile_viewer::{get_samples, load_profile, print_profile};
 use anyhow::Result;
 use camino::Utf8PathBuf;
 use clap::Args;
+use std::num::NonZeroUsize;
 
 #[derive(Args)]
 pub struct ViewProfile {
@@ -10,7 +11,7 @@ pub struct ViewProfile {
 
     /// Show the sample in the top view.
     /// To get the list of available samples use `--list-samples`.
-    #[arg(long, default_value = "steps")]
+    #[arg(long, default_value = "steps", conflicts_with = "list_samples")]
     pub sample: String,
 
     /// List all the samples included in the profile.
@@ -18,8 +19,8 @@ pub struct ViewProfile {
     pub list_samples: bool,
 
     /// Set a limit of nodes showed in the top view.
-    #[arg(long, default_value = "10")]
-    pub limit: usize,
+    #[arg(long, default_value = "10", conflicts_with = "list_samples")]
+    pub limit: NonZeroUsize,
 }
 
 pub fn run_view(args: &ViewProfile) -> Result<()> {
