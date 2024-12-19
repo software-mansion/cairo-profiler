@@ -33,14 +33,3 @@ pub fn run_view(args: &ViewProfile) -> Result<()> {
     print_profile(&profile, &args.sample, args.limit)?;
     Ok(())
 }
-
-pub fn run_view(args: &ViewProfile) -> Result<()> {
-    let profile = load_profile(&args.path_to_profile)?;
-    if args.list_samples {
-        let samples = get_samples(&profile);
-        println!("{}", samples.join("\n"));
-        return Ok(());
-    }
-    print_profile(&profile, &args.sample, args.limit)?;
-    Ok(())
-}
