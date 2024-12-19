@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `l2_l1_message_sizes` sample no longer is displayed when its value is zero
+
+### Added
+
+- new `build-profile` subcommand, it behaves the same as `cairo-profiler <trace_file>`
+- new flag `--view` that allows to view the built profile 
+(eg `cairo-profiler <trace_file> --view` or `cairo-profiler build-profile <trace_file> --view`)
+- new `view` subcommand that allows to view previously built profile
+
 ## [0.7.0] - 2024-11-27
 
 - show syscalls as nodes in trace tree rather than samples

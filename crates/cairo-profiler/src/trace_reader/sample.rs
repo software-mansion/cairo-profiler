@@ -87,11 +87,20 @@ impl Sample {
         assert!(
             !measurements.contains_key(&MeasurementUnit::from("l2_l1_message_sizes".to_string()))
         );
-        let summarized_payload: usize = l1_resources.l2_l1_message_sizes.iter().sum();
-        measurements.insert(
-            MeasurementUnit::from("l2_l1_message_sizes".to_string()),
-            MeasurementValue(i64::try_from(summarized_payload).unwrap()),
-        );
+
+        l1_resources
+            .l2_l1_message_sizes
+            .iter()
+            .sum::<usize>()
+            .try_into()
+            .ok()
+            .filter(|summarized_resources| *summarized_resources > 0)
+            .map(|summarized_resources| {
+                measurements.insert(
+                    MeasurementUnit::from("l2_l1_message_sizes".to_string()),
+                    MeasurementValue(summarized_resources),
+                )
+            });
 
         Sample {
             call_stack,
