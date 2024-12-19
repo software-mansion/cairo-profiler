@@ -22,6 +22,7 @@ anyhow.workspace = true
 itertools.workspace = true
 tempfile.workspace = true
 cairo-annotations.workspace = true
+prettytable-rs.workspace = true
 
 cairo-lang-sierra.workspace = true
 cairo-lang-sierra-to-casm.workspace = true

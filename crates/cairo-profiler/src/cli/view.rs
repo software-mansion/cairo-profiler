@@ -1,3 +1,5 @@
+use crate::profile_viewer::{get_samples, load_profile, print_profile};
+use anyhow::Result;
 use camino::Utf8PathBuf;
 use clap::Args;
 
@@ -18,4 +20,15 @@ pub struct ViewProfile {
     /// Set a limit of nodes showed in the top view.
     #[arg(long, default_value = "10")]
     pub limit: usize,
+}
+
+pub fn run_view(args: &ViewProfile) -> Result<()> {
+    let profile = load_profile(&args.path_to_profile)?;
+    if args.list_samples {
+        let samples = get_samples(&profile);
+        println!("{}", samples.join("\n"));
+        return Ok(());
+    }
+    print_profile(&profile, &args.sample, args.limit)?;
+    Ok(())
 }
