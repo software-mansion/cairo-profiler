@@ -1,4 +1,4 @@
-use crate::Cli;
+use crate::cli::build_profile::BuildProfile;
 
 pub struct ProfilerConfig {
     pub show_details: bool,
@@ -7,8 +7,8 @@ pub struct ProfilerConfig {
     pub show_inlined_functions: bool,
 }
 
-impl From<&Cli> for ProfilerConfig {
-    fn from(cli: &Cli) -> ProfilerConfig {
+impl From<&BuildProfile> for ProfilerConfig {
+    fn from(cli: &BuildProfile) -> ProfilerConfig {
         ProfilerConfig {
             show_details: cli.show_details,
             max_function_stack_trace_depth: cli.max_function_stack_trace_depth,
