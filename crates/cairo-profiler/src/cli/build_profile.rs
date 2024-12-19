@@ -1,5 +1,13 @@
+use crate::profile_builder::{build_profile, save_profile};
+use crate::profiler_config::ProfilerConfig;
+use crate::sierra_loader::collect_and_compile_all_sierra_programs;
+use crate::trace_reader::collect_samples_from_trace;
+use crate::versioned_constants_reader::read_and_parse_versioned_constants_file;
+use anyhow::{Context, Result};
+use cairo_annotations::trace_data::VersionedCallTrace;
 use camino::Utf8PathBuf;
 use clap::Args;
+use std::fs;
 
 #[derive(Args, Debug)]
 pub struct BuildProfile {
@@ -52,4 +60,39 @@ pub struct BuildProfile {
     /// To view already-built profile run `cairo-profiler view`.
     #[arg(long, requires = "view", default_value = "10")]
     pub limit: usize,
+}
+
+pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
+    let data = fs::read_to_string(&args.path_to_trace_data)
+        .context("Failed to read call trace from a file")?;
+    let os_resources_map =
+        read_and_parse_versioned_constants_file(args.versioned_constants_path.as_ref())
+            .context("Failed to get resource map from versioned constants file")?;
+    let VersionedCallTrace::V1(serialized_trace) =
+        serde_json::from_str(&data).context("Failed to deserialize call trace")?;
+
+    let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(&serialized_trace)?;
+    let profiler_config = ProfilerConfig::from(args);
+
+    if profiler_config.show_inlined_functions
+        && !compiled_artifacts_cache.statements_functions_maps_are_present()
+    {
+        eprintln!(
+            "[\x1b[0;33mWARNING\x1b[0m] Mappings used for generating information about \
+                inlined functions are missing. Make sure to add this to your Scarb.toml:\n\
+                [profile.dev.cairo]\nunstable-add-statements-functions-debug-info = true"
+        );
+    }
+
+    let samples = collect_samples_from_trace(
+        &serialized_trace,
+        &compiled_artifacts_cache,
+        &profiler_config,
+        &os_resources_map,
+    )?;
+
+    let profile = build_profile(&samples);
+    save_profile(&args.output_path, &profile).context("Failed to write profile data to file")?;
+
+    Ok(())
 }
