@@ -6,6 +6,26 @@ Profiler for Cairo programming language &amp; Starknet.
 
 ## Installation
 
+You can install `cairo-profiler` using [asdf](https://asdf-vm.com/guide/getting-started.html)(recommended)
+or the installation script.
+
+### asdf:
+
+```shell
+asdf plugin add cairo-profiler https://github.com/software-mansion/asdf-cairo-profiler
+asdf install cairo-profiler latest # Replace 'latest' with a specific version number if needed
+```
+
+Please remember to set global/project version to use:
+
+```shell
+asdf global cairo-profiler 0.7.0
+# or
+asdf local cairo-profiler 0.7.0
+```
+
+### script:
+
 To install the latest stable version of `cairo-profiler`, run:
 
 ```shell
