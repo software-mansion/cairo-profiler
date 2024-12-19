@@ -46,8 +46,8 @@ trace in the [expected](https://docs.rs/cairo-annotations/0.2.0/cairo_annotation
 
 Usage flow consists of two steps:
 
-- generating the output file,
-- running `pprof` tool.
+- generating the output file
+- viewing the generated profile
 
 ### Generating output file
 
@@ -58,6 +58,10 @@ if not specified, the output file will be saved as `profile.pb.gz`.
 #### Example
 
 ```shell
+cairo-profiler build-profile path/to/trace.json
+```
+or
+```shell
 cairo-profiler path/to/trace.json
 ```
 
@@ -65,9 +69,48 @@ cairo-profiler path/to/trace.json
 >
 > Trace needs to be in the correct format. See [trace.json](./crates/cairo-profiler/tests/data/call.json) as an example.
 
-### Running pprof
+### Viewing profile
 
-To see results from the generated file you will need to install:
+You can use the `cairo-profiler` to see the results from the generated file. The information will be printed in `top`
+view, closely mimicking `pprof` output. There are two ways to view the profile:
+- by using `view` subcommand on previously generated profile file
+- by adding `--view` flag to `build-profile` subcommand
+
+By default, the top 10 `steps` samples will be shown. This can be changed using `--limit` and `--sample` flags.
+
+#### Examples:
+
+Viewing directly after building the profile:
+```shell
+cairo-profiler build-profile path/to/trace.json --view
+```
+
+Viewing the previously built profile:
+```shell
+cairo-profiler view path/to/profile.pb.gz
+```
+
+Viewing all the available samples in the profile:
+```shell
+cairo-profiler view path/to/profile.pb.gz --list-samples
+```
+
+Viewing the top 2 nodes for "range check builtin" sample:
+```shell
+cairo-profiler view path/to/profile.pb.gz --sample "range check builtin" --limit 2
+
+Showing nodes accounting for 37 range check builtin, 92.50% of 40 range check builtin total
+Showing top 2 nodes out of 14
+
+                   flat |  flat% |   sum% |                    cum |    cum% |
+------------------------+--------+--------+------------------------+---------+-----------------------------------------------------------------------
+ 22 range check builtin | 55.00% | 55.00% | 40 range check builtin | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n"
+ 15 range check builtin | 37.50% | 92.50% | 15 range check builtin |  37.50% | "CallContract"
+```
+
+#### Using pprof
+
+Alternatively to see results from the generated file you can also use `pprof`. To do so, you will need to install:
 
 - [Go](https://go.dev/doc/install)
 - [Graphviz](https://www.graphviz.org/download/)
