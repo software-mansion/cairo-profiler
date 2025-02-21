@@ -20,7 +20,7 @@ struct FunctionProfile {
 }
 
 // we only care about two decimal places, so we do not really care about potential precision loss
-#[allow(clippy::cast_precision_loss)]
+#[expect(clippy::cast_precision_loss)]
 fn get_profile_data(
     profile: &Profile,
     sample_name: &str,
