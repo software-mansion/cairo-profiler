@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use camino::Utf8PathBuf;
 use flate2::read::GzDecoder;
-use prettytable::{format, Table};
+use prettytable::{Table, format};
 use prost::Message;
 use std::collections::HashMap;
 use std::fs;
@@ -133,7 +133,9 @@ pub fn print_profile(profile: &Profile, sample: &str, limit: NonZeroUsize) -> Re
             .context("Failed to get current percentage from profile data")?
     );
 
-    println!("\nShowing nodes accounting for {summary_resource_cost} {sample}, {cost_percentage} of {total_resource_count} {sample} total");
+    println!(
+        "\nShowing nodes accounting for {summary_resource_cost} {sample}, {cost_percentage} of {total_resource_count} {sample} total"
+    );
     println!("Showing top {effective_limit} nodes out of {profile_length}\n");
 
     let mut table = Table::new();

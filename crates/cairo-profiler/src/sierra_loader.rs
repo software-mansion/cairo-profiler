@@ -1,8 +1,8 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
+use cairo_annotations::annotations::TryFromDebugInfo;
 use cairo_annotations::annotations::profiler::{
     ProfilerAnnotationsV1, VersionedProfilerAnnotations,
 };
-use cairo_annotations::annotations::TryFromDebugInfo;
 use cairo_annotations::trace_data::{CallTraceNode, CallTraceV1};
 use cairo_lang_sierra::debug_info::DebugInfo;
 use cairo_lang_sierra::program::{Program, ProgramArtifact, VersionedProgram};

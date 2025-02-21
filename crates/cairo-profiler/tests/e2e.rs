@@ -1,6 +1,6 @@
 use assert_fs::fixture::PathCopy;
 use indoc::indoc;
-use snapbox::cmd::{cargo_bin, Command as SnapboxCommand};
+use snapbox::cmd::{Command as SnapboxCommand, cargo_bin};
 use std::str;
 use test_case::test_case;
 

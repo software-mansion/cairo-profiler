@@ -10,7 +10,7 @@ use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall, Sample};
 use crate::versioned_constants_reader::OsResources;
 use cairo_annotations::annotations::profiler::{FunctionName, ProfilerAnnotationsV1};
 use cairo_annotations::trace_data::CasmLevelInfo;
-use cairo_annotations::{map_pcs_to_sierra_statement_ids, MappingResult};
+use cairo_annotations::{MappingResult, map_pcs_to_sierra_statement_ids};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
