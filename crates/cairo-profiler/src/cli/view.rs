@@ -21,6 +21,10 @@ pub struct ViewProfile {
     /// Set a limit of nodes showed in the top view.
     #[arg(long, default_value = "10", conflicts_with = "list_samples")]
     pub limit: NonZeroUsize,
+
+    /// Skip nodes matching regex
+    #[arg(long, conflicts_with = "list_samples")]
+    pub hide: Option<String>,
 }
 
 pub fn run_view(args: &ViewProfile) -> Result<()> {
@@ -30,6 +34,6 @@ pub fn run_view(args: &ViewProfile) -> Result<()> {
         println!("{}", samples.join("\n"));
         return Ok(());
     }
-    print_profile(&profile, &args.sample, args.limit)?;
+    print_profile(&profile, &args.sample, args.limit, args.hide.as_ref())?;
     Ok(())
 }
