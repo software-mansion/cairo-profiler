@@ -229,3 +229,172 @@ fn view_range_check_builtin() {
             "#
         ));
 }
+
+#[test]
+fn view_hide_invalid_regex() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("trace_balance_simple.json")
+        .assert()
+        .success();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("steps")
+        .arg("--hide")
+        .arg("[core")
+        .assert()
+        .failure()
+        .stderr_eq(indoc!(
+            r"
+            Error: Failed to get data from profile
+            
+            Caused by:
+                Invalid regular expression passed: regex parse error:
+                    [core
+                    ^
+                error: unclosed character class
+            "
+        ));
+}
+
+#[test]
+fn view_hide_in_view() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("trace_balance_simple.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -hide "core::*" -top profile.pb.gz` command
+    // as well as `go tool pprof -hide "core" -top profile.pb.gz` command (they should be the same!)
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    let expected_output = indoc!(
+        r#"
+
+            Active filter:
+            hide=core
+
+            Showing nodes accounting for 1371 steps, 100.00% of 1371 steps total
+            Showing top 11 nodes out of 11
+
+                  flat |  flat% |    sum% |        cum |    cum% |  
+            -----------+--------+---------+------------+---------+-----------------------------------------------------------------------------------------------
+             827 steps | 60.32% |  60.32% |  827 steps |  60.32% | "CallContract" 
+             145 steps | 10.58% |  70.90% |  170 steps |  12.40% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              87 steps |  6.35% |  77.24% |   87 steps |   6.35% | "StorageRead" 
+              81 steps |  5.91% |  83.15% |  144 steps |  10.50% | "snforge_std::cheatcodes::contract_class::declare" 
+              75 steps |  5.47% |  88.62% |   75 steps |   5.47% | "snforge_std::_cheatcode::handle_cheatcode" 
+              53 steps |  3.87% |  92.49% | 1246 steps |  90.88% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              38 steps |  2.77% |  95.26% |   38 steps |   2.77% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              33 steps |  2.41% |  97.67% |  120 steps |   8.75% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              27 steps |  1.97% |  99.64% |  341 steps |  24.87% | "balance_simple_integrationtest::test_contract::deploy_contract" 
+               5 steps |  0.36% | 100.00% | 1371 steps | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+               0 steps |  0.00% | 100.00% |  120 steps |   8.75% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+            "#
+    );
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("steps")
+        .arg("--hide")
+        .arg("core")
+        .assert()
+        .success()
+        .stdout_eq(expected_output);
+}
+
+#[test]
+fn view_hide_in_build() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("trace_balance_simple.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -hide "core::*" -top profile.pb.gz` command
+    // as well as `go tool pprof -hide "core" -top profile.pb.gz` command (they should be the same!)
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    let expected_output = indoc!(
+        r#"
+
+            Active filter:
+            hide=core::*
+
+            Showing nodes accounting for 1371 steps, 100.00% of 1371 steps total
+            Showing top 11 nodes out of 11
+
+                  flat |  flat% |    sum% |        cum |    cum% |  
+            -----------+--------+---------+------------+---------+-----------------------------------------------------------------------------------------------
+             827 steps | 60.32% |  60.32% |  827 steps |  60.32% | "CallContract" 
+             145 steps | 10.58% |  70.90% |  170 steps |  12.40% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              87 steps |  6.35% |  77.24% |   87 steps |   6.35% | "StorageRead" 
+              81 steps |  5.91% |  83.15% |  144 steps |  10.50% | "snforge_std::cheatcodes::contract_class::declare" 
+              75 steps |  5.47% |  88.62% |   75 steps |   5.47% | "snforge_std::_cheatcode::handle_cheatcode" 
+              53 steps |  3.87% |  92.49% | 1246 steps |  90.88% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              38 steps |  2.77% |  95.26% |   38 steps |   2.77% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              33 steps |  2.41% |  97.67% |  120 steps |   8.75% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              27 steps |  1.97% |  99.64% |  341 steps |  24.87% | "balance_simple_integrationtest::test_contract::deploy_contract" 
+               5 steps |  0.36% | 100.00% | 1371 steps | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+               0 steps |  0.00% | 100.00% |  120 steps |   8.75% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+            "#
+    );
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("steps")
+        .arg("--hide")
+        .arg("core::*")
+        .assert()
+        .success()
+        .stdout_eq(expected_output);
+}

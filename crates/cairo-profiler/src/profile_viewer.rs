@@ -1,14 +1,15 @@
+use crate::profile_builder::pprof::{Function, Location, Profile};
+use anyhow::anyhow;
 use anyhow::{Context, Result};
 use camino::Utf8PathBuf;
 use flate2::read::GzDecoder;
 use prettytable::{Table, format};
 use prost::Message;
+use regex::Regex;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
 use std::num::NonZeroUsize;
-
-use crate::profile_builder::pprof::{Function, Location, Profile};
 
 #[derive(Debug, Default)]
 struct FunctionProfile {
@@ -24,7 +25,15 @@ struct FunctionProfile {
 fn get_profile_data(
     profile: &Profile,
     sample_name: &str,
+    hide: Option<&String>,
 ) -> Result<Vec<(String, FunctionProfile)>> {
+    let hide_pattern = hide
+        .as_ref()
+        .map(|pattern| {
+            Regex::new(pattern).map_err(|e| anyhow!("Invalid regular expression passed: {}", e))
+        })
+        .transpose()?;
+
     // Labels in string_table are prefixed with a whitespace
     let sample_label = format!(" {sample_name}");
 
@@ -54,26 +63,43 @@ fn get_profile_data(
 
     for sample in &profile.sample {
         let sample_value = sample.value[sample_type_idx];
+        let mut filtered_entry_value: i64 = 0;
+        // it might happen that filtered function pops out in the middle of the sample
+        // (ie there is other, non-filtered function above it in the stack).
+        // In that case we want to ignore it.
+        let mut consumed: bool = false;
 
-        sample
-            .location_id
-            .iter()
-            .filter_map(|&loc_id| {
-                let line = location_map.get(&loc_id)?.line.first()?;
-                let function = function_map.get(&line.function_id)?;
-                Some(
-                    &profile.string_table[usize::try_from(function.name)
-                        .expect("Overflow while converting function id to usize")],
-                )
-            })
-            .enumerate()
-            .for_each(|(idx, function_name)| {
-                let entry = profile_map.entry(function_name.clone()).or_default();
-                entry.cumulative += sample_value;
-                if idx == 0 {
-                    entry.flat += sample_value;
+        for (idx, &loc_id) in sample.location_id.iter().enumerate() {
+            let Some(line) = location_map.get(&loc_id).and_then(|loc| loc.line.first()) else {
+                continue;
+            };
+            let Some(function) = function_map.get(&line.function_id) else {
+                continue;
+            };
+            let function_name = &profile.string_table[usize::try_from(function.name)
+                .expect("Overflow while converting function id to usize")];
+
+            if let Some(pattern) = &hide_pattern {
+                if pattern.is_match(function_name) {
+                    if !consumed {
+                        filtered_entry_value = sample_value;
+                    }
+                    continue;
                 }
-            });
+                consumed = true;
+            }
+
+            let entry = profile_map.entry(function_name.clone()).or_default();
+            entry.cumulative += sample_value;
+            if idx == 0 {
+                entry.flat += sample_value;
+            }
+
+            if consumed {
+                entry.flat += filtered_entry_value;
+                filtered_entry_value = 0;
+            }
+        }
     }
 
     let total_resource_count = profile_map
@@ -111,8 +137,14 @@ pub fn get_samples(profile: &Profile) -> Vec<&str> {
         .collect()
 }
 
-pub fn print_profile(profile: &Profile, sample: &str, limit: NonZeroUsize) -> Result<()> {
-    let data = get_profile_data(profile, sample).context("Failed to get data from profile")?;
+pub fn print_profile(
+    profile: &Profile,
+    sample: &str,
+    limit: NonZeroUsize,
+    hide: Option<&String>,
+) -> Result<()> {
+    let data =
+        get_profile_data(profile, sample, hide).context("Failed to get data from profile")?;
 
     let total_resource_count = data
         .iter()
@@ -133,6 +165,9 @@ pub fn print_profile(profile: &Profile, sample: &str, limit: NonZeroUsize) -> Re
             .context("Failed to get current percentage from profile data")?
     );
 
+    if let Some(hide) = hide {
+        println!("\nActive filter:\nhide={hide}");
+    }
     println!(
         "\nShowing nodes accounting for {summary_resource_cost} {sample}, {cost_percentage} of {total_resource_count} {sample} total"
     );
