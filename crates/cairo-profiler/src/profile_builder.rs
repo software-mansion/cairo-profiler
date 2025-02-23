@@ -9,7 +9,7 @@ mod perftools {
 use anyhow::{Context, Result};
 use bytes::{Buf, BytesMut};
 use camino::Utf8PathBuf;
-use flate2::{bufread::GzEncoder, Compression};
+use flate2::{Compression, bufread::GzEncoder};
 use prost::Message;
 use std::collections::{HashMap, HashSet};
 use std::{fs, io::Read};
@@ -113,7 +113,10 @@ impl ProfilerContext {
                 locations_ids.push(LocationId(location.id));
             } else {
                 let mut location = match &function_stack[0] {
-                    FunctionCall::EntrypointCall(function_name) | FunctionCall::InternalFunctionCall(InternalFunctionCall::NonInlined(function_name) | Syscall(function_name)) => {
+                    FunctionCall::EntrypointCall(function_name)
+                    | FunctionCall::InternalFunctionCall(
+                        InternalFunctionCall::NonInlined(function_name) | Syscall(function_name),
+                    ) => {
                         let line = pprof::Line {
                             function_id: self.function_id(function_name).into(),
                             line: 0,
@@ -126,7 +129,11 @@ impl ProfilerContext {
                             is_folded: true,
                         }
                     }
-                    FunctionCall::InternalFunctionCall(InternalFunctionCall::Inlined(_)) => unreachable!("First function in a function stack corresponding to a single location cannot be inlined")
+                    FunctionCall::InternalFunctionCall(InternalFunctionCall::Inlined(_)) => {
+                        unreachable!(
+                            "First function in a function stack corresponding to a single location cannot be inlined"
+                        )
+                    }
                 };
 
                 for function in function_stack.get(1..).unwrap_or_default() {
@@ -144,7 +151,9 @@ impl ProfilerContext {
                         | FunctionCall::InternalFunctionCall(
                             InternalFunctionCall::NonInlined(_) | Syscall(_),
                         ) => {
-                            unreachable!("Only first function in a function stack corresponding to a single location can be not inlined")
+                            unreachable!(
+                                "Only first function in a function stack corresponding to a single location can be not inlined"
+                            )
                         }
                     }
                 }
