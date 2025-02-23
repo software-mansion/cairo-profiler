@@ -44,7 +44,7 @@ impl AddAssign<usize> for Steps {
 }
 
 /// Collects profiling info of the current run using the trace.
-#[allow(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines)]
 pub fn collect_function_level_profiling_info(
     program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,

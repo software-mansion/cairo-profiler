@@ -1,6 +1,6 @@
 mod perftools {
-    #[allow(clippy::doc_link_with_quotes)]
-    #[allow(clippy::doc_markdown)]
+    #[expect(clippy::doc_link_with_quotes)]
+    #[expect(clippy::doc_markdown)]
     pub mod profiles {
         include!(concat!(env!("OUT_DIR"), "/perftools.profiles.rs"));
     }
