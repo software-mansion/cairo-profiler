@@ -18,7 +18,7 @@ pub fn read_and_parse_versioned_constants_file(path: Option<&Utf8PathBuf>) -> Re
         Some(path) => fs::read_to_string(path).with_context(|| {
             format!("Cannot read versioned constants file at specified path {path}")
         })?,
-        None => include_str!("../resources/versioned_constants_0_13_3.json").to_string(),
+        None => include_str!("../resources/versioned_constants_0_13_4.json").to_string(),
     };
     let json_value: Value = serde_json::from_str(&file_content)
         .context("Failed to parse versioned constants file content")?;

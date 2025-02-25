@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Chore
+- Bumped dependencies to ensure compatibility with scarb 2.10 and newest snfoundry
+
 ## [0.8.0] - 2025-01-13
 
 ### Fixed
