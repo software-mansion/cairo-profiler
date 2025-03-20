@@ -2,6 +2,7 @@ use cairo_annotations::annotations::profiler::FunctionName;
 use cairo_annotations::trace_data::{ExecutionResources, L1Resources};
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub(crate) struct Sample {
     pub call_stack: Vec<FunctionCall>,
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
@@ -59,6 +60,7 @@ impl Sample {
         resources: &ExecutionResources,
         l1_resources: &L1Resources,
     ) -> Self {
+        // measurements domyślnie to chyba tylko calls, dla sierra gazu robimy
         let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
             (
                 MeasurementUnit::from("calls".to_string()),
@@ -71,6 +73,12 @@ impl Sample {
             (
                 MeasurementUnit::from("memory_holes".to_string()),
                 MeasurementValue(i64::try_from(resources.vm_resources.n_memory_holes).unwrap()),
+            ), // todo: measurementy mają się nie pokazuwać jak są 0
+            // tak, czy moze lepiej czytać wersję sierry z pliku i na tej podstawie próbować ?
+            // albo od rau próbować, czy nie jest None
+            (
+                MeasurementUnit::from("sierra_gas".to_string()),
+                MeasurementValue(i64::try_from(resources.gas_consumed.unwrap_or(0)).unwrap()),
             ),
         ]
         .into_iter()
