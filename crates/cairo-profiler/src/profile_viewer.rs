@@ -68,8 +68,14 @@ fn get_profile_data(
         // (ie there is other, non-filtered function above it in the stack).
         // In that case we want to ignore it.
         let mut consumed: bool = false;
+        // in order to prevent loosing data, we need some way to know if we're at the end of the sample
+        // e.g. it may happen that someone tries to hide with a very broad regex (extreme example being '.*'),
+        // which would mean we may silently omit looooooots of sample values
+        let sample_length = sample.location_id.len() - 1;
 
         for (idx, &loc_id) in sample.location_id.iter().enumerate() {
+            let is_last_function = idx == sample_length;
+
             let Some(line) = location_map.get(&loc_id).and_then(|loc| loc.line.first()) else {
                 continue;
             };
@@ -80,7 +86,7 @@ fn get_profile_data(
                 .expect("Overflow while converting function id to usize")];
 
             if let Some(pattern) = &hide_pattern {
-                if pattern.is_match(function_name) {
+                if pattern.is_match(function_name) && !is_last_function {
                     if !consumed {
                         filtered_entry_value = sample_value;
                     }
