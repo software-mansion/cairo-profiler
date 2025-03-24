@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- new `--hide` option, that allows to filter out nodes from the profile based on passed regex. Resources of the filtered
+  node are added to a parent node (function).
+
 ## [0.8.1] - 2025-02-25
 
 ### Chore
