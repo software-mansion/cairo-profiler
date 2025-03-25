@@ -103,7 +103,7 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
     save_profile(&args.output_path, &profile).context("Failed to write profile data to file")?;
 
     if args.view {
-        print_profile(&profile, &args.sample, args.limit, args.hide.as_ref())?;
+        print_profile(&profile, &args.sample, args.limit, args.hide.as_deref())?;
     }
 
     Ok(())

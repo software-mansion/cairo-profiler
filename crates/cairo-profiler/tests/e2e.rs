@@ -265,10 +265,11 @@ fn view_hide_invalid_regex() {
             Error: Failed to get data from profile
             
             Caused by:
-                Invalid regular expression passed: regex parse error:
-                    [core
-                    ^
-                error: unclosed character class
+                0: Invalid regular expression passed
+                1: regex parse error:
+                       [core
+                       ^
+                   error: unclosed character class
             "
         ));
 }

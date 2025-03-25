@@ -34,6 +34,6 @@ pub fn run_view(args: &ViewProfile) -> Result<()> {
         println!("{}", samples.join("\n"));
         return Ok(());
     }
-    print_profile(&profile, &args.sample, args.limit, args.hide.as_ref())?;
+    print_profile(&profile, &args.sample, args.limit, args.hide.as_deref())?;
     Ok(())
 }

@@ -1,5 +1,4 @@
 use crate::profile_builder::pprof::{Function, Location, Profile};
-use anyhow::anyhow;
 use anyhow::{Context, Result};
 use camino::Utf8PathBuf;
 use flate2::read::GzDecoder;
@@ -25,13 +24,10 @@ struct FunctionProfile {
 fn get_profile_data(
     profile: &Profile,
     sample_name: &str,
-    hide: Option<&String>,
+    hide: Option<&str>,
 ) -> Result<Vec<(String, FunctionProfile)>> {
     let hide_pattern = hide
-        .as_ref()
-        .map(|pattern| {
-            Regex::new(pattern).map_err(|e| anyhow!("Invalid regular expression passed: {}", e))
-        })
+        .map(|pattern| Regex::new(pattern).context("Invalid regular expression passed"))
         .transpose()?;
 
     // Labels in string_table are prefixed with a whitespace
@@ -147,7 +143,7 @@ pub fn print_profile(
     profile: &Profile,
     sample: &str,
     limit: NonZeroUsize,
-    hide: Option<&String>,
+    hide: Option<&str>,
 ) -> Result<()> {
     let data =
         get_profile_data(profile, sample, hide).context("Failed to get data from profile")?;
