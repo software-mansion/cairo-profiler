@@ -40,7 +40,7 @@ pub struct BuildProfile {
     pub show_inlined_functions: bool,
 
     /// Path to a file, that includes a map with cost of resources like syscalls.
-    /// If not provided, the cost map will default to the one used on Starknet 0.13.3.
+    /// If not provided, the cost map will default to the one used on Starknet 0.13.4.
     /// Files for different Starknet versions can be found in the sequencer repo:
     /// <https://github.com/starkware-libs/sequencer/blob/main/crates/blockifier/resources/>
     #[arg(long)]
@@ -62,6 +62,12 @@ pub struct BuildProfile {
     /// To view already-built profile run `cairo-profiler view`.
     #[arg(long, requires = "view", default_value = "10")]
     pub limit: NonZeroUsize,
+
+    /// Skip nodes matching regex
+    /// Requires `--view` flag to be set.
+    /// To view already-built profile run `cairo-profiler view`.
+    #[arg(long, requires = "view")]
+    pub hide: Option<String>,
 }
 
 pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
@@ -97,7 +103,7 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
     save_profile(&args.output_path, &profile).context("Failed to write profile data to file")?;
 
     if args.view {
-        print_profile(&profile, &args.sample, args.limit)?;
+        print_profile(&profile, &args.sample, args.limit, args.hide.as_deref())?;
     }
 
     Ok(())
