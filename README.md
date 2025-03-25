@@ -19,9 +19,15 @@ asdf install cairo-profiler latest # Replace 'latest' with a specific version nu
 Please remember to set global/project version to use:
 
 ```shell
-asdf global cairo-profiler 0.7.0
-# or
-asdf local cairo-profiler 0.7.0
+# in asdf <0.16.0
+asdf local cairo-profiler latest
+# OR
+asdf global cairo-profiler latest
+
+# or in asdf >= 0.16.0
+asdf set cairo-profiler latest
+# OR
+asdf set -u cairo-profiler latest
 ```
 
 ### script:
@@ -126,6 +132,11 @@ Showing top 2 nodes out of 14
 ------------------------+--------+--------+------------------------+---------+-----------------------------------------------------------------------
  22 range check builtin | 55.00% | 55.00% | 40 range check builtin | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n"
  15 range check builtin | 37.50% | 92.50% | 15 range check builtin |  37.50% | "CallContract"
+```
+
+Viewing the nodes with everything from crate "core" filtered out:
+```shell
+cairo-profiler view path/to/profile.pb.gz --hide "^core::*"
 ```
 
 #### Using pprof
