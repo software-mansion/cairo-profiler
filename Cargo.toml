@@ -13,12 +13,12 @@ edition = "2024"
 prost = "0.12"
 # Only necessary if using Protobuf well-known types:
 prost-types = "0.12"
-bytes = "1.9.0"
-flate2 = "1.0.34"
+bytes = "1.10.1"
+flate2 = "1.1.0"
 hex = "0.4.3"
-clap = { version = "4.5.27", features = ["derive"] }
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.138"
+clap = { version = "4.5.32", features = ["derive"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 camino = { version = "1.1.9", features = ["serde1"] }
 anyhow = "1.0"
 assert_fs = "1.1.2"
@@ -27,7 +27,7 @@ snapbox = "0.4.16"
 prost-build = { version = "0.12" }
 test-case = "3.3.1"
 itertools = "0.12.1"
-tempfile = "3.16.0"
+tempfile = "3.19.1"
 indoc = "2"
 cairo-annotations = "0.2.2"
 prettytable-rs = "0.10.0"
