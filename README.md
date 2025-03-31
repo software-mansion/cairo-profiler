@@ -102,7 +102,7 @@ view, closely mimicking `pprof` output. There are two ways to view the profile:
 - by using `view` subcommand on previously generated profile file
 - by adding `--view` flag to `build-profile` subcommand
 
-By default, the top 10 `steps` samples will be shown. This can be changed using `--limit` and `--sample` flags.
+By default, the top 10 `calls` samples will be shown. This can be changed using `--limit` and `--sample` flags.
 
 #### Examples:
 
