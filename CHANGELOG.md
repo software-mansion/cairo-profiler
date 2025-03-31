@@ -7,13 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- sierra gas profiling; in order to profile sierra gas please make sure to run snforge test with `--tracked-resource` flag set to "sierra-gas"
+
 ## [0.8.2] - 2025-05-06
 
 ### Added
 
 - new `--hide` option, that allows to filter out nodes from the profile based on passed regex. Resources of the filtered
   node are added to a parent node (function).
-- sierra gas profiling; in order to profile sierra gas please make sure to run snforge test with `--tracked-resource` flag set to "sierra-gas"
 
 ## [0.8.1] - 2025-02-25
 
