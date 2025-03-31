@@ -198,9 +198,9 @@ checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
 name = "cairo-annotations"
-version = "0.2.2"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e6d7624764c83e33a4eb0d581cc126232d42c878a187ffa6372bea038dc9ee6"
+checksum = "d4b542cfcdce03448c9db7a2464ec9440c9943785749fc74bf6a1a829fefcea4"
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-to-casm",
@@ -368,7 +368,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-profiler"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -392,6 +392,8 @@ dependencies = [
  "serde",
  "serde_json",
  "snapbox",
+ "strum",
+ "strum_macros",
  "tempfile",
  "test-case",
 ]

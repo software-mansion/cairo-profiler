@@ -112,7 +112,7 @@ fn get_profile_data(
 
     // sum_p depends on the correct order of data
     let mut sorted_profile_map: Vec<(String, FunctionProfile)> = profile_map.into_iter().collect();
-    sorted_profile_map.sort_by(|a, b| b.1.flat.cmp(&a.1.flat));
+    sorted_profile_map.sort_by(|a, b| b.1.flat.cmp(&a.1.flat).then_with(|| a.0.cmp(&b.0)));
 
     let mut sum_p: f64 = 0.0;
 

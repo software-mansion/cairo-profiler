@@ -9,7 +9,7 @@ use cairo_annotations::annotations::profiler::FunctionName;
 
 use crate::trace_reader::sample::{FunctionCall, Sample};
 
-use crate::versioned_constants_reader::OsResources;
+use crate::versioned_constants_reader::VersionedConstants;
 use cairo_annotations::trace_data::{CallTraceNode, CallTraceV1, ExecutionResources};
 
 pub mod function_name;
@@ -20,10 +20,11 @@ pub fn collect_samples_from_trace(
     trace: &CallTraceV1,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
-    os_resources_map: &OsResources,
+    versioned_constants: &VersionedConstants,
 ) -> Result<Vec<Sample>> {
     let mut samples = vec![];
     let mut current_entrypoint_call_stack = vec![];
+    let sierra_gas_tracking: bool = trace.cumulative_resources.gas_consumed.unwrap_or_default() > 0;
 
     collect_samples(
         &mut samples,
@@ -31,7 +32,8 @@ pub fn collect_samples_from_trace(
         trace,
         compiled_artifacts_cache,
         profiler_config,
-        os_resources_map,
+        versioned_constants,
+        sierra_gas_tracking,
     )?;
 
     Ok(samples)
@@ -43,7 +45,8 @@ fn collect_samples<'a>(
     trace: &'a CallTraceV1,
     compiled_artifacts_cache: &CompiledArtifactsCache,
     profiler_config: &ProfilerConfig,
-    os_resources_map: &OsResources,
+    versioned_constants: &VersionedConstants,
+    sierra_gas_tracking: bool,
 ) -> Result<&'a ExecutionResources> {
     current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(
         FunctionName::from_entry_point_params(
@@ -75,7 +78,8 @@ fn collect_samples<'a>(
             &cairo_execution_info.casm_level_info,
             compiled_artifacts.statements_functions_map.as_ref(),
             &FunctionLevelConfig::from(profiler_config),
-            os_resources_map,
+            versioned_constants,
+            sierra_gas_tracking,
         );
 
         let mut function_samples = function_level_profiling_info
@@ -93,7 +97,7 @@ fn collect_samples<'a>(
             .collect();
 
         samples.append(&mut function_samples);
-        Some(function_level_profiling_info.header_steps)
+        Some(function_level_profiling_info.header_resources)
     } else {
         None
     };
@@ -108,7 +112,8 @@ fn collect_samples<'a>(
                 sub_trace,
                 compiled_artifacts_cache,
                 profiler_config,
-                os_resources_map,
+                versioned_constants,
+                sierra_gas_tracking,
             )?;
         }
     }
@@ -116,7 +121,8 @@ fn collect_samples<'a>(
     let mut call_resources = &trace.cumulative_resources - &children_resources;
 
     if let Some(entrypoint_steps) = maybe_entrypoint_steps {
-        call_resources.vm_resources.n_steps = entrypoint_steps.0;
+        call_resources.vm_resources.n_steps = entrypoint_steps.steps.0;
+        call_resources.gas_consumed = Some(entrypoint_steps.sierra_gas_consumed.0.try_into()?);
     }
 
     samples.push(Sample::from(

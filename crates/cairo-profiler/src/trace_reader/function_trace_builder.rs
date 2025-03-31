@@ -7,7 +7,7 @@ use crate::trace_reader::function_trace_builder::stack_trace::{
     map_syscall_to_selector, trace_to_samples,
 };
 use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall, Sample};
-use crate::versioned_constants_reader::OsResources;
+use crate::versioned_constants_reader::VersionedConstants;
 use cairo_annotations::annotations::profiler::{FunctionName, ProfilerAnnotationsV1};
 use cairo_annotations::trace_data::CasmLevelInfo;
 use cairo_annotations::{MappingResult, map_pcs_to_sierra_statement_ids};
@@ -25,10 +25,10 @@ mod stack_trace;
 
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,
-    pub header_steps: Steps,
+    pub header_resources: ChargedResources,
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Steps(pub usize);
 
 impl AddAssign for Steps {
@@ -43,6 +43,37 @@ impl AddAssign<usize> for Steps {
     }
 }
 
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
+pub struct SierraGasConsumed(pub usize);
+
+impl AddAssign for SierraGasConsumed {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+    }
+}
+
+impl AddAssign<usize> for SierraGasConsumed {
+    fn add_assign(&mut self, rhs: usize) {
+        self.0 += rhs;
+    }
+}
+
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
+pub struct ChargedResources {
+    pub steps: Steps,
+    pub sierra_gas_consumed: SierraGasConsumed,
+}
+
+impl ChargedResources {
+    pub fn increment(&mut self, sierra_gas_tracking: bool) {
+        if sierra_gas_tracking {
+            self.sierra_gas_consumed += 100;
+        } else {
+            self.steps += 1;
+        }
+    }
+}
+
 /// Collects profiling info of the current run using the trace.
 #[expect(clippy::too_many_lines)]
 pub fn collect_function_level_profiling_info(
@@ -51,26 +82,28 @@ pub fn collect_function_level_profiling_info(
     casm_level_info: &CasmLevelInfo,
     statements_functions_map: Option<&ProfilerAnnotationsV1>,
     function_level_config: &FunctionLevelConfig,
-    os_resources_map: &OsResources,
+    versioned_constants: &VersionedConstants,
+    sierra_gas_tracking: bool,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
 
     let mut call_stack = CallStack::new(function_level_config.max_function_stack_trace_depth);
 
-    // The value is the steps of the stack trace so far, not including the pending steps being
+    // The value is the charged resource of the stack trace so far, not including the pending resources being
     // tracked at the time. The key is a function stack trace.
-    let mut functions_stack_traces: HashMap<Vec<FunctionCall>, Steps> = HashMap::new();
+    let mut functions_stack_traces: HashMap<Vec<FunctionCall>, ChargedResources> = HashMap::new();
 
     // The value is the number of invocations of the syscall in the trace.
     // The key is a syscall stack trace.
     let mut syscall_stack_traces: HashMap<Vec<FunctionCall>, i64> = HashMap::new();
 
-    // Header steps are counted separately and then displayed as steps of the entrypoint in the
-    // profile tree. It is because technically they don't belong to any function, but still increase
-    // the number of total steps. The value is different from zero only for functions run with header.
-    let mut header_steps = Steps(0);
+    // Header charged resources are counted separately and then displayed as charged resources
+    // of the entrypoint in the profile tree. It is because technically they don't belong
+    // to any function, but still increase the number of total steps/gas consumed.
+    // The value is different from zero only for functions run with header.
+    let mut header_resources = ChargedResources::default();
     let mut end_of_program_reached = false;
-    // Syscalls can be recognised by GenStatement::Invocation but they do not have GenStatement::Return
+    // Syscalls can be recognised by GenStatement::Invocation, but they do not have GenStatement::Return
     // That's why we must track entry to a syscall, and leave as soon as we're out of given GenStatement::Invocation
     let mut in_syscall_idx: Option<StatementIdx> = None;
 
@@ -80,7 +113,7 @@ pub fn collect_function_level_profiling_info(
         let sierra_statement_idx = match statement {
             MappingResult::SierraStatementIdx(sierra_statement_idx) => sierra_statement_idx,
             MappingResult::Header => {
-                header_steps += 1;
+                header_resources.increment(sierra_gas_tracking);
                 continue;
             }
             MappingResult::PcOutOfFunctionArea => {
@@ -106,9 +139,10 @@ pub fn collect_function_level_profiling_info(
             statements_functions_map,
         );
 
-        *functions_stack_traces
+        functions_stack_traces
             .entry(current_call_stack.clone().into())
-            .or_insert(Steps(0)) += 1;
+            .or_default()
+            .increment(sierra_gas_tracking);
 
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
@@ -174,12 +208,13 @@ pub fn collect_function_level_profiling_info(
     let functions_samples = trace_to_samples(
         functions_stack_traces,
         syscall_stack_traces,
-        os_resources_map,
+        versioned_constants,
+        sierra_gas_tracking,
     );
 
     FunctionLevelProfilingInfo {
         functions_samples,
-        header_steps,
+        header_resources,
     }
 }
 
