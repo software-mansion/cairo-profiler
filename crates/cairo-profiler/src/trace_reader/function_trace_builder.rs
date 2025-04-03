@@ -52,12 +52,6 @@ impl AddAssign for SierraGasConsumed {
     }
 }
 
-impl AddAssign<usize> for SierraGasConsumed {
-    fn add_assign(&mut self, rhs: usize) {
-        self.0 += rhs;
-    }
-}
-
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct ChargedResources {
     pub steps: Steps,
@@ -67,7 +61,7 @@ pub struct ChargedResources {
 impl ChargedResources {
     pub fn increment(&mut self, sierra_gas_tracking: bool) {
         if sierra_gas_tracking {
-            self.sierra_gas_consumed += 100;
+            self.sierra_gas_consumed += SierraGasConsumed(100);
         } else {
             self.steps += 1;
         }

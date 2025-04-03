@@ -392,7 +392,6 @@ dependencies = [
  "serde",
  "serde_json",
  "snapbox",
- "strum",
  "strum_macros",
  "tempfile",
  "test-case",

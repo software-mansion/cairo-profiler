@@ -24,7 +24,6 @@ tempfile.workspace = true
 cairo-annotations.workspace = true
 prettytable-rs.workspace = true
 regex.workspace = true
-strum.workspace = true
 strum_macros.workspace = true
 
 cairo-lang-sierra.workspace = true

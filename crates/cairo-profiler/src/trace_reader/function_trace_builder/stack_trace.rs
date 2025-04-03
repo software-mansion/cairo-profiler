@@ -138,12 +138,10 @@ fn calculate_syscall_sierra_gas_measurements(
         .checked_mul(invocations)
         .expect("Total syscall cost multiplication overflow");
 
-    vec![(
+    HashMap::from([(
         MeasurementUnit::from("sierra_gas".to_string()),
         MeasurementValue(total_cost),
-    )]
-    .into_iter()
-    .collect()
+    )])
 }
 
 fn calculate_syscall_cairo_steps_measurements(
@@ -157,7 +155,7 @@ fn calculate_syscall_cairo_steps_measurements(
             .expect("Measurement multiplication overflow")
     };
 
-    let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
+    let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = HashMap::from([
         (
             MeasurementUnit::from("steps".to_string()),
             MeasurementValue(multiply_resource_by_invocations(
@@ -172,9 +170,7 @@ fn calculate_syscall_cairo_steps_measurements(
                 invocations,
             )),
         ),
-    ]
-    .into_iter()
-    .collect();
+    ]);
 
     for (builtin, b_count) in &resources.builtin_instance_counter {
         measurements.insert(
