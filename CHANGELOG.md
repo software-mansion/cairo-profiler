@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2025-05-06
+
 ### Added
 
 - new `--hide` option, that allows to filter out nodes from the profile based on passed regex. Resources of the filtered
