@@ -11,7 +11,7 @@ pub struct ViewProfile {
 
     /// Show the sample in the top view.
     /// To get the list of available samples use `--list-samples`.
-    #[arg(long, default_value = "steps", conflicts_with = "list_samples")]
+    #[arg(long, default_value = "calls", conflicts_with = "list_samples")]
     pub sample: String,
 
     /// List all the samples included in the profile.
