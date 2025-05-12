@@ -88,7 +88,6 @@ fn map_syscall_trace_to_sample(
     } else {
         calculate_syscall_cairo_steps_measurements(syscall_resources, invocations)
     };
-    dbg!(&measurements);
 
     measurements.insert(
         MeasurementUnit::from("syscall_usage".to_string()),
