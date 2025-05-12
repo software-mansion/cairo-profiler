@@ -8,12 +8,13 @@ use std::collections::HashMap;
 pub fn trace_to_samples(
     functions_stack_traces: HashMap<Vec<FunctionCall>, ChargedResources>,
     syscall_stack_traces: HashMap<Vec<FunctionCall>, i64>,
+    function_casm_sizes: &HashMap<Vec<FunctionCall>, i64>,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
 ) -> Vec<Sample> {
     let function_samples: Vec<Sample> = functions_stack_traces
         .into_iter()
-        .map(|(call_stack, cr)| map_function_trace_to_sample(call_stack, cr))
+        .map(|(call_stack, cr)| map_function_trace_to_sample(call_stack, cr, function_casm_sizes))
         .collect();
 
     let syscall_samples: Vec<Sample> = syscall_stack_traces
@@ -31,7 +32,11 @@ pub fn trace_to_samples(
     [function_samples, syscall_samples].concat()
 }
 
-fn map_function_trace_to_sample(call_stack: Vec<FunctionCall>, cr: ChargedResources) -> Sample {
+fn map_function_trace_to_sample(
+    call_stack: Vec<FunctionCall>,
+    cr: ChargedResources,
+    casm_sizes: &HashMap<Vec<FunctionCall>, i64>,
+) -> Sample {
     let measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
         (
             MeasurementUnit::from("steps".to_string()),
@@ -40,6 +45,10 @@ fn map_function_trace_to_sample(call_stack: Vec<FunctionCall>, cr: ChargedResour
         (
             MeasurementUnit::from("sierra_gas".to_string()),
             MeasurementValue(i64::try_from(cr.sierra_gas_consumed.0).unwrap()),
+        ),
+        (
+            MeasurementUnit::from("casm_size".to_string()),
+            MeasurementValue(*casm_sizes.get(&call_stack.clone()).unwrap_or(&0)),
         ),
     ]
     .into_iter()
