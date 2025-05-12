@@ -79,7 +79,7 @@ fn map_syscall_trace_to_sample(
         )
         .unwrap();
 
-    let measurements = if sierra_gas_tracking {
+    let mut measurements = if sierra_gas_tracking {
         calculate_syscall_sierra_gas_measurements(
             syscall_resources,
             invocations,
@@ -88,6 +88,11 @@ fn map_syscall_trace_to_sample(
     } else {
         calculate_syscall_cairo_steps_measurements(syscall_resources, invocations)
     };
+
+    measurements.insert(
+        MeasurementUnit::from("syscall_usage".to_string()),
+        MeasurementValue(invocations),
+    );
 
     Sample {
         call_stack,
