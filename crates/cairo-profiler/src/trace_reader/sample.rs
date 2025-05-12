@@ -31,6 +31,7 @@ pub enum InternalFunctionCall {
     Inlined(FunctionName),
     NonInlined(FunctionName),
     Syscall(FunctionName),
+    Libfunc(FunctionName),
 }
 
 impl InternalFunctionCall {
@@ -38,7 +39,8 @@ impl InternalFunctionCall {
         match self {
             InternalFunctionCall::Inlined(function_name)
             | InternalFunctionCall::NonInlined(function_name)
-            | InternalFunctionCall::Syscall(function_name) => function_name,
+            | InternalFunctionCall::Syscall(function_name)
+            | InternalFunctionCall::Libfunc(function_name) => function_name,
         }
     }
 }

@@ -479,25 +479,132 @@ fn view_sierra_gas() {
         .stdout_eq(indoc!(
             r#"
             
-            Showing nodes accounting for 145585 sierra gas, 100.00% of 145585 sierra gas total
+            Showing nodes accounting for 146425 sierra gas, 100.00% of 146425 sierra gas total
             Showing top 14 nodes out of 14
             
                          flat |  flat% |    sum% |               cum |    cum% |  
             ------------------+--------+---------+-------------------+---------+-----------------------------------------------------------------------------------------------
-             86685 sierra gas | 59.54% |  59.54% |  86685 sierra gas |  59.54% | "CallContract" 
-             10200 sierra gas |  7.01% |  66.55% |  17900 sierra gas |  12.30% | "core::result::ResultSerde::::deserialize" 
-             10000 sierra gas |  6.87% |  73.42% |  10000 sierra gas |   6.87% | "StorageRead" 
-              8700 sierra gas |  5.98% |  79.39% |   8700 sierra gas |   5.98% | "snforge_std::_cheatcode::execute_cheatcode::" 
-              6400 sierra gas |  4.40% |  83.79% | 131485 sierra gas |  90.31% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
-              3900 sierra gas |  2.68% |  86.47% |   3900 sierra gas |   2.68% | "core::array::SpanFelt252Serde::deserialize" 
-              3800 sierra gas |  2.61% |  89.08% |   3800 sierra gas |   2.61% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
-              3700 sierra gas |  2.54% |  91.62% |  13700 sierra gas |   9.41% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
-              3400 sierra gas |  2.34% |  93.96% |  18300 sierra gas |  12.57% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
-              3400 sierra gas |  2.34% |  96.29% |  15000 sierra gas |  10.30% | "snforge_std::cheatcodes::contract_class::declare" 
-              2800 sierra gas |  1.92% |  98.21% |   2800 sierra gas |   1.92% | "core::array::serialize_array_helper::" 
-              2200 sierra gas |  1.51% |  99.73% |   5100 sierra gas |   3.50% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
-               400 sierra gas |  0.27% | 100.00% | 145585 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
-                 0 sierra gas |  0.00% | 100.00% |  13700 sierra gas |   9.41% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+             86685 sierra gas | 59.20% |  59.20% |  86685 sierra gas |  59.20% | "CallContract" 
+             10200 sierra gas |  6.97% |  66.17% |  18320 sierra gas |  12.51% | "core::result::ResultSerde::::deserialize" 
+             10000 sierra gas |  6.83% |  73.00% |  10000 sierra gas |   6.83% | "StorageRead" 
+              9120 sierra gas |  6.23% |  79.22% |   9120 sierra gas |   6.23% | "snforge_std::_cheatcode::execute_cheatcode::" 
+              6400 sierra gas |  4.37% |  83.60% | 132325 sierra gas |  90.37% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              4320 sierra gas |  2.95% |  86.55% |   4320 sierra gas |   2.95% | "core::array::SpanFelt252Serde::deserialize" 
+              3800 sierra gas |  2.60% |  89.14% |   3800 sierra gas |   2.60% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              3700 sierra gas |  2.53% |  91.67% |  13700 sierra gas |   9.36% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              3400 sierra gas |  2.32% |  93.99% |  18860 sierra gas |  12.88% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              3400 sierra gas |  2.32% |  96.31% |  15140 sierra gas |  10.34% | "snforge_std::cheatcodes::contract_class::declare" 
+              2800 sierra gas |  1.91% |  98.22% |   2800 sierra gas |   1.91% | "core::array::serialize_array_helper::" 
+              2200 sierra gas |  1.50% |  99.73% |   5240 sierra gas |   3.58% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+               400 sierra gas |  0.27% | 100.00% | 146425 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                 0 sierra gas |  0.00% | 100.00% |  13700 sierra gas |   9.36% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+            "#
+        ));
+}
+
+#[test]
+fn view_builtins_factored_in() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/builtins_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("builtins_simple_tests_pedersen_cost.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 12290 sierra gas, 100.00% of 12290 sierra gas total
+            Showing top 4 nodes out of 4
+            
+                        flat |  flat% |    sum% |              cum |    cum% |  
+            -----------------+--------+---------+------------------+---------+-----------------------------------------------------------------------
+             6550 sierra gas | 53.30% |  53.30% | 11790 sierra gas |  95.93% | "builtins_simple::tests::pedersen_cost" 
+             3040 sierra gas | 24.74% |  78.03% |  3040 sierra gas |  24.74% | "snforge_std::_cheatcode::execute_cheatcode::" 
+             2200 sierra gas | 17.90% |  95.93% |  5240 sierra gas |  42.64% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+              500 sierra gas |  4.07% | 100.00% | 12290 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+            "#
+        ));
+}
+
+#[test]
+fn view_all_libfuncs() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/builtins_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("builtins_simple_tests_bitwise_cost.json")
+        .arg("--show-libfuncs")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 8823 sierra gas, 100.00% of 8823 sierra gas total
+            Showing top 14 nodes out of 14
+            
+                        flat |  flat% |    sum% |             cum |    cum% |  
+            -----------------+--------+---------+-----------------+---------+-----------------------------------------------------------------------
+             4700 sierra gas | 53.27% |  53.27% | 4700 sierra gas |  53.27% | "store_temp" 
+              783 sierra gas |  8.87% |  62.14% |  783 sierra gas |   8.87% | "u8_bitwise" 
+              570 sierra gas |  6.46% |  68.60% |  570 sierra gas |   6.46% | "array_slice" 
+              500 sierra gas |  5.67% |  74.27% | 8823 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+              400 sierra gas |  4.53% |  78.81% |  400 sierra gas |   4.53% | "array_snapshot_pop_front" 
+              370 sierra gas |  4.19% |  83.00% |  370 sierra gas |   4.19% | "u32_overflowing_sub" 
+              300 sierra gas |  3.40% |  86.40% |  300 sierra gas |   3.40% | "enum_match" 
+              300 sierra gas |  3.40% |  89.80% |  300 sierra gas |   3.40% | "felt252_is_zero" 
+              200 sierra gas |  2.27% |  92.07% | 8323 sierra gas |  94.33% | "builtins_simple::tests::bitwise_cost" 
+              200 sierra gas |  2.27% |  94.33% | 3040 sierra gas |  34.46% | "snforge_std::_cheatcode::execute_cheatcode::" 
+              200 sierra gas |  2.27% |  96.60% | 5240 sierra gas |  59.39% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+              100 sierra gas |  1.13% |  97.73% |  100 sierra gas |   1.13% | "array_new" 
+              100 sierra gas |  1.13% |  98.87% |  100 sierra gas |   1.13% | "bool_not_impl" 
+              100 sierra gas |  1.13% | 100.00% |  100 sierra gas |   1.13% | "jump" 
             "#
         ));
 }
