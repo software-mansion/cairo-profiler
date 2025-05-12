@@ -157,6 +157,16 @@ pub fn collect_function_level_profiling_info(
         .collect();
 
     let sierra_statements = map_pcs_to_sierra_statement_ids(casm_debug_info, casm_level_info);
+    // get all sizes to a hashmap, for quicker lookup
+    let mut casm_sizes: HashMap<String, i64> = HashMap::new();
+    for entry in casm_debug_info.sierra_statement_info.clone() {
+        *casm_sizes
+            .entry(entry.instruction_idx.to_string())
+            .or_default() += i64::try_from(entry.end_offset - entry.start_offset)
+            .expect("Failed to convert casm size to i64");
+    }
+
+    let mut function_casm_sizes: HashMap<Vec<FunctionCall>, i64> = HashMap::new();
 
     for statement in sierra_statements {
         let sierra_statement_idx = match statement {
@@ -203,6 +213,11 @@ pub fn collect_function_level_profiling_info(
 
                 match libfunc {
                     Ok(CoreConcreteLibfunc::FunctionCall(_)) => {
+                        *function_casm_sizes
+                            .entry(current_call_stack.clone().into())
+                            .or_default() += casm_sizes
+                            .get(&sierra_statement_idx.to_string())
+                            .unwrap_or(&0);
                         call_stack.enter_function_call(current_call_stack);
                     }
                     Ok(CoreConcreteLibfunc::StarkNet(libfunc)) => {
@@ -314,6 +329,11 @@ pub fn collect_function_level_profiling_info(
                                     }
                                 }
                             }
+                            *function_casm_sizes
+                                .entry(libfunc_call_stack.clone().into())
+                                .or_default() += casm_sizes
+                                .get(&sierra_statement_idx.to_string())
+                                .unwrap_or(&0);
                         }
 
                         // If we were in a syscall this is the time we go out of it, as pcs no longer
@@ -333,6 +353,7 @@ pub fn collect_function_level_profiling_info(
     let functions_samples = trace_to_samples(
         functions_stack_traces,
         syscall_stack_traces,
+        &function_casm_sizes,
         versioned_constants,
         sierra_gas_tracking,
     );
