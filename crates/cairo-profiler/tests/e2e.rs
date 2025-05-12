@@ -68,7 +68,7 @@ fn missing_syscall_from_versioned_constants_file() {
         .args([
             "call.json",
             "--versioned-constants-path",
-            "invalid_versioned_constants.json",
+            "missing_syscall_versioned_constants.json",
         ])
         .assert()
         .failure()
@@ -84,12 +84,44 @@ fn missing_syscall_from_versioned_constants_file() {
 }
 
 #[test]
+fn missing_os_constants_from_versioned_constants_file() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/data/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .args([
+            "call.json",
+            "--versioned-constants-path",
+            "invalid_versioned_constants.json",
+        ])
+        .assert()
+        .failure()
+        .stderr_eq(indoc!(
+            r"
+            Error: Failed to get resource map from versioned constants file
+
+            Caused by:
+                Invalid versioned constants file format: field 'os_constants' not found in versioned constants file
+            "
+        ));
+}
+
+#[test]
 fn view_samples() {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -141,7 +173,9 @@ fn view_steps() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -199,7 +233,9 @@ fn view_range_check_builtin() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -236,7 +272,9 @@ fn view_hide_invalid_regex() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -280,7 +318,9 @@ fn view_hide_in_view() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -343,7 +383,9 @@ fn view_hide_in_build() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -398,4 +440,64 @@ fn view_hide_in_build() {
         .assert()
         .success()
         .stdout_eq(expected_output);
+}
+
+#[test]
+fn view_sierra_gas() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_sierra_gas/",
+            ),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("trace_balance_simple.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 145585 sierra gas, 100.00% of 145585 sierra gas total
+            Showing top 14 nodes out of 14
+            
+                         flat |  flat% |    sum% |               cum |    cum% |  
+            ------------------+--------+---------+-------------------+---------+-----------------------------------------------------------------------------------------------
+             86685 sierra gas | 59.54% |  59.54% |  86685 sierra gas |  59.54% | "CallContract" 
+             10200 sierra gas |  7.01% |  66.55% |  17900 sierra gas |  12.30% | "core::result::ResultSerde::::deserialize" 
+             10000 sierra gas |  6.87% |  73.42% |  10000 sierra gas |   6.87% | "StorageRead" 
+              8700 sierra gas |  5.98% |  79.39% |   8700 sierra gas |   5.98% | "snforge_std::_cheatcode::execute_cheatcode::" 
+              6400 sierra gas |  4.40% |  83.79% | 131485 sierra gas |  90.31% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              3900 sierra gas |  2.68% |  86.47% |   3900 sierra gas |   2.68% | "core::array::SpanFelt252Serde::deserialize" 
+              3800 sierra gas |  2.61% |  89.08% |   3800 sierra gas |   2.61% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              3700 sierra gas |  2.54% |  91.62% |  13700 sierra gas |   9.41% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              3400 sierra gas |  2.34% |  93.96% |  18300 sierra gas |  12.57% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              3400 sierra gas |  2.34% |  96.29% |  15000 sierra gas |  10.30% | "snforge_std::cheatcodes::contract_class::declare" 
+              2800 sierra gas |  1.92% |  98.21% |   2800 sierra gas |   1.92% | "core::array::serialize_array_helper::" 
+              2200 sierra gas |  1.51% |  99.73% |   5100 sierra gas |   3.50% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+               400 sierra gas |  0.27% | 100.00% | 145585 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                 0 sierra gas |  0.00% | 100.00% |  13700 sierra gas |   9.41% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+            "#
+        ));
 }

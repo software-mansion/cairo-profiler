@@ -66,13 +66,6 @@
     },
     "os_resources": {
         "execute_syscalls": {
-            "CallContract": {
-                "n_steps": 10,
-                "builtin_instance_counter": {
-                    "range_check_builtin": 15
-                },
-                "n_memory_holes": 0
-            },
             "DelegateCall": {
                 "n_steps": 10,
                 "builtin_instance_counter": {

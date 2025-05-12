@@ -4,3 +4,7 @@ To re-generate run `snforge test --save-trace-data`, and change paths in trace f
 - balance_simple_integrationtest.test.sierra.json
 
 Then copy trace + compiled files in here
+
+Generated using:
+- scarb 2.9.2
+- snforge 0.35.1
