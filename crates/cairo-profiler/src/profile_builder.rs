@@ -228,7 +228,7 @@ fn build_samples(
     samples: &[Sample],
     all_measurements_units: &[MeasurementUnit],
 ) -> Vec<pprof::Sample> {
-    let samples = samples
+    samples
         .iter()
         .map(|s| pprof::Sample {
             location_id: context
@@ -249,9 +249,7 @@ fn build_samples(
                 .collect(),
             label: vec![],
         })
-        .collect();
-
-    samples
+        .collect()
 }
 
 fn collect_all_measurements_units(samples: &[Sample]) -> Vec<MeasurementUnit> {
