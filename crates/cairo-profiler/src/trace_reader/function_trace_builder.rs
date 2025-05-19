@@ -145,6 +145,17 @@ pub fn collect_function_level_profiling_info(
         CostTokenType::MulMod,
     ];
 
+    let libfunc_map: HashMap<u64, String> = program
+        .libfunc_declarations
+        .iter()
+        .map(|declaration| {
+            (
+                declaration.id.id,
+                declaration.long_id.generic_id.0.clone().to_string(),
+            )
+        })
+        .collect();
+
     let sierra_statements = map_pcs_to_sierra_statement_ids(casm_debug_info, casm_level_info);
 
     for statement in sierra_statements {
@@ -235,28 +246,24 @@ pub fn collect_function_level_profiling_info(
                         if in_syscall_idx.is_none() {
                             let mut libfunc_call_stack = current_call_stack.clone();
                             if function_level_config.show_libfuncs {
-                                let libfunc_declaration = &program
-                                    .libfunc_declarations
-                                    .iter()
-                                    .find(|entry| entry.id == invocation.libfunc_id)
-                                    .unwrap();
-
-                                let libfunc_name = libfunc_declaration
-                                    .id
-                                    .debug_name
-                                    .clone()
-                                    .unwrap_or(libfunc_declaration.long_id.generic_id.0.clone())
-                                    .to_string();
+                                let libfunc_name = libfunc_map
+                                    .get(&invocation.libfunc_id.id)
+                                    .expect("Failed to find libfunc in map");
 
                                 // todo: hack, fix this abomination
+                                // we are subtracting resources accounted to current function from stack
                                 functions_stack_traces
                                     .entry(current_call_stack.clone().into())
                                     .or_default()
                                     .decrement(sierra_gas_tracking);
 
+                                // then appending libfunc to said stack
                                 libfunc_call_stack.push(FunctionCall::InternalFunctionCall(
-                                    InternalFunctionCall::Libfunc(FunctionName(libfunc_name)),
+                                    InternalFunctionCall::Libfunc(FunctionName(
+                                        libfunc_name.to_owned(),
+                                    )),
                                 ));
+                                // and accounting previously subtracted resources to this libfunc
                                 functions_stack_traces
                                     .entry(libfunc_call_stack.clone().into())
                                     .or_default()
@@ -274,9 +281,12 @@ pub fn collect_function_level_profiling_info(
                                         pre_cost,
                                     } = branch_cost
                                     {
+                                        // determine if we are already tracking this specific invocation (libfunc)
+                                        // we use steps estimated by `core_libfunc_cost` function to do this
                                         if const_cost.steps == 1
                                             || const_cost.steps <= libfunc_appearance_tracker
                                         {
+                                            // if a given invocation "costs" some builtins, sum them
                                             let post_cost = sum_builtins_cost(
                                                 const_cost,
                                                 pre_cost,
@@ -284,6 +294,7 @@ pub fn collect_function_level_profiling_info(
                                                 builtins_with_cost,
                                             );
 
+                                            // add builtin cost (resources) to current function in stack
                                             *functions_stack_traces
                                                 .entry(libfunc_call_stack.clone().into())
                                                 .or_default() +=
@@ -295,6 +306,8 @@ pub fn collect_function_level_profiling_info(
                                                 };
 
                                             libfunc_appearance_tracker = 1;
+                                        // if an invocation takes more than 1 step, we skip getting its cost for subsequent
+                                        // appearances in stack, so we do not wrongly add the resources multiple times
                                         } else if const_cost.steps > libfunc_appearance_tracker {
                                             libfunc_appearance_tracker += 1;
                                         }
