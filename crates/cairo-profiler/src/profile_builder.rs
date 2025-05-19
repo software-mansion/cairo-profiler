@@ -16,7 +16,6 @@ use std::{fs, io::Read};
 
 pub use perftools::profiles as pprof;
 
-use crate::trace_reader::sample::InternalFunctionCall::{Libfunc, Syscall};
 use crate::trace_reader::sample::{
     FunctionCall, InternalFunctionCall, MeasurementUnit, MeasurementValue, Sample,
 };
@@ -93,7 +92,9 @@ impl ProfilerContext {
         for (index, function) in call_stack.iter().enumerate() {
             match function {
                 FunctionCall::InternalFunctionCall(
-                    InternalFunctionCall::NonInlined(_) | Syscall(_) | Libfunc(_),
+                    InternalFunctionCall::NonInlined(_)
+                    | InternalFunctionCall::Syscall(_)
+                    | InternalFunctionCall::Libfunc(_),
                 )
                 | FunctionCall::EntrypointCall(_) => {
                     if index != 0 {
@@ -116,8 +117,8 @@ impl ProfilerContext {
                     FunctionCall::EntrypointCall(function_name)
                     | FunctionCall::InternalFunctionCall(
                         InternalFunctionCall::NonInlined(function_name)
-                        | Syscall(function_name)
-                        | Libfunc(function_name),
+                        | InternalFunctionCall::Syscall(function_name)
+                        | InternalFunctionCall::Libfunc(function_name),
                     ) => {
                         let line = pprof::Line {
                             function_id: self.function_id(function_name).into(),
@@ -151,7 +152,9 @@ impl ProfilerContext {
                         }
                         FunctionCall::EntrypointCall(_)
                         | FunctionCall::InternalFunctionCall(
-                            InternalFunctionCall::NonInlined(_) | Syscall(_) | Libfunc(_),
+                            InternalFunctionCall::NonInlined(_)
+                            | InternalFunctionCall::Syscall(_)
+                            | InternalFunctionCall::Libfunc(_),
                         ) => {
                             unreachable!(
                                 "Only first function in a function stack corresponding to a single location can be not inlined"
