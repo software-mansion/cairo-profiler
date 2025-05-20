@@ -608,3 +608,169 @@ fn view_all_libfuncs() {
             "#
         ));
 }
+
+#[test]
+fn view_casm_sizes_minimal() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/builtins_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("builtins_simple_tests_poseidon_cost.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("casm size")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 94 casm size, 100.00% of 94 casm size total
+            Showing top 4 nodes out of 4
+            
+                     flat |  flat% |    sum% |          cum |    cum% |  
+            --------------+--------+---------+--------------+---------+-----------------------------------------------------------------------
+             33 casm size | 35.11% |  35.11% | 94 casm size | 100.00% | "builtins_simple::tests::poseidon_cost" 
+             33 casm size | 35.11% |  70.21% | 61 casm size |  64.89% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+             28 casm size | 29.79% | 100.00% | 28 casm size |  29.79% | "snforge_std::_cheatcode::execute_cheatcode::" 
+              0 casm size |  0.00% | 100.00% | 94 casm size | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+            "#
+        ));
+}
+
+#[test]
+fn view_casm_sizes_with_libfuncs_and_inlines() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/builtins_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("builtins_simple_tests_poseidon_cost.json")
+        .arg("--show-libfuncs")
+        .arg("--show-inlined-functions")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("casm size")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 94 casm size, 100.00% of 94 casm size total
+            Showing top 24 nodes out of 24
+            
+                     flat |  flat% |    sum% |          cum |    cum% |  
+            --------------+--------+---------+--------------+---------+-----------------------------------------------------------------------
+             58 casm size | 61.70% |  61.70% | 58 casm size |  61.70% | "store_temp" 
+              9 casm size |  9.57% |  71.28% |  9 casm size |   9.57% | "felt252_is_zero" 
+              9 casm size |  9.57% |  80.85% |  9 casm size |   9.57% | "jump" 
+              8 casm size |  8.51% |  89.36% |  8 casm size |   8.51% | "array_snapshot_pop_front" 
+              8 casm size |  8.51% |  97.87% | 71 casm size |  75.53% | "snforge_std::_cheatcode::_is_config_run" 
+              1 casm size |  1.06% |  98.94% |  1 casm size |   1.06% | "array_new" 
+              1 casm size |  1.06% | 100.00% |  1 casm size |   1.06% | "enum_match" 
+              0 casm size |  0.00% | 100.00% | 94 casm size | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "array_slice" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "bool_not_impl" 
+              0 casm size |  0.00% | 100.00% |  6 casm size |   6.38% | "builtins_simple::tests::poseidon_cost" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "core::BoolNot::not" 
+              0 casm size |  0.00% | 100.00% | 32 casm size |  34.04% | "core::Felt252PartialEq::eq" 
+              0 casm size |  0.00% | 100.00% |  2 casm size |   2.13% | "core::Felt252Sub::sub" 
+              0 casm size |  0.00% | 100.00% |  1 casm size |   1.06% | "core::array::ArrayImpl::new" 
+              0 casm size |  0.00% | 100.00% |  3 casm size |   3.19% | "core::array::SpanImpl::pop_front" 
+              0 casm size |  0.00% | 100.00% |  4 casm size |   4.26% | "core::array::SpanImpl::slice" 
+              0 casm size |  0.00% | 100.00% |  8 casm size |   8.51% | "core::array::array_at" 
+              0 casm size |  0.00% | 100.00% |  9 casm size |   9.57% | "core::assert" 
+              0 casm size |  0.00% | 100.00% |  8 casm size |   8.51% | "core::integer::U32Sub::sub" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "hades_permutation" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "snforge_std::_cheatcode::execute_cheatcode" 
+              0 casm size |  0.00% | 100.00% | 39 casm size |  41.49% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "u32_overflowing_sub" 
+            "#
+        ));
+}
+
+#[test]
+fn view_syscall_counts() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_sierra_gas/",
+            ),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("trace_balance_simple.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2")
+        .arg("--sample")
+        .arg("syscall usage")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 2 syscall usage, 100.00% of 2 syscall usage total
+            Showing top 2 nodes out of 14
+            
+                        flat |  flat% |    sum% |             cum |   cum% |  
+            -----------------+--------+---------+-----------------+--------+----------------
+             1 syscall usage | 50.00% |  50.00% | 1 syscall usage | 50.00% | "CallContract" 
+             1 syscall usage | 50.00% | 100.00% | 1 syscall usage | 50.00% | "StorageRead" 
+            "#
+        ));
+}
