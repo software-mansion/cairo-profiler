@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-05-20
+
 ### Added
 
 - sierra gas profiling; in order to profile sierra gas please make sure to run snforge test with `--tracked-resource` flag set to "sierra-gas"
