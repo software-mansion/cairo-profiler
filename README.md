@@ -97,7 +97,7 @@ cairo-profiler path/to/trace.json
 
 #### Libfuncs
 
-In order to include lifuncs nodes in the output, build profile with `--show-libfuncs` flag:
+In order to include libfuncs nodes in the output, build profile with `--show-libfuncs` flag:
 ```shell
 cairo-profiler build-profile path/to/trace.json --show-libfuncs
 ```
