@@ -37,3 +37,11 @@ strum_macros = "0.27.1"
 cairo-lang-sierra = "2.10.1"
 cairo-lang-sierra-to-casm = "2.10.1"
 cairo-lang-starknet-classes = "2.10.1"
+cairo-lang-sierra-gas = "2.10.1"
+
+[patch.crates-io]
+cairo-annotations = { git = "https://github.com/software-mansion/cairo-annotations.git", branch = "szymczyk/bump-cairo" }
+cairo-lang-sierra = { git = "https://github.com/THenry14/cairo.git", branch = "szymczyk/2.10.1-sierra-gas-pub" }
+cairo-lang-sierra-to-casm = { git = "https://github.com/THenry14/cairo.git", branch = "szymczyk/2.10.1-sierra-gas-pub" }
+cairo-lang-starknet-classes = { git = "https://github.com/THenry14/cairo.git", branch = "szymczyk/2.10.1-sierra-gas-pub" }
+cairo-lang-sierra-gas = { git = "https://github.com/THenry14/cairo.git", branch = "szymczyk/2.10.1-sierra-gas-pub" }

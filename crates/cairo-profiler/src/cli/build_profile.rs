@@ -68,6 +68,10 @@ pub struct BuildProfile {
     /// To view already-built profile run `cairo-profiler view`.
     #[arg(long, requires = "view")]
     pub hide: Option<String>,
+
+    /// Show libfuncs in the trace tree.
+    #[arg(long)]
+    pub show_libfuncs: bool,
 }
 
 pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
