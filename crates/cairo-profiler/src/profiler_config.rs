@@ -5,6 +5,7 @@ pub struct ProfilerConfig {
     pub max_function_stack_trace_depth: usize,
     pub split_generics: bool,
     pub show_inlined_functions: bool,
+    pub show_libfuncs: bool,
 }
 
 impl From<&BuildProfile> for ProfilerConfig {
@@ -14,6 +15,7 @@ impl From<&BuildProfile> for ProfilerConfig {
             max_function_stack_trace_depth: cli.max_function_stack_trace_depth,
             split_generics: cli.split_generics,
             show_inlined_functions: cli.show_inlined_functions,
+            show_libfuncs: cli.show_libfuncs,
         }
     }
 }
@@ -22,6 +24,7 @@ pub struct FunctionLevelConfig {
     pub max_function_stack_trace_depth: usize,
     pub split_generics: bool,
     pub show_inlined_functions: bool,
+    pub show_libfuncs: bool,
 }
 
 impl From<&ProfilerConfig> for FunctionLevelConfig {
@@ -30,6 +33,7 @@ impl From<&ProfilerConfig> for FunctionLevelConfig {
             max_function_stack_trace_depth: profiler_config.max_function_stack_trace_depth,
             split_generics: profiler_config.split_generics,
             show_inlined_functions: profiler_config.show_inlined_functions,
+            show_libfuncs: profiler_config.show_libfuncs,
         }
     }
 }

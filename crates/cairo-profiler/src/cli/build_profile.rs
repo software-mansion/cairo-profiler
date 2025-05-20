@@ -54,7 +54,7 @@ pub struct BuildProfile {
     /// Show the sample in the top view.
     /// Requires `--view` flag to be set.
     /// To view already-built profile run `cairo-profiler view`.
-    #[arg(long, requires = "view", default_value = "steps")]
+    #[arg(long, requires = "view", default_value = "calls")]
     pub sample: String,
 
     /// Set a limit of viewed nodes.
@@ -68,12 +68,16 @@ pub struct BuildProfile {
     /// To view already-built profile run `cairo-profiler view`.
     #[arg(long, requires = "view")]
     pub hide: Option<String>,
+
+    /// Show libfuncs in the trace tree.
+    #[arg(long)]
+    pub show_libfuncs: bool,
 }
 
 pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
     let data = fs::read_to_string(&args.path_to_trace_data)
         .context("Failed to read call trace from a file")?;
-    let os_resources_map =
+    let versioned_constants =
         read_and_parse_versioned_constants_file(args.versioned_constants_path.as_ref())
             .context("Failed to get resource map from versioned constants file")?;
     let VersionedCallTrace::V1(serialized_trace) =
@@ -96,7 +100,7 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
         &serialized_trace,
         &compiled_artifacts_cache,
         &profiler_config,
-        &os_resources_map,
+        &versioned_constants,
     )?;
 
     let profile = build_profile(&samples);

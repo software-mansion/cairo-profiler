@@ -5,7 +5,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.8.1"
+version = "0.8.2"
 edition = "2024"
 
 
@@ -29,10 +29,19 @@ test-case = "3.3.1"
 itertools = "0.12.1"
 tempfile = "3.19.1"
 indoc = "2"
-cairo-annotations = "0.2.2"
+cairo-annotations = "0.3.1"
 prettytable-rs = "0.10.0"
 regex = "1.11.1"
+strum_macros = "0.27.1"
 
 cairo-lang-sierra = "2.10.1"
 cairo-lang-sierra-to-casm = "2.10.1"
 cairo-lang-starknet-classes = "2.10.1"
+cairo-lang-sierra-gas = "2.10.1"
+
+[patch.crates-io]
+cairo-annotations = { git = "https://github.com/software-mansion/cairo-annotations.git", branch = "szymczyk/bump-cairo" }
+cairo-lang-sierra = { git = "https://github.com/THenry14/cairo.git", branch = "szymczyk/2.10.1-sierra-gas-pub" }
+cairo-lang-sierra-to-casm = { git = "https://github.com/THenry14/cairo.git", branch = "szymczyk/2.10.1-sierra-gas-pub" }
+cairo-lang-starknet-classes = { git = "https://github.com/THenry14/cairo.git", branch = "szymczyk/2.10.1-sierra-gas-pub" }
+cairo-lang-sierra-gas = { git = "https://github.com/THenry14/cairo.git", branch = "szymczyk/2.10.1-sierra-gas-pub" }

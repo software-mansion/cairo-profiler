@@ -68,7 +68,7 @@ fn missing_syscall_from_versioned_constants_file() {
         .args([
             "call.json",
             "--versioned-constants-path",
-            "invalid_versioned_constants.json",
+            "missing_syscall_versioned_constants.json",
         ])
         .assert()
         .failure()
@@ -84,12 +84,44 @@ fn missing_syscall_from_versioned_constants_file() {
 }
 
 #[test]
+fn missing_os_constants_from_versioned_constants_file() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/data/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .args([
+            "call.json",
+            "--versioned-constants-path",
+            "invalid_versioned_constants.json",
+        ])
+        .assert()
+        .failure()
+        .stderr_eq(indoc!(
+            r"
+            Error: Failed to get resource map from versioned constants file
+
+            Caused by:
+                Invalid versioned constants file format: field 'os_constants' not found in versioned constants file
+            "
+        ));
+}
+
+#[test]
 fn view_samples() {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -141,7 +173,9 @@ fn view_steps() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -199,7 +233,9 @@ fn view_range_check_builtin() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -236,7 +272,9 @@ fn view_hide_invalid_regex() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -280,7 +318,9 @@ fn view_hide_in_view() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -343,7 +383,9 @@ fn view_hide_in_build() {
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/balance_simple/precompiled/"),
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_cairo_steps/",
+            ),
             &["*.json"],
         )
         .unwrap();
@@ -398,4 +440,337 @@ fn view_hide_in_build() {
         .assert()
         .success()
         .stdout_eq(expected_output);
+}
+
+#[test]
+fn view_sierra_gas() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_sierra_gas/",
+            ),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("trace_balance_simple.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 146425 sierra gas, 100.00% of 146425 sierra gas total
+            Showing top 14 nodes out of 14
+            
+                         flat |  flat% |    sum% |               cum |    cum% |  
+            ------------------+--------+---------+-------------------+---------+-----------------------------------------------------------------------------------------------
+             86685 sierra gas | 59.20% |  59.20% |  86685 sierra gas |  59.20% | "CallContract" 
+             10200 sierra gas |  6.97% |  66.17% |  18320 sierra gas |  12.51% | "core::result::ResultSerde::::deserialize" 
+             10000 sierra gas |  6.83% |  73.00% |  10000 sierra gas |   6.83% | "StorageRead" 
+              9120 sierra gas |  6.23% |  79.22% |   9120 sierra gas |   6.23% | "snforge_std::_cheatcode::execute_cheatcode::" 
+              6400 sierra gas |  4.37% |  83.60% | 132325 sierra gas |  90.37% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              4320 sierra gas |  2.95% |  86.55% |   4320 sierra gas |   2.95% | "core::array::SpanFelt252Serde::deserialize" 
+              3800 sierra gas |  2.60% |  89.14% |   3800 sierra gas |   2.60% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              3700 sierra gas |  2.53% |  91.67% |  13700 sierra gas |   9.36% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              3400 sierra gas |  2.32% |  93.99% |  18860 sierra gas |  12.88% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              3400 sierra gas |  2.32% |  96.31% |  15140 sierra gas |  10.34% | "snforge_std::cheatcodes::contract_class::declare" 
+              2800 sierra gas |  1.91% |  98.22% |   2800 sierra gas |   1.91% | "core::array::serialize_array_helper::" 
+              2200 sierra gas |  1.50% |  99.73% |   5240 sierra gas |   3.58% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+               400 sierra gas |  0.27% | 100.00% | 146425 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                 0 sierra gas |  0.00% | 100.00% |  13700 sierra gas |   9.36% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+            "#
+        ));
+}
+
+#[test]
+fn view_builtins_factored_in() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/builtins_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("builtins_simple_tests_pedersen_cost.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 12290 sierra gas, 100.00% of 12290 sierra gas total
+            Showing top 4 nodes out of 4
+            
+                        flat |  flat% |    sum% |              cum |    cum% |  
+            -----------------+--------+---------+------------------+---------+-----------------------------------------------------------------------
+             6550 sierra gas | 53.30% |  53.30% | 11790 sierra gas |  95.93% | "builtins_simple::tests::pedersen_cost" 
+             3040 sierra gas | 24.74% |  78.03% |  3040 sierra gas |  24.74% | "snforge_std::_cheatcode::execute_cheatcode::" 
+             2200 sierra gas | 17.90% |  95.93% |  5240 sierra gas |  42.64% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+              500 sierra gas |  4.07% | 100.00% | 12290 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+            "#
+        ));
+}
+
+#[test]
+fn view_all_libfuncs() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/builtins_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("builtins_simple_tests_bitwise_cost.json")
+        .arg("--show-libfuncs")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 8823 sierra gas, 100.00% of 8823 sierra gas total
+            Showing top 14 nodes out of 14
+            
+                        flat |  flat% |    sum% |             cum |    cum% |  
+            -----------------+--------+---------+-----------------+---------+-----------------------------------------------------------------------
+             4700 sierra gas | 53.27% |  53.27% | 4700 sierra gas |  53.27% | "store_temp" 
+              783 sierra gas |  8.87% |  62.14% |  783 sierra gas |   8.87% | "u8_bitwise" 
+              570 sierra gas |  6.46% |  68.60% |  570 sierra gas |   6.46% | "array_slice" 
+              500 sierra gas |  5.67% |  74.27% | 8823 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+              400 sierra gas |  4.53% |  78.81% |  400 sierra gas |   4.53% | "array_snapshot_pop_front" 
+              370 sierra gas |  4.19% |  83.00% |  370 sierra gas |   4.19% | "u32_overflowing_sub" 
+              300 sierra gas |  3.40% |  86.40% |  300 sierra gas |   3.40% | "enum_match" 
+              300 sierra gas |  3.40% |  89.80% |  300 sierra gas |   3.40% | "felt252_is_zero" 
+              200 sierra gas |  2.27% |  92.07% | 8323 sierra gas |  94.33% | "builtins_simple::tests::bitwise_cost" 
+              200 sierra gas |  2.27% |  94.33% | 3040 sierra gas |  34.46% | "snforge_std::_cheatcode::execute_cheatcode::" 
+              200 sierra gas |  2.27% |  96.60% | 5240 sierra gas |  59.39% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+              100 sierra gas |  1.13% |  97.73% |  100 sierra gas |   1.13% | "array_new" 
+              100 sierra gas |  1.13% |  98.87% |  100 sierra gas |   1.13% | "bool_not_impl" 
+              100 sierra gas |  1.13% | 100.00% |  100 sierra gas |   1.13% | "jump" 
+            "#
+        ));
+}
+
+#[test]
+fn view_casm_sizes_minimal() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/builtins_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("builtins_simple_tests_poseidon_cost.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("casm size")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 94 casm size, 100.00% of 94 casm size total
+            Showing top 4 nodes out of 4
+            
+                     flat |  flat% |    sum% |          cum |    cum% |  
+            --------------+--------+---------+--------------+---------+-----------------------------------------------------------------------
+             33 casm size | 35.11% |  35.11% | 94 casm size | 100.00% | "builtins_simple::tests::poseidon_cost" 
+             33 casm size | 35.11% |  70.21% | 61 casm size |  64.89% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+             28 casm size | 29.79% | 100.00% | 28 casm size |  29.79% | "snforge_std::_cheatcode::execute_cheatcode::" 
+              0 casm size |  0.00% | 100.00% | 94 casm size | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+            "#
+        ));
+}
+
+#[test]
+fn view_casm_sizes_with_libfuncs_and_inlines() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/builtins_simple/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("builtins_simple_tests_poseidon_cost.json")
+        .arg("--show-libfuncs")
+        .arg("--show-inlined-functions")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("casm size")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 94 casm size, 100.00% of 94 casm size total
+            Showing top 24 nodes out of 24
+            
+                     flat |  flat% |    sum% |          cum |    cum% |  
+            --------------+--------+---------+--------------+---------+-----------------------------------------------------------------------
+             58 casm size | 61.70% |  61.70% | 58 casm size |  61.70% | "store_temp" 
+              9 casm size |  9.57% |  71.28% |  9 casm size |   9.57% | "felt252_is_zero" 
+              9 casm size |  9.57% |  80.85% |  9 casm size |   9.57% | "jump" 
+              8 casm size |  8.51% |  89.36% |  8 casm size |   8.51% | "array_snapshot_pop_front" 
+              8 casm size |  8.51% |  97.87% | 71 casm size |  75.53% | "snforge_std::_cheatcode::_is_config_run" 
+              1 casm size |  1.06% |  98.94% |  1 casm size |   1.06% | "array_new" 
+              1 casm size |  1.06% | 100.00% |  1 casm size |   1.06% | "enum_match" 
+              0 casm size |  0.00% | 100.00% | 94 casm size | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "array_slice" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "bool_not_impl" 
+              0 casm size |  0.00% | 100.00% |  6 casm size |   6.38% | "builtins_simple::tests::poseidon_cost" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "core::BoolNot::not" 
+              0 casm size |  0.00% | 100.00% | 32 casm size |  34.04% | "core::Felt252PartialEq::eq" 
+              0 casm size |  0.00% | 100.00% |  2 casm size |   2.13% | "core::Felt252Sub::sub" 
+              0 casm size |  0.00% | 100.00% |  1 casm size |   1.06% | "core::array::ArrayImpl::new" 
+              0 casm size |  0.00% | 100.00% |  3 casm size |   3.19% | "core::array::SpanImpl::pop_front" 
+              0 casm size |  0.00% | 100.00% |  4 casm size |   4.26% | "core::array::SpanImpl::slice" 
+              0 casm size |  0.00% | 100.00% |  8 casm size |   8.51% | "core::array::array_at" 
+              0 casm size |  0.00% | 100.00% |  9 casm size |   9.57% | "core::assert" 
+              0 casm size |  0.00% | 100.00% |  8 casm size |   8.51% | "core::integer::U32Sub::sub" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "hades_permutation" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "snforge_std::_cheatcode::execute_cheatcode" 
+              0 casm size |  0.00% | 100.00% | 39 casm size |  41.49% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize" 
+              0 casm size |  0.00% | 100.00% |  0 casm size |   0.00% | "u32_overflowing_sub" 
+            "#
+        ));
+}
+
+#[test]
+fn view_syscall_counts() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_sierra_gas/",
+            ),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("trace_balance_simple.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2")
+        .arg("--sample")
+        .arg("syscall usage")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 2 syscall usage, 100.00% of 2 syscall usage total
+            Showing top 2 nodes out of 14
+            
+                        flat |  flat% |    sum% |             cum |   cum% |  
+            -----------------+--------+---------+-----------------+--------+----------------
+             1 syscall usage | 50.00% |  50.00% | 1 syscall usage | 50.00% | "CallContract" 
+             1 syscall usage | 50.00% | 100.00% | 1 syscall usage | 50.00% | "StorageRead" 
+            "#
+        ));
 }

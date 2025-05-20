@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- sierra gas profiling; in order to profile sierra gas please make sure to run snforge test with `--tracked-resource` flag set to "sierra-gas"
+- builtins usage is now included in sierra gas estimations
+- new flag `--show-libfuncs`, allowing to show all libfuncs usage per function (along with its resource consumption)
+- new sample "casm size" to show casm sizes of functions
+- new sample "syscall usage" to show functions' syscall usage count
+
+## [0.8.2] - 2025-05-06
+
+### Added
+
 - new `--hide` option, that allows to filter out nodes from the profile based on passed regex. Resources of the filtered
   node are added to a parent node (function).
 

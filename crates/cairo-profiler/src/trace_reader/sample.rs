@@ -1,7 +1,9 @@
 use cairo_annotations::annotations::profiler::FunctionName;
 use cairo_annotations::trace_data::{ExecutionResources, L1Resources};
+use std::cmp::PartialEq;
 use std::collections::HashMap;
 
+#[derive(Clone, Debug)]
 pub(crate) struct Sample {
     pub call_stack: Vec<FunctionCall>,
     pub measurements: HashMap<MeasurementUnit, MeasurementValue>,
@@ -29,6 +31,7 @@ pub enum InternalFunctionCall {
     Inlined(FunctionName),
     NonInlined(FunctionName),
     Syscall(FunctionName),
+    Libfunc(FunctionName),
 }
 
 impl InternalFunctionCall {
@@ -36,7 +39,8 @@ impl InternalFunctionCall {
         match self {
             InternalFunctionCall::Inlined(function_name)
             | InternalFunctionCall::NonInlined(function_name)
-            | InternalFunctionCall::Syscall(function_name) => function_name,
+            | InternalFunctionCall::Syscall(function_name)
+            | InternalFunctionCall::Libfunc(function_name) => function_name,
         }
     }
 }
@@ -52,6 +56,12 @@ impl From<String> for MeasurementUnit {
 
 #[derive(Debug, Clone)]
 pub struct MeasurementValue(pub i64);
+
+impl PartialEq<i64> for MeasurementValue {
+    fn eq(&self, other: &i64) -> bool {
+        self.0 == *other
+    }
+}
 
 impl Sample {
     pub fn from(
@@ -72,8 +82,13 @@ impl Sample {
                 MeasurementUnit::from("memory_holes".to_string()),
                 MeasurementValue(i64::try_from(resources.vm_resources.n_memory_holes).unwrap()),
             ),
+            (
+                MeasurementUnit::from("sierra_gas".to_string()),
+                MeasurementValue(i64::try_from(resources.gas_consumed.unwrap_or(0)).unwrap()),
+            ),
         ]
         .into_iter()
+        .filter(|(_, value)| *value != 0)
         .collect();
 
         for (builtin, count) in &resources.vm_resources.builtin_instance_counter {

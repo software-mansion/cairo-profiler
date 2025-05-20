@@ -2,7 +2,7 @@
 version = 1
 
 [[package]]
-name = "balance_simple"
+name = "builtins_simple"
 version = "0.1.0"
 dependencies = [
  "snforge_std",

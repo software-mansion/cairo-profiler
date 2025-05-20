@@ -1,5 +1,5 @@
 [package]
-name = "balance_simple"
+name = "builtins_simple"
 version = "0.1.0"
 edition = "2024_07"
 
@@ -15,3 +15,6 @@ sierra = true
 
 [tool.scarb]
 allow-prebuilt-plugins = ["snforge_std"]
+
+[profile.dev.cairo]
+unstable-add-statements-functions-debug-info = true

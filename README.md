@@ -12,7 +12,7 @@ or the installation script.
 ### asdf (recommended):
 
 ```shell
-asdf plugin add cairo-profiler https://github.com/software-mansion/asdf-cairo-profiler
+asdf plugin add cairo-profiler
 asdf install cairo-profiler latest # Replace 'latest' with a specific version number if needed
 ```
 
@@ -95,6 +95,13 @@ cairo-profiler path/to/trace.json
 >
 > Trace needs to be in the correct format. See [trace.json](./crates/cairo-profiler/tests/data/call.json) as an example.
 
+#### Libfuncs
+
+In order to include libfuncs nodes in the output, build profile with `--show-libfuncs` flag:
+```shell
+cairo-profiler build-profile path/to/trace.json --show-libfuncs
+```
+
 ### Viewing profile
 
 You can use the `cairo-profiler` to see the results from the generated file. The information will be printed in `top`
@@ -102,7 +109,7 @@ view, closely mimicking `pprof` output. There are two ways to view the profile:
 - by using `view` subcommand on previously generated profile file
 - by adding `--view` flag to `build-profile` subcommand
 
-By default, the top 10 `steps` samples will be shown. This can be changed using `--limit` and `--sample` flags.
+By default, the top 10 `calls` samples will be shown. This can be changed using `--limit` and `--sample` flags.
 
 #### Examples:
 

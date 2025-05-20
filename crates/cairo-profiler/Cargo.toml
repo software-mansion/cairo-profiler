@@ -24,10 +24,12 @@ tempfile.workspace = true
 cairo-annotations.workspace = true
 prettytable-rs.workspace = true
 regex.workspace = true
+strum_macros.workspace = true
 
 cairo-lang-sierra.workspace = true
 cairo-lang-sierra-to-casm.workspace = true
 cairo-lang-starknet-classes.workspace = true
+cairo-lang-sierra-gas.workspace = true
 
 [dev-dependencies]
 assert_fs.workspace = true
