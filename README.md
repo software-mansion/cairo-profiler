@@ -12,7 +12,7 @@ or the installation script.
 ### asdf (recommended):
 
 ```shell
-asdf plugin add cairo-profiler https://github.com/software-mansion/asdf-cairo-profiler
+asdf plugin add cairo-profiler
 asdf install cairo-profiler latest # Replace 'latest' with a specific version number if needed
 ```
 
@@ -94,6 +94,13 @@ cairo-profiler path/to/trace.json
 > 📝 **Note**
 >
 > Trace needs to be in the correct format. See [trace.json](./crates/cairo-profiler/tests/data/call.json) as an example.
+
+#### Libfuncs
+
+In order to include libfuncs nodes in the output, build profile with `--show-libfuncs` flag:
+```shell
+cairo-profiler build-profile path/to/trace.json --show-libfuncs
+```
 
 ### Viewing profile
 
