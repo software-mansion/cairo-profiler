@@ -176,6 +176,15 @@ pub fn collect_function_level_profiling_info(
                 continue;
             }
             MappingResult::PcOutOfFunctionArea => {
+                let current_stack = call_stack.current_call_stack();
+                if current_stack.is_empty() {
+                    header_resources.increment(sierra_gas_tracking);
+                } else {
+                    functions_stack_traces
+                        .entry(current_stack.clone().into())
+                        .or_default()
+                        .increment(sierra_gas_tracking);
+                }
                 continue;
             }
         };
@@ -373,7 +382,7 @@ fn build_current_call_stack(
 ) -> VecWithLimitedCapacity<FunctionCall> {
     let mut current_call_stack = call_stack.current_call_stack().clone();
 
-    if current_call_stack.len() == 0
+    if current_call_stack.is_empty()
         || *current_call_stack[current_call_stack.len() - 1].function_name()
             != current_function_name
     {
