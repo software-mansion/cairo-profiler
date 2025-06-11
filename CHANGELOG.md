@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- profiler now accounts for steps when pc is outside the function area
+
 ## [0.9.0] - 2025-05-20
 
 ### Added

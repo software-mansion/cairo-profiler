@@ -12,3 +12,6 @@ profile.pb.gz
 *.pdb
 
 .idea
+
+# MAC OS
+.DS_Store

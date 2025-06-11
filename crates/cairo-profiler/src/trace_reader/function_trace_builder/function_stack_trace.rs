@@ -62,6 +62,10 @@ impl<T> VecWithLimitedCapacity<T> {
     pub fn len(&self) -> usize {
         self.vector.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.vector.is_empty()
+    }
 }
 
 impl<T> From<VecWithLimitedCapacity<T>> for Vec<T> {
