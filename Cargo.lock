@@ -188,7 +188,7 @@ checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 [[package]]
 name = "cairo-annotations"
 version = "0.3.1"
-source = "git+https://github.com/software-mansion/cairo-annotations.git?branch=spr%2Fmain%2F2cf9b205#474b920544fca434a623e19474990d86cd81dcf7"
+source = "git+https://github.com/software-mansion/cairo-annotations.git?branch=spr%2Fmain%2F16b8d496#ece8f464314b19f99e170c4bd4c53831299b2650"
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-to-casm",
