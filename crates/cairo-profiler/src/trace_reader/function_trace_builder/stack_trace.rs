@@ -2,7 +2,7 @@ use crate::trace_reader::function_trace_builder::ChargedResources;
 use crate::trace_reader::sample::{FunctionCall, MeasurementUnit, MeasurementValue, Sample};
 use crate::versioned_constants_reader::{BuiltinGasCosts, VersionedConstants};
 use cairo_annotations::trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
-use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
+use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use std::collections::HashMap;
 
 pub fn trace_to_samples(
@@ -195,23 +195,23 @@ fn calculate_syscall_cairo_steps_measurements(
     measurements
 }
 
-pub fn map_syscall_to_selector(syscall: &StarkNetConcreteLibfunc) -> DeprecatedSyscallSelector {
+pub fn map_syscall_to_selector(syscall: &StarknetConcreteLibfunc) -> DeprecatedSyscallSelector {
     match syscall {
-        StarkNetConcreteLibfunc::CallContract(_) => DeprecatedSyscallSelector::CallContract,
-        StarkNetConcreteLibfunc::Deploy(_) => DeprecatedSyscallSelector::Deploy,
-        StarkNetConcreteLibfunc::EmitEvent(_) => DeprecatedSyscallSelector::EmitEvent,
-        StarkNetConcreteLibfunc::GetBlockHash(_) => DeprecatedSyscallSelector::GetBlockHash,
-        StarkNetConcreteLibfunc::GetExecutionInfo(_) => DeprecatedSyscallSelector::GetExecutionInfo,
-        StarkNetConcreteLibfunc::GetExecutionInfoV2(_) => {
+        StarknetConcreteLibfunc::CallContract(_) => DeprecatedSyscallSelector::CallContract,
+        StarknetConcreteLibfunc::Deploy(_) => DeprecatedSyscallSelector::Deploy,
+        StarknetConcreteLibfunc::EmitEvent(_) => DeprecatedSyscallSelector::EmitEvent,
+        StarknetConcreteLibfunc::GetBlockHash(_) => DeprecatedSyscallSelector::GetBlockHash,
+        StarknetConcreteLibfunc::GetExecutionInfo(_) => DeprecatedSyscallSelector::GetExecutionInfo,
+        StarknetConcreteLibfunc::GetExecutionInfoV2(_) => {
             DeprecatedSyscallSelector::GetExecutionInfo
         }
-        StarkNetConcreteLibfunc::Keccak(_) => DeprecatedSyscallSelector::Keccak,
-        StarkNetConcreteLibfunc::LibraryCall(_) => DeprecatedSyscallSelector::LibraryCall,
-        StarkNetConcreteLibfunc::ReplaceClass(_) => DeprecatedSyscallSelector::ReplaceClass,
-        StarkNetConcreteLibfunc::SendMessageToL1(_) => DeprecatedSyscallSelector::SendMessageToL1,
-        StarkNetConcreteLibfunc::StorageRead(_) => DeprecatedSyscallSelector::StorageRead,
-        StarkNetConcreteLibfunc::StorageWrite(_) => DeprecatedSyscallSelector::StorageWrite,
-        StarkNetConcreteLibfunc::Sha256ProcessBlock(_) => {
+        StarknetConcreteLibfunc::Keccak(_) => DeprecatedSyscallSelector::Keccak,
+        StarknetConcreteLibfunc::LibraryCall(_) => DeprecatedSyscallSelector::LibraryCall,
+        StarknetConcreteLibfunc::ReplaceClass(_) => DeprecatedSyscallSelector::ReplaceClass,
+        StarknetConcreteLibfunc::SendMessageToL1(_) => DeprecatedSyscallSelector::SendMessageToL1,
+        StarknetConcreteLibfunc::StorageRead(_) => DeprecatedSyscallSelector::StorageRead,
+        StarknetConcreteLibfunc::StorageWrite(_) => DeprecatedSyscallSelector::StorageWrite,
+        StarknetConcreteLibfunc::Sha256ProcessBlock(_) => {
             DeprecatedSyscallSelector::Sha256ProcessBlock
         }
         _ => panic!("Missing mapping to a syscall"),
