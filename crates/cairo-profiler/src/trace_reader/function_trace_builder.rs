@@ -13,7 +13,7 @@ use cairo_annotations::trace_data::CasmLevelInfo;
 use cairo_annotations::{MappingResult, map_pcs_to_sierra_statement_ids};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
-use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
+use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_gas::ComputeCostInfoProvider;
@@ -229,21 +229,21 @@ pub fn collect_function_level_profiling_info(
                             .unwrap_or(&0);
                         call_stack.enter_function_call(current_call_stack);
                     }
-                    Ok(CoreConcreteLibfunc::StarkNet(libfunc)) => {
+                    Ok(CoreConcreteLibfunc::Starknet(libfunc)) => {
                         let syscall = match libfunc {
-                            StarkNetConcreteLibfunc::CallContract(_)
-                            | StarkNetConcreteLibfunc::Deploy(_)
-                            | StarkNetConcreteLibfunc::EmitEvent(_)
-                            | StarkNetConcreteLibfunc::GetBlockHash(_)
-                            | StarkNetConcreteLibfunc::GetExecutionInfo(_)
-                            | StarkNetConcreteLibfunc::GetExecutionInfoV2(_)
-                            | StarkNetConcreteLibfunc::Keccak(_)
-                            | StarkNetConcreteLibfunc::LibraryCall(_)
-                            | StarkNetConcreteLibfunc::ReplaceClass(_)
-                            | StarkNetConcreteLibfunc::SendMessageToL1(_)
-                            | StarkNetConcreteLibfunc::StorageRead(_)
-                            | StarkNetConcreteLibfunc::StorageWrite(_)
-                            | StarkNetConcreteLibfunc::Sha256ProcessBlock(_) => libfunc,
+                            StarknetConcreteLibfunc::CallContract(_)
+                            | StarknetConcreteLibfunc::Deploy(_)
+                            | StarknetConcreteLibfunc::EmitEvent(_)
+                            | StarknetConcreteLibfunc::GetBlockHash(_)
+                            | StarknetConcreteLibfunc::GetExecutionInfo(_)
+                            | StarknetConcreteLibfunc::GetExecutionInfoV2(_)
+                            | StarknetConcreteLibfunc::Keccak(_)
+                            | StarknetConcreteLibfunc::LibraryCall(_)
+                            | StarknetConcreteLibfunc::ReplaceClass(_)
+                            | StarknetConcreteLibfunc::SendMessageToL1(_)
+                            | StarknetConcreteLibfunc::StorageRead(_)
+                            | StarknetConcreteLibfunc::StorageWrite(_)
+                            | StarknetConcreteLibfunc::Sha256ProcessBlock(_) => libfunc,
                             _ => {
                                 if in_syscall_idx.is_some() {
                                     in_syscall_idx = None;
