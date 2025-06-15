@@ -10,11 +10,46 @@ use cairo_annotations::annotations::profiler::FunctionName;
 use crate::trace_reader::sample::{FunctionCall, Sample};
 
 use crate::versioned_constants_reader::VersionedConstants;
-use cairo_annotations::trace_data::{CallTraceNode, CallTraceV1, ExecutionResources};
+use cairo_annotations::trace_data::{
+    CallTraceNode, CallTraceV1, ExecutionResources, VmExecutionResources,
+};
 
 pub mod function_name;
 mod function_trace_builder;
 pub mod sample;
+
+pub trait ResourcesOperations {
+    fn add_resources(&mut self, rhs: &Self);
+    fn sub_resources(&mut self, rhs: &Self);
+}
+
+impl ResourcesOperations for ExecutionResources {
+    fn add_resources(&mut self, rhs: &ExecutionResources) {
+        self.vm_resources.add_resources(&rhs.vm_resources);
+    }
+
+    fn sub_resources(&mut self, rhs: &ExecutionResources) {
+        self.vm_resources.sub_resources(&rhs.vm_resources);
+    }
+}
+impl ResourcesOperations for VmExecutionResources {
+    fn add_resources(&mut self, rhs: &VmExecutionResources) {
+        self.n_steps += rhs.n_steps;
+        self.n_memory_holes += rhs.n_memory_holes;
+        for (k, v) in &rhs.builtin_instance_counter {
+            *self.builtin_instance_counter.entry(k.clone()).or_default() += v;
+        }
+    }
+
+    fn sub_resources(&mut self, rhs: &VmExecutionResources) {
+        self.n_steps -= rhs.n_steps;
+        self.n_memory_holes -= rhs.n_memory_holes;
+        for (k, v) in &rhs.builtin_instance_counter {
+            let entry = self.builtin_instance_counter.entry(k.clone()).or_default();
+            *entry = (*entry).saturating_sub(*v);
+        }
+    }
+}
 
 pub fn collect_samples_from_trace(
     trace: &CallTraceV1,
@@ -106,7 +141,7 @@ fn collect_samples<'a>(
 
     for sub_trace_node in &trace.nested_calls {
         if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
-            children_resources += collect_samples(
+            children_resources.add_resources(collect_samples(
                 samples,
                 current_entrypoint_call_stack,
                 sub_trace,
@@ -114,11 +149,12 @@ fn collect_samples<'a>(
                 profiler_config,
                 versioned_constants,
                 sierra_gas_tracking,
-            )?;
+            )?);
         }
     }
 
-    let mut call_resources = &trace.cumulative_resources - &children_resources;
+    let mut call_resources = trace.cumulative_resources.clone();
+    call_resources.sub_resources(&children_resources);
 
     if let Some(entrypoint_steps) = maybe_entrypoint_steps {
         call_resources.vm_resources.n_steps = entrypoint_steps.steps.0;
