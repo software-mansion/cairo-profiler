@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- addresses and selectors are now displayed in fixed hex format (66 chars) instead of decimal format
+
 ### Fixed
 
 - profiler now accounts for steps when pc is outside the function area
