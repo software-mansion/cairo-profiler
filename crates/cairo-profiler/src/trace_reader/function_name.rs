@@ -37,11 +37,11 @@ impl FunctionNameExt for FunctionName {
 
         let contract_address = match address {
             None => String::new(),
-            Some(address) => format!("Address: {address}\n"),
+            Some(address) => format!("Address: {}\n", address.to_fixed_hex_string()),
         };
         let selector = match selector {
             None => String::new(),
-            Some(selector) => format!("Selector: {selector}\n"),
+            Some(selector) => format!("Selector: {}\n", selector.to_fixed_hex_string()),
         };
 
         FunctionName(format!(

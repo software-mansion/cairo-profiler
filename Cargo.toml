@@ -40,6 +40,8 @@ cairo-lang-starknet-classes = "2.11.4"
 cairo-lang-sierra-gas = "2.11.4"
 
 [patch.crates-io]
+# until release of `cairo-annotations` 0.4.0
+cairo-annotations = { git = "https://github.com/software-mansion/cairo-annotations.git", rev = "2e95608" }
 cairo-lang-sierra = { git = "https://github.com/ksew1/cairo.git", branch = "2.11.4-sierra-gas-pub" }
 cairo-lang-sierra-to-casm = { git = "https://github.com/ksew1/cairo.git", branch = "2.11.4-sierra-gas-pub" }
 cairo-lang-starknet-classes = { git = "https://github.com/ksew1/cairo.git", branch = "2.11.4-sierra-gas-pub" }
