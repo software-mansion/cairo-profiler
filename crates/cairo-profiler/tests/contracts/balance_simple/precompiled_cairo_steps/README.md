@@ -7,4 +7,4 @@ Then copy trace + compiled files in here
 
 Generated using:
 - scarb 2.9.2
-- snforge 0.35.1
+- snforge 0.39.0

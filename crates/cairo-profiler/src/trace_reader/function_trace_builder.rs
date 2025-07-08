@@ -1,4 +1,5 @@
 use crate::profiler_config::FunctionLevelConfig;
+use crate::trace_reader::function_name::FunctionNameExt;
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
     CallStack, VecWithLimitedCapacity,
 };
