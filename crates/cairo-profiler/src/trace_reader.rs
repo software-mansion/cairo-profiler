@@ -8,12 +8,15 @@ use crate::trace_reader::function_name::FunctionNameExt;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
 use cairo_annotations::annotations::profiler::FunctionName;
 
-use crate::trace_reader::sample::{FunctionCall, Sample};
+use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall, Sample};
 
+use crate::trace_reader::function_trace_builder::stack_trace::map_syscall_trace_to_sample;
 use crate::versioned_constants_reader::VersionedConstants;
 use cairo_annotations::trace_data::{
-    CallTraceNode, CallTraceV1, ExecutionResources, VmExecutionResources,
+    CallTraceNode, CallTraceV1, DeprecatedSyscallSelector, ExecutionResources, SyscallUsage,
+    VmExecutionResources,
 };
+use indoc::formatdoc;
 
 pub mod function_name;
 mod function_trace_builder;
@@ -131,15 +134,14 @@ fn collect_samples<'a>(
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
 ) -> Result<&'a ExecutionResources> {
-    current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(
-        FunctionName::from_entry_point_params(
-            trace.entry_point.contract_name.clone(),
-            trace.entry_point.function_name.clone(),
-            trace.entry_point.contract_address.clone(),
-            trace.entry_point.entry_point_selector.clone(),
-            profiler_config.show_details,
-        ),
-    ));
+    let function_name = FunctionName::from_entry_point_params(
+        trace.entry_point.contract_name.clone(),
+        trace.entry_point.function_name.clone(),
+        trace.entry_point.contract_address.clone(),
+        trace.entry_point.entry_point_selector.clone(),
+        profiler_config.show_details,
+    );
+    current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(function_name.clone()));
 
     let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
         let absolute_source_sierra_path = cairo_execution_info
@@ -209,6 +211,18 @@ fn collect_samples<'a>(
         call_resources.gas_consumed = Some(entrypoint_steps.sierra_gas_consumed.0.try_into()?);
     }
 
+    // Only applies to traces without explicit Cairo execution info
+    if trace.cairo_execution_info.is_none() {
+        try_add_syscalls(
+            trace,
+            samples,
+            current_entrypoint_call_stack,
+            &function_name,
+            versioned_constants,
+            sierra_gas_tracking,
+        );
+    }
+
     samples.push(Sample::from(
         current_entrypoint_call_stack.clone(),
         &call_resources,
@@ -218,4 +232,65 @@ fn collect_samples<'a>(
     current_entrypoint_call_stack.pop();
 
     Ok(&trace.cumulative_resources)
+}
+
+fn try_add_syscalls(
+    trace: &CallTraceV1,
+    samples: &mut Vec<Sample>,
+    call_stack: &[FunctionCall],
+    function_name: &FunctionName,
+    versioned_constants: &VersionedConstants,
+    sierra_gas_tracking: bool,
+) {
+    match &trace.cumulative_resources.syscall_counter {
+        Some(syscall_counter) => {
+            collect_syscall_samples(
+                syscall_counter,
+                samples,
+                call_stack,
+                versioned_constants,
+                sierra_gas_tracking,
+            );
+        }
+        None => {
+            emit_missing_syscall_warning(function_name);
+        }
+    }
+}
+
+fn collect_syscall_samples(
+    syscall_counter: &HashMap<DeprecatedSyscallSelector, SyscallUsage>,
+    samples: &mut Vec<Sample>,
+    base_call_stack: &[FunctionCall],
+    versioned_constants: &VersionedConstants,
+    sierra_gas_tracking: bool,
+) {
+    for (selector, usage) in syscall_counter {
+        let mut call_stack = base_call_stack.to_vec();
+        call_stack.push(FunctionCall::InternalFunctionCall(
+            InternalFunctionCall::Syscall(FunctionName(selector.to_string())),
+        ));
+
+        let invocations = usage
+            .call_count
+            .try_into()
+            .expect("syscall call count should fit in i64");
+
+        let sample = map_syscall_trace_to_sample(
+            call_stack,
+            invocations,
+            versioned_constants,
+            sierra_gas_tracking,
+        );
+        samples.push(sample);
+    }
+}
+
+fn emit_missing_syscall_warning(function_name: &FunctionName) {
+    let message = formatdoc! {
+        "The trace for {function_name} does not contain syscall counter information. \
+         This may lead to inaccurate syscall measurements. \
+         Consider using `snforge` >= `0.46.0`."
+    };
+    eprintln!("[\x1b[0;33mWARNING\x1b[0m] {message}");
 }
