@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - new flag `--show-libfuncs`, allowing to show all libfuncs usage per function (along with its resource consumption)
 - new sample "casm size" to show casm sizes of functions
 - new sample "syscall usage" to show functions' syscall usage count
+- upgraded cost map (versioned constants) to starknet 0.13.5
 
 ## [0.8.2] - 2025-05-06
 

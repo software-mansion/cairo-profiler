@@ -4,6 +4,7 @@ use crate::versioned_constants_reader::{BuiltinGasCosts, VersionedConstants};
 use cairo_annotations::trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use std::collections::HashMap;
+use crate::versioned_constants_reader::SyscallVariant::{Deploy, Regular};
 
 pub fn trace_to_samples(
     functions_stack_traces: HashMap<Vec<FunctionCall>, ChargedResources>,
@@ -78,15 +79,20 @@ fn map_syscall_trace_to_sample(
                 .expect("Failed to map function to SyscallSelector"),
         )
         .unwrap();
+    
+    let adjusted_resources = match syscall_resources {
+        Regular(resources) => resources,
+        Deploy(resources) => &resources.constant,
+    };
 
     let mut measurements = if sierra_gas_tracking {
         calculate_syscall_sierra_gas_measurements(
-            syscall_resources,
+            adjusted_resources,
             invocations,
             versioned_constants,
         )
     } else {
-        calculate_syscall_cairo_steps_measurements(syscall_resources, invocations)
+        calculate_syscall_cairo_steps_measurements(adjusted_resources, invocations)
     };
 
     measurements.insert(
