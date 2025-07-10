@@ -64,7 +64,7 @@ fn get_profile_data(
         // (ie there is other, non-filtered function above it in the stack).
         // In that case we want to ignore it.
         let mut consumed: bool = false;
-        // in order to prevent loosing data, we need some way to know if we're at the end of the sample
+        // in order to prevent losing data, we need some way to know if we're at the end of the sample
         // e.g. it may happen that someone tries to hide with a very broad regex (extreme example being '.*'),
         // which would mean we may silently omit looooooots of sample values
         let sample_length = sample.location_id.len() - 1;
