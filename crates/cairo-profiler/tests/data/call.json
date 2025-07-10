@@ -20,18 +20,6 @@
         "range_check_builtin": 715,
         "ec_op_builtin": 11
       }
-    },
-    "syscall_counter": {
-      "Keccak": 11,
-      "Deploy": 14,
-      "LibraryCall": 1,
-      "StorageRead": 11,
-      "EmitEvent": 11,
-      "GetExecutionInfo": 11,
-      "StorageWrite": 11,
-      "SendMessageToL1": 11,
-      "GetBlockHash": 11,
-      "CallContract": 8
     }
   },
   "used_l1_resources": {
@@ -65,17 +53,6 @@
               "range_check_builtin": 119,
               "ec_op_builtin": 2
             }
-          },
-          "syscall_counter": {
-            "Keccak": 2,
-            "EmitEvent": 2,
-            "CallContract": 1,
-            "StorageWrite": 2,
-            "GetBlockHash": 2,
-            "Deploy": 2,
-            "GetExecutionInfo": 2,
-            "SendMessageToL1": 2,
-            "StorageRead": 2
           }
         },
         "used_l1_resources": {
@@ -108,16 +85,6 @@
                     "range_check_builtin": 58,
                     "ec_op_builtin": 1
                   }
-                },
-                "syscall_counter": {
-                  "SendMessageToL1": 1,
-                  "EmitEvent": 1,
-                  "Keccak": 1,
-                  "StorageRead": 1,
-                  "Deploy": 1,
-                  "GetBlockHash": 1,
-                  "GetExecutionInfo": 1,
-                  "StorageWrite": 1
                 }
               },
               "used_l1_resources": {
@@ -7268,17 +7235,6 @@
               "range_check_builtin": 119,
               "ec_op_builtin": 2
             }
-          },
-          "syscall_counter": {
-            "Keccak": 2,
-            "SendMessageToL1": 2,
-            "EmitEvent": 2,
-            "CallContract": 1,
-            "Deploy": 2,
-            "StorageRead": 2,
-            "StorageWrite": 2,
-            "GetBlockHash": 2,
-            "GetExecutionInfo": 2
           }
         },
         "used_l1_resources": {
@@ -7311,16 +7267,6 @@
                     "range_check_builtin": 58,
                     "ec_op_builtin": 1
                   }
-                },
-                "syscall_counter": {
-                  "StorageWrite": 1,
-                  "GetExecutionInfo": 1,
-                  "SendMessageToL1": 1,
-                  "Keccak": 1,
-                  "StorageRead": 1,
-                  "Deploy": 1,
-                  "GetBlockHash": 1,
-                  "EmitEvent": 1
                 }
               },
               "used_l1_resources": {
@@ -14475,17 +14421,6 @@
               "range_check_builtin": 119,
               "ec_op_builtin": 2
             }
-          },
-          "syscall_counter": {
-            "StorageWrite": 2,
-            "SendMessageToL1": 2,
-            "GetExecutionInfo": 2,
-            "Deploy": 2,
-            "StorageRead": 2,
-            "GetBlockHash": 2,
-            "LibraryCall": 1,
-            "Keccak": 2,
-            "EmitEvent": 2
           }
         },
         "used_l1_resources": {
@@ -14518,16 +14453,6 @@
                     "range_check_builtin": 58,
                     "ec_op_builtin": 1
                   }
-                },
-                "syscall_counter": {
-                  "SendMessageToL1": 1,
-                  "StorageRead": 1,
-                  "GetExecutionInfo": 1,
-                  "StorageWrite": 1,
-                  "EmitEvent": 1,
-                  "GetBlockHash": 1,
-                  "Keccak": 1,
-                  "Deploy": 1
                 }
               },
               "used_l1_resources": {
@@ -21682,17 +21607,6 @@
               "range_check_builtin": 180,
               "ec_op_builtin": 3
             }
-          },
-          "syscall_counter": {
-            "GetBlockHash": 3,
-            "SendMessageToL1": 3,
-            "CallContract": 2,
-            "Deploy": 3,
-            "EmitEvent": 3,
-            "StorageWrite": 3,
-            "GetExecutionInfo": 3,
-            "StorageRead": 3,
-            "Keccak": 3
           }
         },
         "used_l1_resources": {
@@ -21724,16 +21638,6 @@
                     "range_check_builtin": 58,
                     "ec_op_builtin": 1
                   }
-                },
-                "syscall_counter": {
-                  "Keccak": 1,
-                  "StorageRead": 1,
-                  "Deploy": 1,
-                  "StorageWrite": 1,
-                  "EmitEvent": 1,
-                  "GetBlockHash": 1,
-                  "SendMessageToL1": 1,
-                  "GetExecutionInfo": 1
                 }
               },
               "used_l1_resources": {
@@ -25198,16 +25102,6 @@
                     "range_check_builtin": 58,
                     "ec_op_builtin": 1
                   }
-                },
-                "syscall_counter": {
-                  "GetBlockHash": 1,
-                  "StorageRead": 1,
-                  "StorageWrite": 1,
-                  "EmitEvent": 1,
-                  "GetExecutionInfo": 1,
-                  "SendMessageToL1": 1,
-                  "Keccak": 1,
-                  "Deploy": 1
                 }
               },
               "used_l1_resources": {
@@ -32462,16 +32356,6 @@
               "range_check_builtin": 58,
               "ec_op_builtin": 1
             }
-          },
-          "syscall_counter": {
-            "StorageRead": 1,
-            "Keccak": 1,
-            "SendMessageToL1": 1,
-            "StorageWrite": 1,
-            "Deploy": 1,
-            "GetExecutionInfo": 1,
-            "EmitEvent": 1,
-            "GetBlockHash": 1
           }
         },
         "used_l1_resources": {
