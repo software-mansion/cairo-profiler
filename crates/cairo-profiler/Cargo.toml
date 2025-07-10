@@ -20,6 +20,7 @@ serde_json.workspace = true
 camino.workspace = true
 anyhow.workspace = true
 itertools.workspace = true
+indoc.workspace = true
 tempfile.workspace = true
 cairo-annotations.workspace = true
 prettytable-rs.workspace = true
@@ -36,7 +37,6 @@ assert_fs.workspace = true
 project-root.workspace = true
 snapbox.workspace = true
 test-case.workspace = true
-indoc.workspace = true
 
 [build-dependencies]
 prost-build.workspace = true

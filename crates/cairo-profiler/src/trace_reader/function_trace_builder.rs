@@ -26,7 +26,7 @@ use std::ops::{AddAssign, SubAssign};
 
 mod function_stack_trace;
 mod inlining;
-mod stack_trace;
+pub mod stack_trace;
 
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,

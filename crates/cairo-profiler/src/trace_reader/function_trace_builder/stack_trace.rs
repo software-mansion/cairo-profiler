@@ -61,7 +61,7 @@ fn map_function_trace_to_sample(
     }
 }
 
-fn map_syscall_trace_to_sample(
+pub fn map_syscall_trace_to_sample(
     call_stack: Vec<FunctionCall>,
     invocations: i64,
     versioned_constants: &VersionedConstants,
