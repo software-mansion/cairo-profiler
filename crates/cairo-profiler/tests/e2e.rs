@@ -737,15 +737,16 @@ fn view_casm_sizes_with_libfuncs_and_inlines() {
         ));
 }
 
-#[test]
-fn view_syscall_counts() {
+#[test_case("cairo_steps", "trace_balance_simple.json"; "cairo_steps")]
+#[test_case("sierra_gas", "trace_balance_simple.json"; "sierra_gas")]
+fn view_syscall_counts(resource: &str, trace_name: &str) {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
-            project_root.join(
-                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_sierra_gas/",
-            ),
+            project_root.join(format!(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_{resource}/"
+            )),
             &["*.json"],
         )
         .unwrap();
@@ -753,7 +754,7 @@ fn view_syscall_counts() {
     SnapboxCommand::new(cargo_bin!("cairo-profiler"))
         .current_dir(&temp_dir)
         .arg("build-profile")
-        .arg("trace_balance_simple.json")
+        .arg(trace_name)
         .assert()
         .success();
 
@@ -777,6 +778,55 @@ fn view_syscall_counts() {
             Showing nodes accounting for 2 syscall usage, 100.00% of 2 syscall usage total
             Showing top 2 nodes out of 15
             
+                        flat |  flat% |    sum% |             cum |   cum% |  
+            -----------------+--------+---------+-----------------+--------+----------------
+             1 syscall usage | 50.00% |  50.00% | 1 syscall usage | 50.00% | "CallContract" 
+             1 syscall usage | 50.00% | 100.00% | 1 syscall usage | 50.00% | "StorageRead" 
+            "#
+        ));
+}
+
+#[test_case("cairo_steps", "trace_balance_simple_fork.json"; "cairo_steps_fork")]
+#[test_case("sierra_gas", "trace_balance_simple_fork.json"; "sierra_gas_fork")]
+fn view_syscall_counts_fork(resource: &str, trace_name: &str) {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join(format!(
+                "crates/cairo-profiler/tests/contracts/balance_simple/precompiled_{resource}/"
+            )),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg(trace_name)
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2")
+        .arg("--sample")
+        .arg("syscall usage")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+
+            Showing nodes accounting for 2 syscall usage, 100.00% of 2 syscall usage total
+            Showing top 2 nodes out of 8
+
                         flat |  flat% |    sum% |             cum |   cum% |  
             -----------------+--------+---------+-----------------+--------+----------------
              1 syscall usage | 50.00% |  50.00% | 1 syscall usage | 50.00% | "CallContract" 
