@@ -13,6 +13,7 @@ mod profile_viewer;
 mod profiler_config;
 mod sierra_loader;
 mod trace_reader;
+mod ui;
 mod versioned_constants_reader;
 
 fn main() -> Result<()> {

@@ -6,6 +6,7 @@ use crate::profiler_config::{FunctionLevelConfig, ProfilerConfig};
 use crate::sierra_loader::CompiledArtifactsCache;
 use crate::trace_reader::function_name::FunctionNameExt;
 use crate::trace_reader::function_trace_builder::collect_function_level_profiling_info;
+use crate::ui;
 use cairo_annotations::annotations::profiler::FunctionName;
 
 use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall, Sample};
@@ -292,5 +293,5 @@ fn emit_missing_syscall_warning(function_name: &FunctionName) {
          This may lead to inaccurate syscall measurements. \
          Consider using `snforge` >= `0.46.0`."
     };
-    eprintln!("[\x1b[0;33mWARNING\x1b[0m] {message}");
+    ui::warn(message);
 }
