@@ -18,3 +18,7 @@ profile.pb.gz
 
 # spr
 .spr.yml
+
+# starknet-foundry
+.snfoundry_cache
+snfoundry_trace
