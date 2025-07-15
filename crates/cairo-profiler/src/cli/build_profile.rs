@@ -3,6 +3,7 @@ use crate::profile_viewer::print_profile;
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
+use crate::ui;
 use crate::versioned_constants_reader::read_and_parse_versioned_constants_file;
 use anyhow::{Context, Result};
 use cairo_annotations::trace_data::VersionedCallTrace;
@@ -89,10 +90,10 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
     if profiler_config.show_inlined_functions
         && !compiled_artifacts_cache.statements_functions_maps_are_present()
     {
-        eprintln!(
-            "[\x1b[0;33mWARNING\x1b[0m] Mappings used for generating information about \
+        ui::warn(
+            "Mappings used for generating information about \
                 inlined functions are missing. Make sure to add this to your Scarb.toml:\n\
-                [profile.dev.cairo]\nunstable-add-statements-functions-debug-info = true"
+                [profile.dev.cairo]\nunstable-add-statements-functions-debug-info = true",
         );
     }
 

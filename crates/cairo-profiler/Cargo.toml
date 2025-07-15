@@ -10,10 +10,8 @@ include = ["resources/*"]
 
 [dependencies]
 prost.workspace = true
-prost-types.workspace = true
 bytes.workspace = true
 flate2.workspace = true
-hex.workspace = true
 clap.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -21,11 +19,10 @@ camino.workspace = true
 anyhow.workspace = true
 itertools.workspace = true
 indoc.workspace = true
-tempfile.workspace = true
 cairo-annotations.workspace = true
 prettytable-rs.workspace = true
 regex.workspace = true
-strum_macros.workspace = true
+console.workspace = true
 
 cairo-lang-sierra.workspace = true
 cairo-lang-sierra-to-casm.workspace = true

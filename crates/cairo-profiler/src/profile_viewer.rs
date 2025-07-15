@@ -1,4 +1,5 @@
 use crate::profile_builder::pprof::{Function, Location, Profile};
+use crate::ui;
 use anyhow::{Context, Result};
 use camino::Utf8PathBuf;
 use flate2::read::GzDecoder;
@@ -173,12 +174,14 @@ pub fn print_profile(
     );
 
     if let Some(hide) = hide {
-        println!("\nActive filter:\nhide={hide}");
+        ui::msg(format!("\nActive filter:\nhide={hide}"));
     }
-    println!(
+    ui::msg(format!(
         "\nShowing nodes accounting for {summary_resource_cost} {sample}, {cost_percentage} of {total_resource_count} {sample} total"
-    );
-    println!("Showing top {effective_limit} nodes out of {profile_length}\n");
+    ));
+    ui::msg(format!(
+        "Showing top {effective_limit} nodes out of {profile_length}\n"
+    ));
 
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
