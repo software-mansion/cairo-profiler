@@ -1,6 +1,7 @@
 use crate::trace_reader::function_trace_builder::ChargedResources;
 use crate::trace_reader::sample::{FunctionCall, MeasurementUnit, MeasurementValue, Sample};
 use crate::versioned_constants_reader::{BuiltinGasCosts, VersionedConstants};
+use crate::versioned_constants_reader::SyscallVariant::{Scaled, Unscaled};
 use cairo_annotations::trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use std::collections::HashMap;
@@ -79,14 +80,19 @@ pub fn map_syscall_trace_to_sample(
         )
         .unwrap();
 
+    let adjusted_resources = match syscall_resources {
+        Unscaled(resources) => resources,
+        Scaled(resources) => &resources.constant,
+    };
+
     let mut measurements = if sierra_gas_tracking {
         calculate_syscall_sierra_gas_measurements(
-            syscall_resources,
+            adjusted_resources,
             invocations,
             versioned_constants,
         )
     } else {
-        calculate_syscall_cairo_steps_measurements(syscall_resources, invocations)
+        calculate_syscall_cairo_steps_measurements(adjusted_resources, invocations)
     };
 
     measurements.insert(
@@ -213,6 +219,9 @@ pub fn map_syscall_to_selector(syscall: &StarknetConcreteLibfunc) -> DeprecatedS
         StarknetConcreteLibfunc::StorageWrite(_) => DeprecatedSyscallSelector::StorageWrite,
         StarknetConcreteLibfunc::Sha256ProcessBlock(_) => {
             DeprecatedSyscallSelector::Sha256ProcessBlock
+        },
+        StarknetConcreteLibfunc::MetaTxV0(_) => {
+            DeprecatedSyscallSelector::MetaTxV0
         }
         _ => panic!("Missing mapping to a syscall"),
     }

@@ -834,3 +834,63 @@ fn view_syscall_counts_fork(resource: &str, trace_name: &str) {
             "#
         ));
 }
+
+#[test]
+fn view_deploy_syscall() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/scaled_syscall/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("scaled_syscall_deploy_syscall_cost.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+
+            Showing nodes accounting for 260488 sierra gas, 100.00% of 260488 sierra gas total
+            Showing top 16 nodes out of 16
+
+                          flat |  flat% |    sum% |               cum |    cum% |  
+            -------------------+--------+---------+-------------------+---------+----------------------------------------------------------------------------
+             121448 sierra gas | 46.62% |  46.62% | 121448 sierra gas |  46.62% | "Deploy" 
+              55340 sierra gas | 21.24% |  67.87% |  55340 sierra gas |  21.24% | "core::keccak::finalize_padding" 
+              20000 sierra gas |  7.68% |  75.55% |  20000 sierra gas |   7.68% | "Keccak" 
+              18560 sierra gas |  7.13% |  82.67% |  18560 sierra gas |   7.13% | "core::keccak::keccak_u256s_le_inputs[637-804]" 
+               7160 sierra gas |  2.75% |  85.42% |  62500 sierra gas |  23.99% | "core::keccak::add_padding" 
+               7100 sierra gas |  2.73% |  88.15% | 108160 sierra gas |  41.52% | "scaled_syscall::GasConstructorChecker::constructor" 
+               6500 sierra gas |  2.50% |  90.64% | 148328 sierra gas |  56.94% | "scaled_syscall::deploy_syscall_cost" 
+               6080 sierra gas |  2.33% |  92.97% |   6080 sierra gas |   2.33% | "snforge_std::_cheatcode::execute_cheatcode::" 
+               3800 sierra gas |  1.46% |  94.43% |   3800 sierra gas |   1.46% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+               3500 sierra gas |  1.34% |  95.78% |   7300 sierra gas |   2.80% | "core::result::ResultSerde::::deserialize" 
+               3500 sierra gas |  1.34% |  97.12% | 111660 sierra gas |  42.87% | "scaled_syscall::GasConstructorChecker::__wrapper__constructor" 
+               3400 sierra gas |  1.31% |  98.43% |  15140 sierra gas |   5.81% | "snforge_std::cheatcodes::contract_class::declare" 
+               2200 sierra gas |  0.84% |  99.27% |   5240 sierra gas |   2.01% | "snforge_std::_cheatcode::execute_cheatcode_and_deserialize::" 
+               1400 sierra gas |  0.54% |  99.81% |   1400 sierra gas |   0.54% | "core::array::serialize_array_helper::" 
+                400 sierra gas |  0.15% |  99.96% | 260488 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                100 sierra gas |  0.04% | 100.00% | 111760 sierra gas |  42.90% | "Contract: GasConstructorChecker\nFunction: constructor\n" 
+            "#
+        ));
+}
