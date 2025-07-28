@@ -159,7 +159,7 @@ fn collect_samples<'a>(
             compiled_artifacts_cache.get_compiled_artifacts_for_path(&absolute_source_sierra_path);
 
         let function_level_profiling_info = collect_function_level_profiling_info(
-            compiled_artifacts.sierra_program.get_program(),
+            &compiled_artifacts.sierra_program,
             &compiled_artifacts.casm_debug_info,
             &cairo_execution_info.casm_level_info,
             compiled_artifacts.statements_functions_map.as_ref(),
