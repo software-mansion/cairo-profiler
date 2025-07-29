@@ -19,24 +19,9 @@ use std::fs;
 pub struct CompiledArtifactsCache(HashMap<Utf8PathBuf, CompiledArtifacts>);
 
 pub struct CompiledArtifacts {
-    pub sierra_program: SierraProgram,
+    pub sierra_program: Program,
     pub casm_debug_info: CairoProgramDebugInfo,
     pub statements_functions_map: Option<ProfilerAnnotationsV1>,
-}
-
-pub enum SierraProgram {
-    VersionedProgram(Program),
-    ContractClass(Program),
-}
-
-impl SierraProgram {
-    pub fn get_program(&self) -> &Program {
-        match self {
-            SierraProgram::VersionedProgram(program) | SierraProgram::ContractClass(program) => {
-                program
-            }
-        }
-    }
 }
 
 impl CompiledArtifactsCache {
@@ -59,7 +44,36 @@ impl CompiledArtifactsCache {
     }
 }
 
-pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
+pub fn collect_and_compile_all_sierra_programs(
+    trace: &CallTraceV1,
+) -> Result<CompiledArtifactsCache> {
+    let mut compiled_artifacts_cache = CompiledArtifactsCache::new();
+    collect_compiled_artifacts(trace, &mut compiled_artifacts_cache)?;
+
+    Ok(compiled_artifacts_cache)
+}
+
+fn collect_compiled_artifacts(
+    trace: &CallTraceV1,
+    compiled_artifacts_cache: &mut CompiledArtifactsCache,
+) -> Result<()> {
+    if let Some(cairo_execution_info) = &trace.cairo_execution_info {
+        compile_sierra_and_add_compiled_artifacts_to_cache(
+            &cairo_execution_info.source_sierra_path,
+            compiled_artifacts_cache,
+        )?;
+    }
+
+    for sub_trace_node in &trace.nested_calls {
+        if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
+            collect_compiled_artifacts(sub_trace, compiled_artifacts_cache)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn compile_sierra_and_add_compiled_artifacts_to_cache(
     sierra_path: &Utf8Path,
     compiled_artifacts_cache: &mut CompiledArtifactsCache,
 ) -> Result<()> {
@@ -98,7 +112,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
             compiled_artifacts_cache.0.insert(
                 absolute_sierra_path,
                 CompiledArtifacts {
-                    sierra_program: SierraProgram::ContractClass(program),
+                    sierra_program: program,
                     casm_debug_info,
                     statements_functions_map,
                 },
@@ -128,7 +142,7 @@ pub fn compile_sierra_and_add_compiled_artifacts_to_cache(
             compiled_artifacts_cache.0.insert(
                 absolute_sierra_path,
                 CompiledArtifacts {
-                    sierra_program: SierraProgram::VersionedProgram(program),
+                    sierra_program: program,
                     casm_debug_info: casm.debug_info,
                     statements_functions_map,
                 },
@@ -153,33 +167,4 @@ fn maybe_get_statements_functions_map(
         VersionedProfilerAnnotations::try_from_debug_info(&maybe_sierra_program_debug_info?)
             .ok()?;
     Some(annotations)
-}
-
-pub fn collect_and_compile_all_sierra_programs(
-    trace: &CallTraceV1,
-) -> Result<CompiledArtifactsCache> {
-    let mut compiled_artifacts_cache = CompiledArtifactsCache::new();
-    collect_compiled_artifacts(trace, &mut compiled_artifacts_cache)?;
-
-    Ok(compiled_artifacts_cache)
-}
-
-fn collect_compiled_artifacts(
-    trace: &CallTraceV1,
-    compiled_artifacts_cache: &mut CompiledArtifactsCache,
-) -> Result<()> {
-    if let Some(cairo_execution_info) = &trace.cairo_execution_info {
-        compile_sierra_and_add_compiled_artifacts_to_cache(
-            &cairo_execution_info.source_sierra_path,
-            compiled_artifacts_cache,
-        )?;
-    }
-
-    for sub_trace_node in &trace.nested_calls {
-        if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
-            collect_compiled_artifacts(sub_trace, compiled_artifacts_cache)?;
-        }
-    }
-
-    Ok(())
 }
