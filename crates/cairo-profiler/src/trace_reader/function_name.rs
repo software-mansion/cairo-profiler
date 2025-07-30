@@ -8,7 +8,7 @@ static RE_LOOP_FUNC: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\[expr\d*\]").expect("Failed to create regex for normalizing loop function names")
 });
 static RE_MONOMORPHIZATION: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"<.*>")
+    Regex::new(r"::<.*>")
         .expect("Failed to create regex for normalizing monomorphized generic function names")
 });
 
