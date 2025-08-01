@@ -2,7 +2,7 @@
 version = 1
 
 [[package]]
-name = "scaled_syscall"
+name = "mega_package"
 version = "0.1.0"
 dependencies = [
  "snforge_std",
