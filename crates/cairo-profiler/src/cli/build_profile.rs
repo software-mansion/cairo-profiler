@@ -84,6 +84,12 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
     let VersionedCallTrace::V1(serialized_trace) =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
+    if serialized_trace.entry_point.calldata_len.is_none() {
+        ui::warn(
+            "Missing calldata_factors for scaled syscalls - resource estimations may not be accurate. Consider using snforge 0.48+ for trace generation.",
+        );
+    }
+
     let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(&serialized_trace)?;
     let profiler_config = ProfilerConfig::from(args);
 

@@ -27,18 +27,16 @@ prost-build = { version = "0.14" }
 test-case = "3.3.1"
 itertools = "0.14.0"
 indoc = "2"
-cairo-annotations = "0.4.0"
+cairo-annotations = { path = "/Users/szymczyk/git-repos/cairo-annotations/crates/cairo-annotations" }
 prettytable-rs = "0.10.0"
 regex = "1.11.1"
 console = "0.16.0"
+indexmap = "2.10"
 
-cairo-lang-sierra = "2.11.4"
-cairo-lang-sierra-to-casm = "2.11.4"
-cairo-lang-starknet-classes = "2.11.4"
-cairo-lang-sierra-gas = "2.11.4"
-
-[patch.crates-io]
-cairo-lang-sierra = { git = "https://github.com/ksew1/cairo.git", branch = "2.11.4-sierra-gas-pub" }
-cairo-lang-sierra-to-casm = { git = "https://github.com/ksew1/cairo.git", branch = "2.11.4-sierra-gas-pub" }
-cairo-lang-starknet-classes = { git = "https://github.com/ksew1/cairo.git", branch = "2.11.4-sierra-gas-pub" }
-cairo-lang-sierra-gas = { git = "https://github.com/ksew1/cairo.git", branch = "2.11.4-sierra-gas-pub" }
+cairo-lang-sierra = "2.12.0-rc.0"
+cairo-lang-sierra-to-casm = "2.12.0-rc.0"
+cairo-lang-starknet-classes = "2.12.0-rc.0"
+cairo-lang-sierra-gas = "2.12.0-rc.0"
+cairo-lang-sierra-type-size = "2.12.0-rc.0"
+cairo-lang-sierra-ap-change = "2.12.0-rc.0"
+cairo-lang-utils = "2.12.0-rc.0"

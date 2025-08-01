@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - profiler now correctly removes `::` separators from function names which were monomorphised with different types
+- calldata factor for deploy syscall is now correctly factored in
+
+### Changed
+- upgraded cost map (versioned constants) to starknet 0.14.1
+- contract entrypoints are now shown in the tree as called from functions
 
 ## [0.10.0] - 2025-07-18
 

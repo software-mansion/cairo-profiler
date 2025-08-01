@@ -1,5 +1,6 @@
 use crate::profiler_config::FunctionLevelConfig;
 use crate::trace_reader::function_name::FunctionNameExt;
+use crate::trace_reader::function_trace_builder::cost::{CostEntry, ProfilerInvocationInfo};
 use crate::trace_reader::function_trace_builder::function_stack_trace::{
     CallStack, VecWithLimitedCapacity,
 };
@@ -17,13 +18,18 @@ use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
-use cairo_lang_sierra_gas::ComputeCostInfoProvider;
-use cairo_lang_sierra_gas::core_libfunc_cost_base::core_libfunc_cost;
-use cairo_lang_sierra_gas::objects::{BranchCost, ConstCost, PreCost};
+use cairo_lang_sierra_gas::compute_precost_info;
+use cairo_lang_sierra_gas::core_libfunc_cost::core_libfunc_cost;
+use cairo_lang_sierra_to_casm::circuit::CircuitsInfo;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
+use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metadata};
+use cairo_lang_sierra_type_size::get_type_size_map;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::ops::{AddAssign, SubAssign};
 
+mod cost;
 mod function_stack_trace;
 mod inlining;
 pub mod stack_trace;
@@ -31,6 +37,7 @@ pub mod stack_trace;
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,
     pub header_resources: ChargedResources,
+    pub nested_call_triggers: Vec<Vec<FunctionCall>>,
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug)]
@@ -83,14 +90,6 @@ impl ChargedResources {
             self.steps += 1;
         }
     }
-
-    pub fn decrement(&mut self, sierra_gas_tracking: bool) {
-        if sierra_gas_tracking {
-            self.sierra_gas_consumed -= SierraGasConsumed(100);
-        } else {
-            self.steps -= 1;
-        }
-    }
 }
 
 impl AddAssign for ChargedResources {
@@ -101,7 +100,7 @@ impl AddAssign for ChargedResources {
 }
 
 /// Collects profiling info of the current run using the trace.
-#[expect(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines, clippy::too_many_arguments)]
 pub fn collect_function_level_profiling_info(
     program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
@@ -110,9 +109,22 @@ pub fn collect_function_level_profiling_info(
     function_level_config: &FunctionLevelConfig,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
+    entrypoint_calldata_lengths: Vec<usize>,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
-    let cost_info_provider = ComputeCostInfoProvider::new(program).unwrap();
+    let precost_info = compute_precost_info(program).expect("Failed to compute pre-cost info");
+
+    let circuits_info = CircuitsInfo::new(
+        sierra_program_registry,
+        program.type_declarations.iter().map(|td| &td.id),
+    )
+    .expect("Failed to compute circuits info");
+    let type_sizes =
+        get_type_size_map(program, sierra_program_registry).expect("Failed to get type-size map");
+
+    let metadata_config = MetadataComputationConfig::default();
+    let metadata =
+        calc_metadata(program, metadata_config.clone()).expect("Failed to compute metadata");
 
     let mut call_stack = CallStack::new(function_level_config.max_function_stack_trace_depth);
 
@@ -122,7 +134,7 @@ pub fn collect_function_level_profiling_info(
 
     // The value is the number of invocations of the syscall in the trace.
     // The key is a syscall stack trace.
-    let mut syscall_stack_traces: HashMap<Vec<FunctionCall>, i64> = HashMap::new();
+    let mut syscall_stack_traces: IndexMap<Vec<FunctionCall>, i64> = IndexMap::new();
 
     // Header charged resources are counted separately and then displayed as charged resources
     // of the entrypoint in the profile tree. It is because technically they don't belong
@@ -136,15 +148,9 @@ pub fn collect_function_level_profiling_info(
     // similarly to syscalls, used to track entry to a libfunc (based on steps costs)
     // default value is 1, because this is a minimal trace count (ie one trace is one step)
     let mut libfunc_appearance_tracker = 1;
-
-    let builtins_with_cost = [
-        CostTokenType::Bitwise,
-        CostTokenType::Pedersen,
-        CostTokenType::Poseidon,
-        CostTokenType::EcOp,
-        CostTokenType::AddMod,
-        CostTokenType::MulMod,
-    ];
+    // In order to map external calls properly, we need to obtain a vector of calls per each nested_call
+    // this calls can be either one of Deploy, CallContract or LibraryCall syscalls
+    let mut nested_call_triggers: Vec<Vec<FunctionCall>> = Vec::new();
 
     let libfunc_map: HashMap<u64, String> = program
         .libfunc_declarations
@@ -208,13 +214,15 @@ pub fn collect_function_level_profiling_info(
             statements_functions_map,
         );
 
-        functions_stack_traces
-            .entry(current_call_stack.clone().into())
-            .or_default()
-            .increment(sierra_gas_tracking);
-
         let Some(gen_statement) = program.statements.get(sierra_statement_idx.0) else {
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
+        };
+
+        let profiler_info_provider = ProfilerInvocationInfo {
+            type_sizes: &type_sizes,
+            circuits_info: &circuits_info,
+            metadata: &metadata,
+            idx: sierra_statement_idx,
         };
 
         match gen_statement {
@@ -223,6 +231,11 @@ pub fn collect_function_level_profiling_info(
 
                 match libfunc {
                     Ok(CoreConcreteLibfunc::FunctionCall(_)) => {
+                        increment_resource(
+                            &mut functions_stack_traces,
+                            &current_call_stack,
+                            sierra_gas_tracking,
+                        );
                         *function_casm_sizes
                             .entry(current_call_stack.clone().into())
                             .or_default() += casm_sizes
@@ -231,6 +244,11 @@ pub fn collect_function_level_profiling_info(
                         call_stack.enter_function_call(current_call_stack);
                     }
                     Ok(CoreConcreteLibfunc::Starknet(libfunc)) => {
+                        increment_resource(
+                            &mut functions_stack_traces,
+                            &current_call_stack,
+                            sierra_gas_tracking,
+                        );
                         let syscall = match libfunc {
                             StarknetConcreteLibfunc::CallContract(_)
                             | StarknetConcreteLibfunc::Deploy(_)
@@ -244,7 +262,8 @@ pub fn collect_function_level_profiling_info(
                             | StarknetConcreteLibfunc::SendMessageToL1(_)
                             | StarknetConcreteLibfunc::StorageRead(_)
                             | StarknetConcreteLibfunc::StorageWrite(_)
-                            | StarknetConcreteLibfunc::Sha256ProcessBlock(_) => libfunc,
+                            | StarknetConcreteLibfunc::Sha256ProcessBlock(_)
+                            | StarknetConcreteLibfunc::MetaTxV0(_) => libfunc,
                             _ => {
                                 if in_syscall_idx.is_some() {
                                     in_syscall_idx = None;
@@ -253,97 +272,66 @@ pub fn collect_function_level_profiling_info(
                             }
                         };
                         if in_syscall_idx.as_ref() != Some(&sierra_statement_idx) {
-                            in_syscall_idx = Some(sierra_statement_idx);
-
-                            let mut current_call_stack_with_syscall = current_call_stack.clone();
-                            current_call_stack_with_syscall.push(
-                                FunctionCall::InternalFunctionCall(InternalFunctionCall::Syscall(
-                                    FunctionName(map_syscall_to_selector(syscall).to_string()),
-                                )),
+                            register_syscall(
+                                syscall,
+                                sierra_statement_idx,
+                                &mut in_syscall_idx,
+                                &current_call_stack,
+                                &mut nested_call_triggers,
+                                &mut syscall_stack_traces,
                             );
-                            *syscall_stack_traces
-                                .entry(current_call_stack_with_syscall.clone().into())
-                                .or_insert(0) += 1;
                         }
                     }
                     _ => {
                         // we do not want to profile builtins from syscalls - they have fixed price and are profiled explicitly
                         if in_syscall_idx.is_none() {
-                            let mut libfunc_call_stack = current_call_stack.clone();
-                            if function_level_config.show_libfuncs {
-                                let libfunc_name = libfunc_map
-                                    .get(&invocation.libfunc_id.id)
-                                    .expect("Failed to find libfunc in map");
+                            let libfunc_name = if function_level_config.show_libfuncs {
+                                Some(
+                                    libfunc_map
+                                        .get(&invocation.libfunc_id.id)
+                                        .expect("Failed to find libfunc in map")
+                                        .as_str(),
+                                )
+                            } else {
+                                None
+                            };
 
-                                // todo: hack, fix this abomination
-                                // we are subtracting resources accounted to current function from stack
-                                functions_stack_traces
-                                    .entry(current_call_stack.clone().into())
-                                    .or_default()
-                                    .decrement(sierra_gas_tracking);
+                            let effective_stack =
+                                effective_call_stack(&current_call_stack, libfunc_name);
 
-                                // then appending libfunc to said stack
-                                libfunc_call_stack.push(FunctionCall::InternalFunctionCall(
-                                    InternalFunctionCall::Libfunc(FunctionName(
-                                        libfunc_name.to_owned(),
-                                    )),
-                                ));
-                                // and accounting previously subtracted resources to this libfunc
-                                functions_stack_traces
-                                    .entry(libfunc_call_stack.clone().into())
-                                    .or_default()
-                                    .increment(sierra_gas_tracking);
-                            }
+                            increment_resource(
+                                &mut functions_stack_traces,
+                                &effective_stack,
+                                sierra_gas_tracking,
+                            );
 
-                            // we do not have builtins vm resources costs, we only include them when tracking sierra gas
                             if sierra_gas_tracking {
-                                let libfunc_cost =
-                                    core_libfunc_cost(libfunc.unwrap(), &cost_info_provider);
-
-                                for branch_cost in &libfunc_cost {
-                                    if let BranchCost::Regular {
-                                        const_cost,
-                                        pre_cost,
-                                    } = branch_cost
-                                    {
-                                        // determine if we are already tracking this specific invocation (libfunc)
-                                        // we use steps estimated by `core_libfunc_cost` function to do this
-                                        if const_cost.steps == 1
-                                            || const_cost.steps <= libfunc_appearance_tracker
-                                        {
-                                            // if a given invocation "costs" some builtins, sum them
-                                            let post_cost = sum_builtins_cost(
-                                                const_cost,
-                                                pre_cost,
-                                                versioned_constants,
-                                                builtins_with_cost,
-                                            );
-
-                                            // add builtin cost (resources) to current function in stack
-                                            *functions_stack_traces
-                                                .entry(libfunc_call_stack.clone().into())
-                                                .or_default() +=
-                                                ChargedResources {
-                                                    steps: Default::default(),
-                                                    sierra_gas_consumed: SierraGasConsumed(
-                                                        usize::try_from(post_cost).expect("Overflow while converting post_cost to usize"),
-                                                    ),
-                                                };
-
-                                            libfunc_appearance_tracker = 1;
-                                        // if an invocation takes more than 1 step, we skip getting its cost for subsequent
-                                        // appearances in stack, so we do not wrongly add the resources multiple times
-                                        } else if const_cost.steps > libfunc_appearance_tracker {
-                                            libfunc_appearance_tracker += 1;
-                                        }
-                                    }
-                                }
+                                let cost_vector = core_libfunc_cost(
+                                    &precost_info,
+                                    &sierra_statement_idx,
+                                    libfunc.unwrap(),
+                                    &profiler_info_provider,
+                                );
+                                add_builtin_sierra_costs(
+                                    &cost_vector,
+                                    &mut libfunc_appearance_tracker,
+                                    versioned_constants,
+                                    &mut functions_stack_traces,
+                                    &effective_stack,
+                                );
                             }
+
                             *function_casm_sizes
-                                .entry(libfunc_call_stack.clone().into())
+                                .entry(effective_stack.into())
                                 .or_default() += casm_sizes
                                 .get(&sierra_statement_idx.to_string())
                                 .unwrap_or(&0);
+                        } else {
+                            increment_resource(
+                                &mut functions_stack_traces,
+                                &current_call_stack,
+                                sierra_gas_tracking,
+                            );
                         }
 
                         // If we were in a syscall this is the time we go out of it, as pcs no longer
@@ -353,6 +341,11 @@ pub fn collect_function_level_profiling_info(
                 }
             }
             GenStatement::Return(_) => {
+                increment_resource(
+                    &mut functions_stack_traces,
+                    &current_call_stack,
+                    sierra_gas_tracking,
+                );
                 if call_stack.exit_function_call().is_none() {
                     end_of_program_reached = true;
                 }
@@ -366,11 +359,13 @@ pub fn collect_function_level_profiling_info(
         &function_casm_sizes,
         versioned_constants,
         sierra_gas_tracking,
+        entrypoint_calldata_lengths,
     );
 
     FunctionLevelProfilingInfo {
         functions_samples,
         header_resources,
+        nested_call_triggers,
     }
 }
 
@@ -403,48 +398,113 @@ fn build_current_call_stack(
     }
 }
 
-fn sum_builtins_cost(
-    const_cost: &ConstCost,
-    pre_cost: &PreCost,
-    versioned_constants: &VersionedConstants,
-    builtins_with_cost: [CostTokenType; 6],
-) -> u64 {
-    let mut post_cost: u64 = u64::try_from(const_cost.range_checks)
-        .expect("Failed to convert const_cost to u64")
-        * versioned_constants
-            .os_constants
-            .builtin_gas_costs
-            .range_check;
-    post_cost += u64::try_from(const_cost.range_checks96)
-        .expect("Failed to convert const_cost to u64")
-        * versioned_constants
-            .os_constants
-            .builtin_gas_costs
-            .range_check96;
+fn sum_builtins_cost(branch_cost: &CostEntry, versioned_constants: &VersionedConstants) -> u64 {
+    let mut post_cost: u64 = u64::default();
 
-    for builtin in &builtins_with_cost {
-        if let Some(value) = pre_cost.0.get(builtin) {
-            let builtin_cost = match builtin {
-                CostTokenType::Bitwise => {
-                    versioned_constants.os_constants.builtin_gas_costs.bitwise
-                }
-                CostTokenType::Pedersen => {
-                    versioned_constants.os_constants.builtin_gas_costs.pedersen
-                }
-                CostTokenType::Poseidon => {
-                    versioned_constants.os_constants.builtin_gas_costs.poseidon
-                }
-                CostTokenType::EcOp => versioned_constants.os_constants.builtin_gas_costs.ecop,
-                CostTokenType::AddMod => versioned_constants.os_constants.builtin_gas_costs.add_mod,
-                CostTokenType::MulMod => versioned_constants.os_constants.builtin_gas_costs.mul_mod,
-                _ => {
-                    panic!("Unknown builtin: {builtin:?}")
-                }
-            };
-            post_cost += u64::try_from(*value)
-                .expect("Failed to convert builtin count value to u64")
-                * builtin_cost;
-        }
+    for (token, cost) in branch_cost.iter() {
+        let cost = u64::try_from(cost.max(0)).expect("Cost must be non-negative after clamping");
+        let builtin_cost = match token {
+            CostTokenType::Pedersen => versioned_constants.os_constants.builtin_gas_costs.pedersen,
+            CostTokenType::Poseidon => versioned_constants.os_constants.builtin_gas_costs.poseidon,
+            CostTokenType::Bitwise => versioned_constants.os_constants.builtin_gas_costs.bitwise,
+            CostTokenType::EcOp => versioned_constants.os_constants.builtin_gas_costs.ecop,
+            CostTokenType::AddMod => versioned_constants.os_constants.builtin_gas_costs.add_mod,
+            CostTokenType::MulMod => versioned_constants.os_constants.builtin_gas_costs.mul_mod,
+            _ => continue,
+        };
+        post_cost += builtin_cost * cost;
     }
     post_cost
+}
+
+fn increment_resource(
+    functions_stack_traces: &mut HashMap<Vec<FunctionCall>, ChargedResources>,
+    call_stack: &VecWithLimitedCapacity<FunctionCall>,
+    sierra_gas_tracking: bool,
+) {
+    functions_stack_traces
+        .entry(call_stack.clone().into())
+        .or_default()
+        .increment(sierra_gas_tracking);
+}
+
+fn effective_call_stack(
+    current_stack: &VecWithLimitedCapacity<FunctionCall>,
+    libfunc_name: Option<&str>,
+) -> VecWithLimitedCapacity<FunctionCall> {
+    match libfunc_name {
+        Some(name) => {
+            let mut stack = current_stack.clone();
+            stack.push(FunctionCall::InternalFunctionCall(
+                InternalFunctionCall::Libfunc(FunctionName(name.to_owned())),
+            ));
+            stack
+        }
+        None => current_stack.clone(),
+    }
+}
+
+fn register_syscall(
+    syscall: &StarknetConcreteLibfunc,
+    sierra_statement_idx: StatementIdx,
+    in_syscall_idx: &mut Option<StatementIdx>,
+    current_call_stack: &VecWithLimitedCapacity<FunctionCall>,
+    nested_call_triggers: &mut Vec<Vec<FunctionCall>>,
+    syscall_stack_traces: &mut IndexMap<Vec<FunctionCall>, i64>,
+) {
+    *in_syscall_idx = Some(sierra_statement_idx);
+
+    let mut current_call_stack_with_syscall = current_call_stack.clone();
+
+    let syscall_name = map_syscall_to_selector(syscall).to_string();
+    current_call_stack_with_syscall.push(FunctionCall::InternalFunctionCall(
+        InternalFunctionCall::Syscall(FunctionName(syscall_name.clone())),
+    ));
+
+    match syscall_name.as_str() {
+        "Deploy" | "CallContract" | "LibraryCall" => {
+            nested_call_triggers.push(current_call_stack_with_syscall.clone().into());
+        }
+        _ => {}
+    }
+
+    *syscall_stack_traces
+        .entry(current_call_stack_with_syscall.into())
+        .or_insert(0) += 1;
+}
+
+fn add_builtin_sierra_costs(
+    cost_vector: &Vec<OrderedHashMap<CostTokenType, i64>>,
+    libfunc_appearance_tracker: &mut i64,
+    versioned_constants: &VersionedConstants,
+    functions_stack_traces: &mut HashMap<Vec<FunctionCall>, ChargedResources>,
+    libfunc_call_stack: &VecWithLimitedCapacity<FunctionCall>,
+) {
+    for branch_cost_map in cost_vector {
+        let branch_cost = CostEntry::from_map(branch_cost_map);
+
+        // determine if we are already tracking this specific invocation (libfunc)
+        // we use sierra gas estimated by `core_libfunc_cost` function to do this
+        if branch_cost.konst == 100 || branch_cost.konst <= *libfunc_appearance_tracker {
+            // if a given invocation "costs" some builtins, sum them
+            let post_cost = sum_builtins_cost(&branch_cost, versioned_constants);
+
+            // add builtin cost (resources) to current function in stack
+            *functions_stack_traces
+                .entry(libfunc_call_stack.clone().into())
+                .or_default() += ChargedResources {
+                steps: Default::default(),
+                sierra_gas_consumed: SierraGasConsumed(
+                    usize::try_from(post_cost)
+                        .expect("Overflow while converting post_cost to usize"),
+                ),
+            };
+
+            *libfunc_appearance_tracker = 100;
+        // if an invocation takes more than 1 step (100 sierra gas), we skip getting its cost for subsequent
+        // appearances in stack, so we do not wrongly add the resources multiple times
+        } else if branch_cost.konst > *libfunc_appearance_tracker {
+            *libfunc_appearance_tracker += 100;
+        }
+    }
 }

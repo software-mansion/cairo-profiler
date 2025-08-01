@@ -37,7 +37,7 @@ impl CallStack {
 
 #[derive(Clone, Debug)]
 pub struct VecWithLimitedCapacity<T> {
-    vector: Vec<T>,
+    pub vector: Vec<T>,
     max_capacity: usize,
 }
 
