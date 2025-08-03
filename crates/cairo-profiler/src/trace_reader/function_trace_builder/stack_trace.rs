@@ -13,23 +13,26 @@ pub fn trace_to_samples(
     function_casm_sizes: &HashMap<Vec<FunctionCall>, i64>,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
+    entrypoint_calldata_lengths: Vec<usize>,
 ) -> Vec<Sample> {
     let function_samples: Vec<Sample> = functions_stack_traces
         .into_iter()
         .map(|(call_stack, cr)| map_function_trace_to_sample(call_stack, cr, function_casm_sizes))
         .collect();
 
-    let syscall_samples: Vec<Sample> = syscall_stack_traces
-        .into_iter()
-        .map(|(call_stack, invocations)| {
-            map_syscall_trace_to_sample(
-                call_stack,
-                invocations,
-                versioned_constants,
-                sierra_gas_tracking,
-            )
-        })
-        .collect();
+    let mut syscall_samples: Vec<Sample> = Vec::new();
+    let mut calldata_lengths_iter = entrypoint_calldata_lengths.into_iter();
+
+    for (call_stack, invocations) in syscall_stack_traces {
+        let sample = map_syscall_trace_to_sample(
+            call_stack,
+            invocations,
+            versioned_constants,
+            sierra_gas_tracking,
+            calldata_lengths_iter.next(),
+        );
+        syscall_samples.push(sample);
+    }
 
     [function_samples, syscall_samples].concat()
 }
@@ -68,6 +71,7 @@ pub fn map_syscall_trace_to_sample(
     invocations: i64,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
+    calldata_factor: Option<usize>,
 ) -> Sample {
     let function_name = call_stack.last().unwrap().function_name();
     let syscall_resources = versioned_constants
@@ -83,7 +87,27 @@ pub fn map_syscall_trace_to_sample(
 
     let adjusted_resources = match syscall_resources {
         Unscaled(resources) => resources,
-        Scaled(resources) => &resources.constant,
+        Scaled(resources) => {
+            if calldata_factor.is_some() {
+                let mut builtin_instance_counter =
+                    resources.constant.builtin_instance_counter.clone();
+
+                for (builtin, count) in &resources.calldata_factor.builtin_instance_counter {
+                    let entry = builtin_instance_counter.entry(builtin.clone()).or_insert(0);
+                    *entry += count * calldata_factor.unwrap();
+                }
+
+                &VmExecutionResources {
+                    n_steps: resources.constant.n_steps
+                        + resources.calldata_factor.n_steps * calldata_factor.unwrap(),
+                    n_memory_holes: resources.constant.n_memory_holes
+                        + resources.calldata_factor.n_memory_holes * calldata_factor.unwrap(),
+                    builtin_instance_counter,
+                }
+            } else {
+                &resources.constant
+            }
+        }
     };
 
     let mut measurements = if sierra_gas_tracking {

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - profiler now correctly removes `::` separators from function names which were monomorphised with different types
+- calldata factor for deploy syscall is now correctly factored in
 
 ### Changed
 

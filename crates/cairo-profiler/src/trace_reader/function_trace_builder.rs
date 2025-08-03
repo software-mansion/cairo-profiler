@@ -101,7 +101,7 @@ impl AddAssign for ChargedResources {
 }
 
 /// Collects profiling info of the current run using the trace.
-#[expect(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines, clippy::too_many_arguments)]
 pub fn collect_function_level_profiling_info(
     program: &Program,
     casm_debug_info: &CairoProgramDebugInfo,
@@ -110,6 +110,7 @@ pub fn collect_function_level_profiling_info(
     function_level_config: &FunctionLevelConfig,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
+    entrypoint_calldata_lengths: Vec<usize>,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
     let precost_info = compute_precost_info(program).expect("Failed to compute pre-cost info");
@@ -362,6 +363,7 @@ pub fn collect_function_level_profiling_info(
         &function_casm_sizes,
         versioned_constants,
         sierra_gas_tracking,
+        entrypoint_calldata_lengths,
     );
 
     FunctionLevelProfilingInfo {
