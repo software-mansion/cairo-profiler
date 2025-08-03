@@ -22,7 +22,20 @@ pub struct OsConstants {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OsResources {
-    pub execute_syscalls: HashMap<DeprecatedSyscallSelector, VmExecutionResources>,
+    pub execute_syscalls: HashMap<DeprecatedSyscallSelector, SyscallVariant>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SyscallVariant {
+    Scaled(ScaledResources),
+    Unscaled(VmExecutionResources),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ScaledResources {
+    pub constant: VmExecutionResources,
+    pub calldata_factor: VmExecutionResources,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -53,7 +66,7 @@ pub fn read_and_parse_versioned_constants_file(
         Some(path) => fs::read_to_string(path).with_context(|| {
             format!("Cannot read versioned constants file at specified path {path}")
         })?,
-        None => include_str!("../resources/versioned_constants_0_13_4.json").to_string(),
+        None => include_str!("../resources/versioned_constants_0_14_1.json").to_string(),
     };
     let json_value: Value = serde_json::from_str(&file_content)
         .context("Failed to parse versioned constants file content")?;
