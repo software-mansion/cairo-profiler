@@ -25,6 +25,7 @@ use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metadata};
 use cairo_lang_sierra_type_size::get_type_size_map;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::ops::{AddAssign, SubAssign};
 
@@ -36,6 +37,7 @@ pub mod stack_trace;
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,
     pub header_resources: ChargedResources,
+    pub nested_call_triggers: Vec<Vec<FunctionCall>>,
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug)]
@@ -131,7 +133,7 @@ pub fn collect_function_level_profiling_info(
 
     // The value is the number of invocations of the syscall in the trace.
     // The key is a syscall stack trace.
-    let mut syscall_stack_traces: HashMap<Vec<FunctionCall>, i64> = HashMap::new();
+    let mut syscall_stack_traces: IndexMap<Vec<FunctionCall>, i64> = IndexMap::new();
 
     // Header charged resources are counted separately and then displayed as charged resources
     // of the entrypoint in the profile tree. It is because technically they don't belong
@@ -146,6 +148,9 @@ pub fn collect_function_level_profiling_info(
     // default value is 100, because this is a minimal trace cost of a single trace
     // (ie one trace is one step which is 100 sierra gas)
     let mut libfunc_appearance_tracker = 100;
+    // In order to map external calls properly, we need to obtain a vector of calls per each nested_call
+    // this calls can be either one of Deploy, CallContract or LibraryCall syscalls
+    let mut nested_call_triggers: Vec<Vec<FunctionCall>> = Vec::new();
 
     let libfunc_map: HashMap<u64, String> = program
         .libfunc_declarations
@@ -272,6 +277,7 @@ pub fn collect_function_level_profiling_info(
                                 sierra_statement_idx,
                                 &mut in_syscall_idx,
                                 &current_call_stack,
+                                &mut nested_call_triggers,
                                 &mut syscall_stack_traces,
                             );
                         }
@@ -358,6 +364,7 @@ pub fn collect_function_level_profiling_info(
     FunctionLevelProfilingInfo {
         functions_samples,
         header_resources,
+        nested_call_triggers,
     }
 }
 
@@ -441,7 +448,8 @@ fn register_syscall(
     sierra_statement_idx: StatementIdx,
     in_syscall_idx: &mut Option<StatementIdx>,
     current_call_stack: &VecWithLimitedCapacity<FunctionCall>,
-    syscall_stack_traces: &mut HashMap<Vec<FunctionCall>, i64>,
+    nested_call_triggers: &mut Vec<Vec<FunctionCall>>,
+    syscall_stack_traces: &mut IndexMap<Vec<FunctionCall>, i64>,
 ) {
     *in_syscall_idx = Some(sierra_statement_idx);
 
@@ -451,6 +459,13 @@ fn register_syscall(
     current_call_stack_with_syscall.push(FunctionCall::InternalFunctionCall(
         InternalFunctionCall::Syscall(FunctionName(syscall_name.clone())),
     ));
+
+    match syscall_name.as_str() {
+        "Deploy" | "CallContract" | "LibraryCall" => {
+            nested_call_triggers.push(current_call_stack_with_syscall.clone().into());
+        }
+        _ => {}
+    }
 
     *syscall_stack_traces
         .entry(current_call_stack_with_syscall.into())

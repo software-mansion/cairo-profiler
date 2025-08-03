@@ -4,11 +4,12 @@ use crate::versioned_constants_reader::SyscallVariant::{Scaled, Unscaled};
 use crate::versioned_constants_reader::{BuiltinGasCosts, VersionedConstants};
 use cairo_annotations::trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
+use indexmap::IndexMap;
 use std::collections::HashMap;
 
 pub fn trace_to_samples(
     functions_stack_traces: HashMap<Vec<FunctionCall>, ChargedResources>,
-    syscall_stack_traces: HashMap<Vec<FunctionCall>, i64>,
+    syscall_stack_traces: IndexMap<Vec<FunctionCall>, i64>,
     function_casm_sizes: &HashMap<Vec<FunctionCall>, i64>,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
