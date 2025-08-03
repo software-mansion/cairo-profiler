@@ -204,26 +204,26 @@ fn view_steps() {
         .stdout_eq(indoc!(
             r#"
 
-            Showing nodes accounting for 1463 steps, 100.00% of 1463 steps total
+            Showing nodes accounting for 1503 steps, 100.00% of 1503 steps total
             Showing top 15 nodes out of 15
             
                   flat |  flat% |    sum% |        cum |    cum% |  
             -----------+--------+---------+------------+---------+--------------------------------------------------------------------------------------------------------------
-             866 steps | 59.19% |  59.19% |  866 steps |  59.19% | "CallContract" 
-             102 steps |  6.97% |  66.17% |  179 steps |  12.24% | "core::result::ResultSerde::deserialize" 
-              87 steps |  5.95% |  72.11% |   87 steps |   5.95% | "StorageRead" 
-              87 steps |  5.95% |  78.06% |   87 steps |   5.95% | "snforge_std::cheatcode::execute_cheatcode" 
-              64 steps |  4.37% |  82.43% | 1314 steps |  89.82% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
-              39 steps |  2.67% |  85.10% |   39 steps |   2.67% | "core::array::SpanFelt252Serde::deserialize" 
-              38 steps |  2.60% |  87.70% |   38 steps |   2.60% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
-              37 steps |  2.53% |  90.23% |  124 steps |   8.48% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
-              34 steps |  2.32% |  92.55% |  183 steps |  12.51% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
-              34 steps |  2.32% |  94.87% |  150 steps |  10.25% | "snforge_std::cheatcodes::contract_class::declare" 
-              28 steps |  1.91% |  96.79% |   28 steps |   1.91% | "core::array::serialize_array_helper" 
-              23 steps |  1.57% |  98.36% | 1337 steps |  91.39% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
-              22 steps |  1.50% |  99.86% |   51 steps |   3.49% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-               1 steps |  0.07% |  99.93% |  125 steps |   8.54% | "Contract: HelloStarknet\nFunction: get_balance\n" 
-               1 steps |  0.07% | 100.00% | 1463 steps | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             903 steps | 60.08% |  60.08% |  903 steps |  60.08% | "CallContract" 
+             102 steps |  6.79% |  66.87% |  179 steps |  11.91% | "core::result::ResultSerde::deserialize" 
+              90 steps |  5.99% |  72.85% |   90 steps |   5.99% | "StorageRead" 
+              87 steps |  5.79% |  78.64% |   87 steps |   5.79% | "snforge_std::cheatcode::execute_cheatcode" 
+              64 steps |  4.26% |  82.90% | 1351 steps |  89.89% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
+              39 steps |  2.59% |  85.50% |   39 steps |   2.59% | "core::array::SpanFelt252Serde::deserialize" 
+              38 steps |  2.53% |  88.02% |   38 steps |   2.53% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              37 steps |  2.46% |  90.49% |  127 steps |   8.45% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              34 steps |  2.26% |  92.75% |  183 steps |  12.18% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              34 steps |  2.26% |  95.01% |  150 steps |   9.98% | "snforge_std::cheatcodes::contract_class::declare" 
+              28 steps |  1.86% |  96.87% |   28 steps |   1.86% | "core::array::serialize_array_helper" 
+              23 steps |  1.53% |  98.40% | 1374 steps |  91.42% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              22 steps |  1.46% |  99.87% |   51 steps |   3.39% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+               1 steps |  0.07% |  99.93% |  128 steps |   8.52% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+               1 steps |  0.07% | 100.00% | 1503 steps | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
             "#
         ));
 }
@@ -255,14 +255,14 @@ fn view_range_check_builtin() {
         .stdout_eq(indoc!(
             r#"
 
-            Showing nodes accounting for 38 range check builtin, 97.44% of 39 range check builtin total
+            Showing nodes accounting for 41 range check builtin, 97.62% of 42 range check builtin total
             Showing top 3 nodes out of 15
             
                                flat |  flat% |   sum% |                    cum |    cum% |  
             ------------------------+--------+--------+------------------------+---------+-----------------------------------------------------------------------
-             21 range check builtin | 53.85% | 53.85% | 39 range check builtin | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
-             15 range check builtin | 38.46% | 92.31% | 15 range check builtin |  38.46% | "CallContract" 
-              2 range check builtin |  5.13% | 97.44% |  3 range check builtin |   7.69% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+             21 range check builtin | 50.00% | 50.00% | 42 range check builtin | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             18 range check builtin | 42.86% | 92.86% | 18 range check builtin |  42.86% | "CallContract" 
+              2 range check builtin |  4.76% | 97.62% |  3 range check builtin |   7.14% | "Contract: HelloStarknet\nFunction: get_balance\n" 
             "#
         ));
 }
@@ -344,23 +344,23 @@ fn view_hide_in_view() {
             Active filter:
             hide=core
 
-            Showing nodes accounting for 1463 steps, 100.00% of 1463 steps total
+            Showing nodes accounting for 1503 steps, 100.00% of 1503 steps total
             Showing top 12 nodes out of 12
 
                   flat |  flat% |    sum% |        cum |    cum% |  
             -----------+--------+---------+------------+---------+--------------------------------------------------------------------------------------------------------------
-             866 steps | 59.19% |  59.19% |  866 steps |  59.19% | "CallContract" 
-             154 steps | 10.53% |  69.72% |  183 steps |  12.51% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
-              87 steps |  5.95% |  75.67% |   87 steps |   5.95% | "StorageRead" 
-              87 steps |  5.95% |  81.61% |   87 steps |   5.95% | "snforge_std::cheatcode::execute_cheatcode" 
-              83 steps |  5.67% |  87.29% |  150 steps |  10.25% | "snforge_std::cheatcodes::contract_class::declare" 
-              64 steps |  4.37% |  91.66% | 1314 steps |  89.82% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
-              38 steps |  2.60% |  94.26% |   38 steps |   2.60% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
-              37 steps |  2.53% |  96.79% |  124 steps |   8.48% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
-              23 steps |  1.57% |  98.36% | 1337 steps |  91.39% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
-              22 steps |  1.50% |  99.86% |   51 steps |   3.49% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-               1 steps |  0.07% |  99.93% |  125 steps |   8.54% | "Contract: HelloStarknet\nFunction: get_balance\n" 
-               1 steps |  0.07% | 100.00% | 1463 steps | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             903 steps | 60.08% |  60.08% |  903 steps |  60.08% | "CallContract" 
+             154 steps | 10.25% |  70.33% |  183 steps |  12.18% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              90 steps |  5.99% |  76.31% |   90 steps |   5.99% | "StorageRead" 
+              87 steps |  5.79% |  82.10% |   87 steps |   5.79% | "snforge_std::cheatcode::execute_cheatcode" 
+              83 steps |  5.52% |  87.62% |  150 steps |   9.98% | "snforge_std::cheatcodes::contract_class::declare" 
+              64 steps |  4.26% |  91.88% | 1351 steps |  89.89% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
+              38 steps |  2.53% |  94.41% |   38 steps |   2.53% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              37 steps |  2.46% |  96.87% |  127 steps |   8.45% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              23 steps |  1.53% |  98.40% | 1374 steps |  91.42% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              22 steps |  1.46% |  99.87% |   51 steps |   3.39% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+               1 steps |  0.07% |  99.93% |  128 steps |   8.52% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+               1 steps |  0.07% | 100.00% | 1503 steps | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
             "#
     );
 
@@ -410,23 +410,23 @@ fn view_hide_in_build() {
             Active filter:
             hide=core::*
 
-            Showing nodes accounting for 1463 steps, 100.00% of 1463 steps total
+            Showing nodes accounting for 1503 steps, 100.00% of 1503 steps total
             Showing top 12 nodes out of 12
 
                   flat |  flat% |    sum% |        cum |    cum% |  
             -----------+--------+---------+------------+---------+--------------------------------------------------------------------------------------------------------------
-             866 steps | 59.19% |  59.19% |  866 steps |  59.19% | "CallContract" 
-             154 steps | 10.53% |  69.72% |  183 steps |  12.51% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
-              87 steps |  5.95% |  75.67% |   87 steps |   5.95% | "StorageRead" 
-              87 steps |  5.95% |  81.61% |   87 steps |   5.95% | "snforge_std::cheatcode::execute_cheatcode" 
-              83 steps |  5.67% |  87.29% |  150 steps |  10.25% | "snforge_std::cheatcodes::contract_class::declare" 
-              64 steps |  4.37% |  91.66% | 1314 steps |  89.82% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
-              38 steps |  2.60% |  94.26% |   38 steps |   2.60% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
-              37 steps |  2.53% |  96.79% |  124 steps |   8.48% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
-              23 steps |  1.57% |  98.36% | 1337 steps |  91.39% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
-              22 steps |  1.50% |  99.86% |   51 steps |   3.49% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-               1 steps |  0.07% |  99.93% |  125 steps |   8.54% | "Contract: HelloStarknet\nFunction: get_balance\n" 
-               1 steps |  0.07% | 100.00% | 1463 steps | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             903 steps | 60.08% |  60.08% |  903 steps |  60.08% | "CallContract" 
+             154 steps | 10.25% |  70.33% |  183 steps |  12.18% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              90 steps |  5.99% |  76.31% |   90 steps |   5.99% | "StorageRead" 
+              87 steps |  5.79% |  82.10% |   87 steps |   5.79% | "snforge_std::cheatcode::execute_cheatcode" 
+              83 steps |  5.52% |  87.62% |  150 steps |   9.98% | "snforge_std::cheatcodes::contract_class::declare" 
+              64 steps |  4.26% |  91.88% | 1351 steps |  89.89% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
+              38 steps |  2.53% |  94.41% |   38 steps |   2.53% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              37 steps |  2.46% |  96.87% |  127 steps |   8.45% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              23 steps |  1.53% |  98.40% | 1374 steps |  91.42% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              22 steps |  1.46% |  99.87% |   51 steps |   3.39% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+               1 steps |  0.07% |  99.93% |  128 steps |   8.52% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+               1 steps |  0.07% | 100.00% | 1503 steps | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
             "#
     );
 
@@ -482,26 +482,26 @@ fn view_sierra_gas() {
         .stdout_eq(indoc!(
             r#"
 
-            Showing nodes accounting for 148525 sierra gas, 100.00% of 148525 sierra gas total
+            Showing nodes accounting for 151388 sierra gas, 100.00% of 151388 sierra gas total
             Showing top 15 nodes out of 15
             
                          flat |  flat% |    sum% |               cum |    cum% |  
             ------------------+--------+---------+-------------------+---------+--------------------------------------------------------------------------------------------------------------
-             86685 sierra gas | 58.36% |  58.36% |  86685 sierra gas |  58.36% | "CallContract" 
-             10200 sierra gas |  6.87% |  65.23% |  18320 sierra gas |  12.33% | "core::result::ResultSerde::deserialize" 
-             10000 sierra gas |  6.73% |  71.96% |  10000 sierra gas |   6.73% | "StorageRead" 
-              9120 sierra gas |  6.14% |  78.10% |   9120 sierra gas |   6.14% | "snforge_std::cheatcode::execute_cheatcode" 
-              6400 sierra gas |  4.31% |  82.41% | 132325 sierra gas |  89.09% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
-              4320 sierra gas |  2.91% |  85.32% |   4320 sierra gas |   2.91% | "core::array::SpanFelt252Serde::deserialize" 
-              3800 sierra gas |  2.56% |  87.88% |   3800 sierra gas |   2.56% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
-              3700 sierra gas |  2.49% |  90.37% |  13700 sierra gas |   9.22% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
-              3400 sierra gas |  2.29% |  92.66% |  18860 sierra gas |  12.70% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
-              3400 sierra gas |  2.29% |  94.95% |  15140 sierra gas |  10.19% | "snforge_std::cheatcodes::contract_class::declare" 
-              2800 sierra gas |  1.89% |  96.84% |   2800 sierra gas |   1.89% | "core::array::serialize_array_helper" 
-              2300 sierra gas |  1.55% |  98.38% | 134625 sierra gas |  90.64% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
-              2200 sierra gas |  1.48% |  99.87% |   5240 sierra gas |   3.53% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-               100 sierra gas |  0.07% |  99.93% |  13800 sierra gas |   9.29% | "Contract: HelloStarknet\nFunction: get_balance\n" 
-               100 sierra gas |  0.07% | 100.00% | 148525 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             90388 sierra gas | 59.71% |  59.71% |  90388 sierra gas |  59.71% | "CallContract" 
+             10200 sierra gas |  6.74% |  66.44% |  17900 sierra gas |  11.82% | "core::result::ResultSerde::deserialize" 
+             10000 sierra gas |  6.61% |  73.05% |  10000 sierra gas |   6.61% | "StorageRead" 
+              8700 sierra gas |  5.75% |  78.80% |   8700 sierra gas |   5.75% | "snforge_std::cheatcode::execute_cheatcode" 
+              6400 sierra gas |  4.23% |  83.02% | 135188 sierra gas |  89.30% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
+              3900 sierra gas |  2.58% |  85.60% |   3900 sierra gas |   2.58% | "core::array::SpanFelt252Serde::deserialize" 
+              3800 sierra gas |  2.51% |  88.11% |   3800 sierra gas |   2.51% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              3700 sierra gas |  2.44% |  90.55% |  13700 sierra gas |   9.05% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              3400 sierra gas |  2.25% |  92.80% |  18300 sierra gas |  12.09% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              3400 sierra gas |  2.25% |  95.05% |  15000 sierra gas |   9.91% | "snforge_std::cheatcodes::contract_class::declare" 
+              2800 sierra gas |  1.85% |  96.90% |   2800 sierra gas |   1.85% | "core::array::serialize_array_helper" 
+              2300 sierra gas |  1.52% |  98.41% | 137488 sierra gas |  90.82% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              2200 sierra gas |  1.45% |  99.87% |   5100 sierra gas |   3.37% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+               100 sierra gas |  0.07% |  99.93% |  13800 sierra gas |   9.12% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+               100 sierra gas |  0.07% | 100.00% | 151388 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
             "#
         ));
 }
@@ -541,15 +541,15 @@ fn view_builtins_factored_in() {
         .stdout_eq(indoc!(
             r#"
             
-            Showing nodes accounting for 13590 sierra gas, 100.00% of 13590 sierra gas total
+            Showing nodes accounting for 13450 sierra gas, 100.00% of 13450 sierra gas total
             Showing top 4 nodes out of 4
             
                         flat |  flat% |    sum% |              cum |    cum% |  
             -----------------+--------+---------+------------------+---------+-----------------------------------------------------------------------
-             8250 sierra gas | 60.71% |  60.71% | 13490 sierra gas |  99.26% | "builtins_simple::tests::pedersen_cost" 
-             3040 sierra gas | 22.37% |  83.08% |  3040 sierra gas |  22.37% | "snforge_std::cheatcode::execute_cheatcode" 
-             2200 sierra gas | 16.19% |  99.26% |  5240 sierra gas |  38.56% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-              100 sierra gas |  0.74% | 100.00% | 13590 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             8250 sierra gas | 61.34% |  61.34% | 13350 sierra gas |  99.26% | "builtins_simple::tests::pedersen_cost" 
+             2900 sierra gas | 21.56% |  82.90% |  2900 sierra gas |  21.56% | "snforge_std::cheatcode::execute_cheatcode" 
+             2200 sierra gas | 16.36% |  99.26% |  5100 sierra gas |  37.92% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+              100 sierra gas |  0.74% | 100.00% | 13450 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
             "#
         ));
 }
@@ -590,28 +590,28 @@ fn view_all_libfuncs() {
         .stdout_eq(indoc!(
             r#"
             
-            Showing nodes accounting for 10123 sierra gas, 100.00% of 10123 sierra gas total
+            Showing nodes accounting for 9983 sierra gas, 100.00% of 9983 sierra gas total
             Showing top 17 nodes out of 17
             
-                        flat |  flat% |    sum% |              cum |    cum% |  
-            -----------------+--------+---------+------------------+---------+-----------------------------------------------------------------------
-             5200 sierra gas | 51.37% |  51.37% |  5200 sierra gas |  51.37% | "store_temp" 
-              783 sierra gas |  7.73% |  59.10% |   783 sierra gas |   7.73% | "u8_bitwise" 
-              570 sierra gas |  5.63% |  64.73% |   570 sierra gas |   5.63% | "array_slice" 
-              500 sierra gas |  4.94% |  69.67% |   500 sierra gas |   4.94% | "withdraw_gas_all" 
-              400 sierra gas |  3.95% |  73.62% |   400 sierra gas |   3.95% | "array_snapshot_pop_front" 
-              370 sierra gas |  3.66% |  77.28% |   370 sierra gas |   3.66% | "u32_overflowing_sub" 
-              300 sierra gas |  2.96% |  80.24% |   300 sierra gas |   2.96% | "enum_match" 
-              300 sierra gas |  2.96% |  83.21% |   300 sierra gas |   2.96% | "felt252_is_zero" 
-              300 sierra gas |  2.96% |  86.17% |   300 sierra gas |   2.96% | "withdraw_gas" 
-              200 sierra gas |  1.98% |  88.15% |   200 sierra gas |   1.98% | "array_new" 
-              200 sierra gas |  1.98% |  90.12% | 10023 sierra gas |  99.01% | "builtins_simple::tests::bitwise_cost" 
-              200 sierra gas |  1.98% |  92.10% |   200 sierra gas |   1.98% | "get_builtin_costs" 
-              200 sierra gas |  1.98% |  94.07% |   200 sierra gas |   1.98% | "jump" 
-              200 sierra gas |  1.98% |  96.05% |  3040 sierra gas |  30.03% | "snforge_std::cheatcode::execute_cheatcode" 
-              200 sierra gas |  1.98% |  98.02% |  5240 sierra gas |  51.76% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-              100 sierra gas |  0.99% |  99.01% | 10123 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
-              100 sierra gas |  0.99% | 100.00% |   100 sierra gas |   0.99% | "bool_not_impl" 
+                        flat |  flat% |    sum% |             cum |    cum% |  
+            -----------------+--------+---------+-----------------+---------+-----------------------------------------------------------------------
+             5200 sierra gas | 52.09% |  52.09% | 5200 sierra gas |  52.09% | "store_temp" 
+              783 sierra gas |  7.84% |  59.93% |  783 sierra gas |   7.84% | "u8_bitwise" 
+              500 sierra gas |  5.01% |  64.94% |  500 sierra gas |   5.01% | "array_slice" 
+              500 sierra gas |  5.01% |  69.95% |  500 sierra gas |   5.01% | "withdraw_gas_all" 
+              400 sierra gas |  4.01% |  73.96% |  400 sierra gas |   4.01% | "array_snapshot_pop_front" 
+              300 sierra gas |  3.01% |  76.96% |  300 sierra gas |   3.01% | "enum_match" 
+              300 sierra gas |  3.01% |  79.97% |  300 sierra gas |   3.01% | "felt252_is_zero" 
+              300 sierra gas |  3.01% |  82.97% |  300 sierra gas |   3.01% | "u32_overflowing_sub" 
+              300 sierra gas |  3.01% |  85.98% |  300 sierra gas |   3.01% | "withdraw_gas" 
+              200 sierra gas |  2.00% |  87.98% |  200 sierra gas |   2.00% | "array_new" 
+              200 sierra gas |  2.00% |  89.98% | 9883 sierra gas |  99.00% | "builtins_simple::tests::bitwise_cost" 
+              200 sierra gas |  2.00% |  91.99% |  200 sierra gas |   2.00% | "get_builtin_costs" 
+              200 sierra gas |  2.00% |  93.99% |  200 sierra gas |   2.00% | "jump" 
+              200 sierra gas |  2.00% |  95.99% | 2900 sierra gas |  29.05% | "snforge_std::cheatcode::execute_cheatcode" 
+              200 sierra gas |  2.00% |  98.00% | 5100 sierra gas |  51.09% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+              100 sierra gas |  1.00% |  99.00% | 9983 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+              100 sierra gas |  1.00% | 100.00% |  100 sierra gas |   1.00% | "bool_not_impl" 
             "#
         ));
 }
