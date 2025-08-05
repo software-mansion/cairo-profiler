@@ -150,8 +150,9 @@ pub fn collect_function_level_profiling_info(
     // That's why we must track entry to a syscall, and leave as soon as we're out of given GenStatement::Invocation
     let mut in_syscall_idx: Option<StatementIdx> = None;
     // similarly to syscalls, used to track entry to a libfunc (based on steps costs)
-    // default value is 1, because this is a minimal trace count (ie one trace is one step)
-    let mut libfunc_appearance_tracker = 1;
+    // default value is 100, because this is a minimal trace cost of a single trace
+    // (ie one trace is one step which is 100 sierra gas)
+    let mut libfunc_appearance_tracker = 100;
 
     let libfunc_map: HashMap<u64, String> = program
         .libfunc_declarations
