@@ -37,6 +37,8 @@ pub mod stack_trace;
 pub struct FunctionLevelProfilingInfo {
     pub functions_samples: Vec<Sample>,
     pub header_resources: ChargedResources,
+    /// Call stacks that triggered each `EntryPointCall` in `nested_calls`,
+    /// used as the entry context for sample collection.
     pub nested_call_triggers: Vec<Vec<FunctionCall>>,
 }
 
@@ -148,8 +150,9 @@ pub fn collect_function_level_profiling_info(
     // default value is 100, because this is a minimal trace cost of a single trace
     // (ie one trace is one step which is 100 sierra gas)
     let mut libfunc_appearance_tracker = 100;
-    // In order to map external calls properly, we need to obtain a vector of calls per each nested_call
-    // this calls can be either one of Deploy, CallContract or LibraryCall syscalls
+    // To correctly append additional entrypoint calls to the tree, we need to obtain
+    // a vector of calls for each `nested_call`. These calls can be one of:
+    // Deploy, CallContract, or LibraryCall syscalls
     let mut nested_call_triggers: Vec<Vec<FunctionCall>> = Vec::new();
 
     let libfunc_map: HashMap<u64, String> = program
@@ -455,13 +458,14 @@ fn register_syscall(
 
     let mut current_call_stack_with_syscall = current_call_stack.clone();
 
-    let syscall_name = map_syscall_to_selector(syscall).to_string();
     current_call_stack_with_syscall.push(FunctionCall::InternalFunctionCall(
-        InternalFunctionCall::Syscall(FunctionName(syscall_name.clone())),
+        InternalFunctionCall::Syscall(FunctionName(map_syscall_to_selector(syscall).to_string())),
     ));
 
-    match syscall_name.as_str() {
-        "Deploy" | "CallContract" | "LibraryCall" => {
+    match syscall {
+        StarknetConcreteLibfunc::Deploy(_)
+        | StarknetConcreteLibfunc::CallContract(_)
+        | StarknetConcreteLibfunc::LibraryCall(_) => {
             nested_call_triggers.push(current_call_stack_with_syscall.clone().into());
         }
         _ => {}
