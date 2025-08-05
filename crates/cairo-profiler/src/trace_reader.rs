@@ -218,7 +218,6 @@ fn collect_samples<'a>(
                 )?);
             } else if expected_syscall == "Deploy" {
                 // snforge can sometimes insert a Deploy nested_call that is not a syscall!
-                ui::warn("No 'Deploy' syscall in trace but CONSTRUCTOR nested call found!");
                 entrypoint_calls.next();
                 children_resources.add_resources(collect_samples(
                     samples,
