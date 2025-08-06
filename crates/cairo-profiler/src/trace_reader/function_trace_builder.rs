@@ -25,7 +25,6 @@ use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metadata};
 use cairo_lang_sierra_type_size::get_type_size_map;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::ops::{AddAssign, SubAssign};
 
@@ -135,7 +134,8 @@ pub fn collect_function_level_profiling_info(
 
     // The value is the number of invocations of the syscall in the trace.
     // The key is a syscall stack trace.
-    let mut syscall_stack_traces: IndexMap<Vec<FunctionCall>, i64> = IndexMap::new();
+    let mut syscall_stack_traces: OrderedHashMap<Vec<FunctionCall>, i64> =
+        OrderedHashMap::default();
 
     // Header charged resources are counted separately and then displayed as charged resources
     // of the entrypoint in the profile tree. It is because technically they don't belong
@@ -452,7 +452,7 @@ fn register_syscall(
     in_syscall_idx: &mut Option<StatementIdx>,
     current_call_stack: &VecWithLimitedCapacity<FunctionCall>,
     nested_call_triggers: &mut Vec<Vec<FunctionCall>>,
-    syscall_stack_traces: &mut IndexMap<Vec<FunctionCall>, i64>,
+    syscall_stack_traces: &mut OrderedHashMap<Vec<FunctionCall>, i64>,
 ) {
     *in_syscall_idx = Some(sierra_statement_idx);
 
