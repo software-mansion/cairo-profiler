@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2025.08.07
+
 ### Fixed
 
 - profiler now correctly removes `::` separators from function names which were monomorphised with different types
