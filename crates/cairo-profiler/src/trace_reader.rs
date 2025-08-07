@@ -161,9 +161,13 @@ fn collect_samples<'a>(
             compiled_artifacts_cache.get_compiled_artifacts_for_path(&absolute_source_sierra_path);
 
         let mut entrypoint_calls = Vec::new();
+        let mut calldata_lengths = Vec::new();
 
         for node in &trace.nested_calls {
             if let CallTraceNode::EntryPointCall(sub_trace) = node {
+                if let Some(len) = sub_trace.entry_point.calldata_len {
+                    calldata_lengths.push(len);
+                }
                 entrypoint_calls.push(sub_trace);
             }
         }
@@ -177,6 +181,7 @@ fn collect_samples<'a>(
             &FunctionLevelConfig::from(profiler_config),
             versioned_constants,
             sierra_gas_tracking,
+            calldata_lengths,
         );
 
         let mut trigger_idx = 0;
@@ -360,6 +365,7 @@ fn collect_syscall_samples(
             invocations,
             versioned_constants,
             sierra_gas_tracking,
+            Some(usage.linear_factor),
         );
         samples.push(sample);
     }
