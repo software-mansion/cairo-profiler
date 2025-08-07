@@ -88,20 +88,20 @@ pub fn map_syscall_trace_to_sample(
     let adjusted_resources = match syscall_resources {
         Unscaled(resources) => resources,
         Scaled(resources) => {
-            if calldata_factor.is_some() {
+            if let Some(calldata_factor) = calldata_factor {
                 let mut builtin_instance_counter =
                     resources.constant.builtin_instance_counter.clone();
 
                 for (builtin, count) in &resources.calldata_factor.builtin_instance_counter {
                     let entry = builtin_instance_counter.entry(builtin.clone()).or_insert(0);
-                    *entry += count * calldata_factor.unwrap();
+                    *entry += count * calldata_factor;
                 }
 
                 &VmExecutionResources {
                     n_steps: resources.constant.n_steps
-                        + resources.calldata_factor.n_steps * calldata_factor.unwrap(),
+                        + resources.calldata_factor.n_steps * calldata_factor,
                     n_memory_holes: resources.constant.n_memory_holes
-                        + resources.calldata_factor.n_memory_holes * calldata_factor.unwrap(),
+                        + resources.calldata_factor.n_memory_holes * calldata_factor,
                     builtin_instance_counter,
                 }
             } else {
