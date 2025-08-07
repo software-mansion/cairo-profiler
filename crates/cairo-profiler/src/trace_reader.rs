@@ -14,8 +14,8 @@ use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall, Sample};
 use crate::trace_reader::function_trace_builder::stack_trace::map_syscall_trace_to_sample;
 use crate::versioned_constants_reader::VersionedConstants;
 use cairo_annotations::trace_data::{
-    CallTraceNode, CallTraceV1, DeprecatedSyscallSelector, ExecutionResources, SyscallUsage,
-    VmExecutionResources,
+    CallEntryPoint, CallTraceNode, CallTraceV1, CallType, DeprecatedSyscallSelector,
+    EntryPointType, ExecutionResources, SyscallUsage, VmExecutionResources,
 };
 use indoc::formatdoc;
 
@@ -126,6 +126,7 @@ pub fn collect_samples_from_trace(
     Ok(samples)
 }
 
+#[expect(clippy::too_many_lines)]
 fn collect_samples<'a>(
     samples: &mut Vec<Sample>,
     current_entrypoint_call_stack: &mut Vec<FunctionCall>,
@@ -143,6 +144,7 @@ fn collect_samples<'a>(
         profiler_config.show_details,
     );
     current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(function_name.clone()));
+    let mut children_resources = ExecutionResources::default();
 
     let maybe_entrypoint_steps = if let Some(cairo_execution_info) = &trace.cairo_execution_info {
         let absolute_source_sierra_path = cairo_execution_info
@@ -158,6 +160,15 @@ fn collect_samples<'a>(
         let compiled_artifacts =
             compiled_artifacts_cache.get_compiled_artifacts_for_path(&absolute_source_sierra_path);
 
+        let mut entrypoint_calls = Vec::new();
+
+        for node in &trace.nested_calls {
+            if let CallTraceNode::EntryPointCall(sub_trace) = node {
+                entrypoint_calls.push(sub_trace);
+            }
+        }
+        let mut entrypoint_calls = entrypoint_calls.into_iter().peekable();
+
         let function_level_profiling_info = collect_function_level_profiling_info(
             &compiled_artifacts.sierra_program,
             &compiled_artifacts.casm_debug_info,
@@ -167,6 +178,76 @@ fn collect_samples<'a>(
             versioned_constants,
             sierra_gas_tracking,
         );
+
+        let mut trigger_idx = 0;
+
+        while trigger_idx < function_level_profiling_info.nested_call_triggers.len() {
+            let trigger = &function_level_profiling_info.nested_call_triggers[trigger_idx];
+            let traced_syscall = &trigger.last().unwrap().function_name().0;
+
+            let Some(&sub_trace) = entrypoint_calls.peek() else {
+                // There are syscall triggers, but no entrypoints left
+                // It is acceptable only for Deploy syscalls, as we filtered out snforge's DeployWithoutConstructor-s
+                if traced_syscall == "Deploy" {
+                    trigger_idx += 1;
+                    continue; // just skip this Deploy trigger and move on
+                }
+                ui::err(format!(
+                    "Found syscall {traced_syscall} in the program trace, that do not have corresponding calls in trace file!"
+                ));
+                panic!("Too few EntryPointCalls for triggers");
+            };
+
+            let expected_syscall = map_entrypoint_to_syscall(&sub_trace.entry_point);
+
+            if traced_syscall == expected_syscall {
+                entrypoint_calls.next();
+                trigger_idx += 1;
+
+                let mut triggered_call_stack = current_entrypoint_call_stack.clone();
+                triggered_call_stack.extend(trigger.clone());
+
+                children_resources.add_resources(collect_samples(
+                    samples,
+                    &mut triggered_call_stack,
+                    sub_trace,
+                    compiled_artifacts_cache,
+                    profiler_config,
+                    versioned_constants,
+                    sierra_gas_tracking,
+                )?);
+            } else if expected_syscall == "Deploy" {
+                // snforge can sometimes insert a Deploy nested_call that is not a syscall!
+                entrypoint_calls.next();
+                children_resources.add_resources(collect_samples(
+                    samples,
+                    current_entrypoint_call_stack,
+                    sub_trace,
+                    compiled_artifacts_cache,
+                    profiler_config,
+                    versioned_constants,
+                    sierra_gas_tracking,
+                )?);
+            } else if traced_syscall == "Deploy" {
+                // keep looking for matching nested_call
+                trigger_idx += 1;
+            } else {
+                ui::err(format!(
+                    "Found syscall {traced_syscall} in the program trace, that do not corresponds to the next call from trace file {:?}!",
+                    trace.entry_point
+                ));
+                panic!("Trigger does not match entrypoint");
+            }
+        }
+
+        // sanity check: we must be sure all nested_calls were collected into samples
+        if entrypoint_calls.next().is_some() {
+            ui::err(format!(
+                "There are no syscalls left in the program trace, but at least one unhandled call in trace file {:?}!",
+                trace.entry_point
+            ));
+            panic!("Too many EntryPointCalls for triggers");
+        }
 
         let mut function_samples = function_level_profiling_info
             .functions_samples
@@ -185,24 +266,21 @@ fn collect_samples<'a>(
         samples.append(&mut function_samples);
         Some(function_level_profiling_info.header_resources)
     } else {
+        for sub_trace_node in &trace.nested_calls {
+            if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
+                children_resources.add_resources(collect_samples(
+                    samples,
+                    current_entrypoint_call_stack,
+                    sub_trace,
+                    compiled_artifacts_cache,
+                    profiler_config,
+                    versioned_constants,
+                    sierra_gas_tracking,
+                )?);
+            }
+        }
         None
     };
-
-    let mut children_resources = ExecutionResources::default();
-
-    for sub_trace_node in &trace.nested_calls {
-        if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
-            children_resources.add_resources(collect_samples(
-                samples,
-                current_entrypoint_call_stack,
-                sub_trace,
-                compiled_artifacts_cache,
-                profiler_config,
-                versioned_constants,
-                sierra_gas_tracking,
-            )?);
-        }
-    }
 
     let mut call_resources = trace.cumulative_resources.clone();
     call_resources.sub_resources(&children_resources);
@@ -294,4 +372,15 @@ fn emit_missing_syscall_warning(function_name: &FunctionName) {
          Consider using `snforge` >= `0.46.0`."
     };
     ui::warn(message);
+}
+
+fn map_entrypoint_to_syscall(entry_point: &CallEntryPoint) -> &str {
+    match entry_point.entry_point_type {
+        EntryPointType::Constructor => "Deploy",
+        EntryPointType::External => match &entry_point.call_type {
+            CallType::Call => "CallContract",
+            CallType::Delegate => "LibraryCall",
+        },
+        EntryPointType::L1Handler => "L1Handler",
+    }
 }
