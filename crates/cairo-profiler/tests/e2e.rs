@@ -20,7 +20,12 @@ fn output_path() {
         .arg("./call.json")
         .args(["-o", "my/output/dir/my_file.pb.gz"])
         .assert()
-        .success();
+        .success()
+        .stderr_eq(indoc!(
+            r"
+            [WARNING] Missing calldata_factors for scaled syscalls - resource estimations may not be accurate. Consider using snforge 0.48+ for trace generation.
+            "
+        ));
 
     assert!(temp_dir.join("my/output/dir/my_file.pb.gz").exists());
 }
@@ -1020,6 +1025,185 @@ fn tree_mismatched_syscall_with_entrypoint() {
             thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:244:17:
             Trigger does not match entrypoint
             note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+            "#
+        ));
+}
+
+#[test]
+fn view_syscall_with_calldata_factor_multiple() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/scaled_syscall/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("scaled_syscall_deploy_syscall_cost.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 515900 sierra gas, 100.00% of 515900 sierra gas total
+            Showing top 21 nodes out of 21
+            
+                          flat |  flat% |    sum% |               cum |    cum% |  
+            -------------------+--------+---------+-------------------+---------+-----------------------------------------------------------------------------
+             246100 sierra gas | 47.70% |  47.70% | 465700 sierra gas |  90.27% | "Deploy" 
+             107600 sierra gas | 20.86% |  68.56% | 107600 sierra gas |  20.86% | "core::keccak::finalize_padding" 
+              40000 sierra gas |  7.75% |  76.31% |  40000 sierra gas |   7.75% | "Keccak" 
+              36000 sierra gas |  6.98% |  83.29% |  36000 sierra gas |   6.98% | "core::keccak::keccak_u256s_le_inputs[637-804]" 
+              13200 sierra gas |  2.56% |  85.85% | 120800 sierra gas |  23.42% | "core::keccak::add_padding" 
+               8700 sierra gas |  1.69% |  87.54% |   8700 sierra gas |   1.69% | "snforge_std::cheatcode::execute_cheatcode" 
+               7600 sierra gas |  1.47% |  89.01% |   7600 sierra gas |   1.47% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+               7100 sierra gas |  1.38% |  90.39% | 105500 sierra gas |  20.45% | "scaled_syscall::GasConstructorChecker::constructor" 
+               7100 sierra gas |  1.38% |  91.76% | 105500 sierra gas |  20.45% | "scaled_syscall::GasConstructorCheckerButDifferent::constructor" 
+               7000 sierra gas |  1.36% |  93.12% |  14600 sierra gas |   2.83% | "core::result::ResultSerde::deserialize" 
+               6800 sierra gas |  1.32% |  94.44% |  31700 sierra gas |   6.14% | "snforge_std::cheatcodes::contract_class::declare" 
+               6700 sierra gas |  1.30% |  95.74% | 513500 sierra gas |  99.53% | "scaled_syscall::deploy_syscall_cost_return_wrapper" 
+               4900 sierra gas |  0.95% |  96.69% | 110400 sierra gas |  21.40% | "scaled_syscall::GasConstructorChecker::__wrapper__constructor" 
+               4500 sierra gas |  0.87% |  97.56% |   4500 sierra gas |   0.87% | "core::array::serialize_array_helper" 
+               4300 sierra gas |  0.83% |  98.39% | 252349 sierra gas |  48.91% | "scaled_syscall::declare_deploy_a_contract" 
+               3500 sierra gas |  0.68% |  99.07% | 109000 sierra gas |  21.13% | "scaled_syscall::GasConstructorCheckerButDifferent::__wrapper__constructor" 
+               2300 sierra gas |  0.45% |  99.52% | 515800 sierra gas |  99.98% | "scaled_syscall::deploy_syscall_cost" 
+               2200 sierra gas |  0.43% |  99.94% |   5100 sierra gas |   0.99% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+                100 sierra gas |  0.02% |  99.96% | 110500 sierra gas |  21.42% | "Contract: GasConstructorChecker\nFunction: constructor\n" 
+                100 sierra gas |  0.02% |  99.98% | 109100 sierra gas |  21.15% | "Contract: GasConstructorCheckerButDifferent\nFunction: constructor\n" 
+                100 sierra gas |  0.02% | 100.00% | 515900 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+            "#
+        ));
+}
+
+#[test]
+fn view_syscall_with_calldata_factor_single() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/scaled_syscall/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("scaled_syscall_deploy_syscall_cost_but_different.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 262249 sierra gas, 100.00% of 262249 sierra gas total
+            Showing top 17 nodes out of 17
+            
+                          flat |  flat% |    sum% |               cum |    cum% |  
+            -------------------+--------+---------+-------------------+---------+-----------------------------------------------------------------------------
+             122249 sierra gas | 46.62% |  46.62% | 231349 sierra gas |  88.22% | "Deploy" 
+              53800 sierra gas | 20.51% |  67.13% |  53800 sierra gas |  20.51% | "core::keccak::finalize_padding" 
+              20000 sierra gas |  7.63% |  74.76% |  20000 sierra gas |   7.63% | "Keccak" 
+              18000 sierra gas |  6.86% |  81.62% |  18000 sierra gas |   6.86% | "core::keccak::keccak_u256s_le_inputs[637-804]" 
+               7100 sierra gas |  2.71% |  84.33% | 105500 sierra gas |  40.23% | "scaled_syscall::GasConstructorCheckerButDifferent::constructor" 
+               6700 sierra gas |  2.55% |  86.88% | 259849 sierra gas |  99.08% | "scaled_syscall::deploy_syscall_cost_but_different_return_wrapper" 
+               6600 sierra gas |  2.52% |  89.40% |  60400 sierra gas |  23.03% | "core::keccak::add_padding" 
+               5800 sierra gas |  2.21% |  91.61% |   5800 sierra gas |   2.21% | "snforge_std::cheatcode::execute_cheatcode" 
+               3800 sierra gas |  1.45% |  93.06% |   3800 sierra gas |   1.45% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+               3500 sierra gas |  1.33% |  94.39% |   7300 sierra gas |   2.78% | "core::result::ResultSerde::deserialize" 
+               3500 sierra gas |  1.33% |  95.73% | 109000 sierra gas |  41.56% | "scaled_syscall::GasConstructorCheckerButDifferent::__wrapper__constructor" 
+               3400 sierra gas |  1.30% |  97.03% |  16700 sierra gas |   6.37% | "snforge_std::cheatcodes::contract_class::declare" 
+               3100 sierra gas |  1.18% |  98.21% |   3100 sierra gas |   1.18% | "core::array::serialize_array_helper" 
+               2300 sierra gas |  0.88% |  99.08% | 262149 sierra gas |  99.96% | "scaled_syscall::deploy_syscall_cost_but_different" 
+               2200 sierra gas |  0.84% |  99.92% |   5100 sierra gas |   1.94% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+                100 sierra gas |  0.04% |  99.96% | 109100 sierra gas |  41.60% | "Contract: GasConstructorCheckerButDifferent\nFunction: constructor\n" 
+                100 sierra gas |  0.04% | 100.00% | 262249 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+            "#
+        ));
+}
+
+#[test]
+fn view_syscall_with_no_calldata_factor() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/scaled_syscall/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("scaled_syscall_test_increase_balance.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("sierra gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 122188 sierra gas, 100.00% of 122188 sierra gas total
+            Showing top 9 nodes out of 9
+            
+                         flat |  flat% |    sum% |               cum |    cum% |  
+            ------------------+--------+---------+-------------------+---------+----------------------------------------------------------------------------------------------------------------------------------
+             90388 sierra gas | 73.97% |  73.97% | 110388 sierra gas |  90.34% | "CallContract" 
+             10000 sierra gas |  8.18% |  82.16% |  10000 sierra gas |   8.18% | "StorageRead" 
+             10000 sierra gas |  8.18% |  90.34% |  10000 sierra gas |   8.18% | "StorageWrite" 
+              4300 sierra gas |  3.52% |  93.86% | 119788 sierra gas |  98.04% | "scaled_syscall::test_increase_balance_return_wrapper" 
+              2900 sierra gas |  2.37% |  96.24% |   2900 sierra gas |   2.37% | "snforge_std::cheatcode::execute_cheatcode" 
+              2300 sierra gas |  1.88% |  98.12% | 122088 sierra gas |  99.92% | "scaled_syscall::test_increase_balance" 
+              2200 sierra gas |  1.80% |  99.92% |   5100 sierra gas |   4.17% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+               100 sierra gas |  0.08% | 100.00% | 122188 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                 0 sierra gas |  0.00% | 100.00% |  20000 sierra gas |  16.37% | "Contract: <unknown>\nAddress: 0x000fa8e78a86a612746455cfeb98012e67ec3426b41a20278d5e7237bcab7413\nFunction: increase_balance\n" 
             "#
         ));
 }
