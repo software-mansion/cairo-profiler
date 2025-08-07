@@ -292,6 +292,11 @@
                 "n_steps": 0,
                 "builtin_instance_counter": {},
                 "n_memory_holes": 0
+            },
+            "MetaTxV0": {
+                "n_steps": 0,
+                "builtin_instance_counter": {},
+                "n_memory_holes": 0
             }
         }
     }

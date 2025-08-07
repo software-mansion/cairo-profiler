@@ -3,13 +3,19 @@
 use console::style;
 use std::fmt::Display;
 
-/// Print an warning message.
+/// Prints a warning message.
 pub fn warn(message: impl Display) {
     let tag = style("WARNING").yellow();
     eprintln!("[{tag}] {message}");
 }
 
-/// Print a message.
+/// Prints an error message.
+pub fn err(message: impl Display) {
+    let tag = style("ERROR").red();
+    eprintln!("[{tag}] {message}");
+}
+
+/// Prints a message.
 pub fn msg(message: impl Display) {
     println!("{message}");
 }

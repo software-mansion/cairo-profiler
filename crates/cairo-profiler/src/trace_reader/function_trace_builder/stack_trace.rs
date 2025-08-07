@@ -1,33 +1,38 @@
 use crate::trace_reader::function_trace_builder::ChargedResources;
 use crate::trace_reader::sample::{FunctionCall, MeasurementUnit, MeasurementValue, Sample};
+use crate::versioned_constants_reader::SyscallVariant::{Scaled, Unscaled};
 use crate::versioned_constants_reader::{BuiltinGasCosts, VersionedConstants};
 use cairo_annotations::trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use std::collections::HashMap;
 
 pub fn trace_to_samples(
     functions_stack_traces: HashMap<Vec<FunctionCall>, ChargedResources>,
-    syscall_stack_traces: HashMap<Vec<FunctionCall>, i64>,
+    syscall_stack_traces: OrderedHashMap<Vec<FunctionCall>, i64>,
     function_casm_sizes: &HashMap<Vec<FunctionCall>, i64>,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
+    entrypoint_calldata_lengths: Vec<usize>,
 ) -> Vec<Sample> {
     let function_samples: Vec<Sample> = functions_stack_traces
         .into_iter()
         .map(|(call_stack, cr)| map_function_trace_to_sample(call_stack, cr, function_casm_sizes))
         .collect();
 
-    let syscall_samples: Vec<Sample> = syscall_stack_traces
-        .into_iter()
-        .map(|(call_stack, invocations)| {
-            map_syscall_trace_to_sample(
-                call_stack,
-                invocations,
-                versioned_constants,
-                sierra_gas_tracking,
-            )
-        })
-        .collect();
+    let mut syscall_samples: Vec<Sample> = Vec::new();
+    let mut calldata_lengths_iter = entrypoint_calldata_lengths.into_iter();
+
+    for (call_stack, invocations) in syscall_stack_traces {
+        let sample = map_syscall_trace_to_sample(
+            call_stack,
+            invocations,
+            versioned_constants,
+            sierra_gas_tracking,
+            calldata_lengths_iter.next(),
+        );
+        syscall_samples.push(sample);
+    }
 
     [function_samples, syscall_samples].concat()
 }
@@ -66,6 +71,7 @@ pub fn map_syscall_trace_to_sample(
     invocations: i64,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
+    calldata_factor: Option<usize>,
 ) -> Sample {
     let function_name = call_stack.last().unwrap().function_name();
     let syscall_resources = versioned_constants
@@ -79,14 +85,39 @@ pub fn map_syscall_trace_to_sample(
         )
         .unwrap();
 
+    let adjusted_resources = match syscall_resources {
+        Unscaled(resources) => resources,
+        Scaled(resources) => {
+            if calldata_factor.is_some() {
+                let mut builtin_instance_counter =
+                    resources.constant.builtin_instance_counter.clone();
+
+                for (builtin, count) in &resources.calldata_factor.builtin_instance_counter {
+                    let entry = builtin_instance_counter.entry(builtin.clone()).or_insert(0);
+                    *entry += count * calldata_factor.unwrap();
+                }
+
+                &VmExecutionResources {
+                    n_steps: resources.constant.n_steps
+                        + resources.calldata_factor.n_steps * calldata_factor.unwrap(),
+                    n_memory_holes: resources.constant.n_memory_holes
+                        + resources.calldata_factor.n_memory_holes * calldata_factor.unwrap(),
+                    builtin_instance_counter,
+                }
+            } else {
+                &resources.constant
+            }
+        }
+    };
+
     let mut measurements = if sierra_gas_tracking {
         calculate_syscall_sierra_gas_measurements(
-            syscall_resources,
+            adjusted_resources,
             invocations,
             versioned_constants,
         )
     } else {
-        calculate_syscall_cairo_steps_measurements(syscall_resources, invocations)
+        calculate_syscall_cairo_steps_measurements(adjusted_resources, invocations)
     };
 
     measurements.insert(
@@ -214,6 +245,7 @@ pub fn map_syscall_to_selector(syscall: &StarknetConcreteLibfunc) -> DeprecatedS
         StarknetConcreteLibfunc::Sha256ProcessBlock(_) => {
             DeprecatedSyscallSelector::Sha256ProcessBlock
         }
+        StarknetConcreteLibfunc::MetaTxV0(_) => DeprecatedSyscallSelector::MetaTxV0,
         _ => panic!("Missing mapping to a syscall"),
     }
 }
