@@ -835,3 +835,191 @@ fn view_syscall_counts_fork(resource: &str, trace_name: &str) {
             "#
         ));
 }
+
+#[test]
+fn tree_more_deploys_without_constructor() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root
+                .join("crates/cairo-profiler/tests/contracts/tree_verification/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("mega_package_integrationtest_test_calls_test_call.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("1")
+        .arg("--sample")
+        .arg("syscall usage")
+        .assert()
+        .success()
+        // snforge adds DeployWithoutConstructor types to nested_calls - we must make sure they are properly matched
+        // there are 14 deploys in the nested calls, and there are 3 snforge deploys (syscall-less) in the code
+        // which means there should be 11 deploy syscalls
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 11 syscall usage, 10.19% of 108 syscall usage total
+            Showing top 1 nodes out of 38
+            
+                         flat |  flat% |   sum% |              cum |   cum% |  
+            ------------------+--------+--------+------------------+--------+----------
+             11 syscall usage | 10.19% | 10.19% | 28 syscall usage | 25.93% | "Deploy" 
+            "#
+        ));
+}
+
+#[test]
+fn tree_more_nested_calls_than_triggers_happy() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root
+                .join("crates/cairo-profiler/tests/contracts/tree_verification/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("mega_package_integrationtest_test_erc20_test.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("6")
+        .arg("--sample")
+        .arg("syscall usage")
+        .assert()
+        .success()
+        // snforge cheats some deploys - deploy will appear in nested_calls, but there won't be a syscall
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 19 syscall usage, 100.00% of 19 syscall usage total
+            Showing top 6 nodes out of 25
+            
+                         flat |  flat% |    sum% |              cum |   cum% |  
+            ------------------+--------+---------+------------------+--------+--------------------------------------------
+             11 syscall usage | 57.89% |  57.89% | 11 syscall usage | 57.89% | "StorageWrite" 
+              4 syscall usage | 21.05% |  78.95% |  4 syscall usage | 21.05% | "StorageRead" 
+              2 syscall usage | 10.53% |  89.47% |  2 syscall usage | 10.53% | "EmitEvent" 
+              1 syscall usage |  5.26% |  94.74% | 11 syscall usage | 57.89% | "CallContract" 
+              1 syscall usage |  5.26% | 100.00% |  1 syscall usage |  5.26% | "GetExecutionInfo" 
+              0 syscall usage |  0.00% | 100.00% |  8 syscall usage | 42.11% | "Contract: ERC20\nFunction: constructor\n" 
+            "#
+        ));
+}
+
+#[test]
+fn tree_more_nested_calls_than_triggers_missing_call_contract() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root
+                .join("crates/cairo-profiler/tests/contracts/tree_verification/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("mega_package_more_calls_than_triggers.json")
+        .assert()
+        .failure()
+        .stderr_eq(indoc!(
+            r#"
+            [ERROR] There are no syscalls left in the program trace, but at least one unhandled call in trace file CallEntryPoint { class_hash: Some(ClassHash(0x117)), entry_point_type: External, entry_point_selector: EntryPointSelector(0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b), contract_address: ContractAddress(0x1724987234973219347210837402), call_type: Call, contract_name: Some("SNFORGE_TEST_CODE"), function_name: Some("SNFORGE_TEST_CODE_FUNCTION") }!
+            
+            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:249:13:
+            Too many EntryPointCalls for triggers
+            note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+            "#
+        ));
+}
+
+#[test]
+fn tree_more_triggers_than_nested_calls() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root
+                .join("crates/cairo-profiler/tests/contracts/tree_verification/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("mega_package_more_triggers_than_calls.json")
+        .assert()
+        .failure()
+        .stderr_eq(indoc!(
+            "
+            [ERROR] Found syscall CallContract in the program trace, that do not have corresponding calls in trace file!
+            
+            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:198:17:
+            Too few EntryPointCalls for triggers
+            note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+            "
+        ));
+}
+
+#[test]
+fn tree_mismatched_syscall_with_entrypoint() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root
+                .join("crates/cairo-profiler/tests/contracts/tree_verification/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("mega_package_mismatched.json")
+        .assert()
+        .failure()
+        .stderr_eq(indoc!(
+            r#"
+            [ERROR] Found syscall CallContract in the program trace, that do not corresponds to the next call from trace file CallEntryPoint { class_hash: Some(ClassHash(0x117)), entry_point_type: External, entry_point_selector: EntryPointSelector(0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b), contract_address: ContractAddress(0x1724987234973219347210837402), call_type: Call, contract_name: Some("SNFORGE_TEST_CODE"), function_name: Some("SNFORGE_TEST_CODE_FUNCTION") }!
+            
+            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:239:17:
+            Trigger does not match entrypoint
+            note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+            "#
+        ));
+}
