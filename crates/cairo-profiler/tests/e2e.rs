@@ -881,7 +881,7 @@ fn tree_more_deploys_without_constructor() {
             r#"
             
             Showing nodes accounting for 11 syscall usage, 10.19% of 108 syscall usage total
-            Showing top 1 nodes out of 38
+            Showing top 1 nodes out of 35
             
                          flat |  flat% |   sum% |              cum |   cum% |  
             ------------------+--------+--------+------------------+--------+----------
@@ -928,7 +928,7 @@ fn tree_more_nested_calls_than_triggers_happy() {
             r#"
             
             Showing nodes accounting for 19 syscall usage, 100.00% of 19 syscall usage total
-            Showing top 6 nodes out of 25
+            Showing top 6 nodes out of 22
             
                          flat |  flat% |    sum% |              cum |   cum% |  
             ------------------+--------+---------+------------------+--------+--------------------------------------------

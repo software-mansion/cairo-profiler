@@ -9,7 +9,7 @@ To re-generate run `snforge test --save-trace-data --tracked-resource sierra-gas
 Then copy trace + compiled files in here
 
 Generated using:
-- scarb 2.11.4
+- scarb 2.12.0
 - snforge 0.48.0
 
 
