@@ -2,7 +2,9 @@ use crate::trace_reader::function_trace_builder::ChargedResources;
 use crate::trace_reader::sample::{FunctionCall, MeasurementUnit, MeasurementValue, Sample};
 use crate::versioned_constants_reader::SyscallVariant::{Scaled, Unscaled};
 use crate::versioned_constants_reader::{BuiltinGasCosts, VersionedConstants};
-use cairo_annotations::trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
+use cairo_annotations::trace_data::{
+    DeprecatedSyscallSelector, SummedUpEvent, VmExecutionResources,
+};
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use std::collections::HashMap;
@@ -14,6 +16,7 @@ pub fn trace_to_samples(
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
     entrypoint_calldata_lengths: Vec<usize>,
+    events: &HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>>,
 ) -> Vec<Sample> {
     let function_samples: Vec<Sample> = functions_stack_traces
         .into_iter()
@@ -30,6 +33,7 @@ pub fn trace_to_samples(
             versioned_constants,
             sierra_gas_tracking,
             calldata_lengths_iter.next(),
+            events,
         );
         syscall_samples.push(sample);
     }
@@ -72,6 +76,7 @@ pub fn map_syscall_trace_to_sample(
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
     calldata_factor: Option<usize>,
+    events: &HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>>,
 ) -> Sample {
     let function_name = call_stack.last().unwrap().function_name();
     let syscall_resources = versioned_constants
@@ -111,10 +116,12 @@ pub fn map_syscall_trace_to_sample(
     };
 
     let mut measurements = if sierra_gas_tracking {
-        calculate_syscall_sierra_gas_measurements(
+        calculate_syscall_gas_measurements(
             adjusted_resources,
             invocations,
             versioned_constants,
+            &call_stack,
+            events,
         )
     } else {
         calculate_syscall_cairo_steps_measurements(adjusted_resources, invocations)
@@ -131,11 +138,40 @@ pub fn map_syscall_trace_to_sample(
     }
 }
 
-fn calculate_syscall_sierra_gas_measurements(
+fn calculate_syscall_gas_measurements(
     resources: &VmExecutionResources,
     invocations: i64,
     versioned_constants: &VersionedConstants,
+    call: &Vec<FunctionCall>,
+    events: &HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>>,
 ) -> HashMap<MeasurementUnit, MeasurementValue> {
+    let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = HashMap::new();
+    let computation_resources = computation_resources(resources, invocations, versioned_constants);
+
+    measurements.insert(
+        MeasurementUnit::from("sierra_gas".to_string()),
+        computation_resources.clone(),
+    );
+
+    let value = events.get(call).map_or(0, |evs| {
+        evs.iter()
+            .map(|e| e.keys_len * 10240 + e.data_len * 5120) // todo: szymczyk
+            .sum()
+    });
+
+    measurements.insert(
+        MeasurementUnit::from("l2_gas".to_string()),
+        computation_resources + MeasurementValue(i64::try_from(value).unwrap()),
+    );
+
+    measurements
+}
+
+fn computation_resources(
+    resources: &VmExecutionResources,
+    invocations: i64,
+    versioned_constants: &VersionedConstants,
+) -> MeasurementValue {
     let step_cost = usize::try_from(versioned_constants.os_constants.step_gas_cost)
         .expect("Overflow while converting step_gas_cost to usize");
     let memory_hole_cost = usize::try_from(versioned_constants.os_constants.memory_hole_gas_cost)
@@ -183,10 +219,7 @@ fn calculate_syscall_sierra_gas_measurements(
         .checked_mul(invocations)
         .expect("Total syscall cost multiplication overflow");
 
-    HashMap::from([(
-        MeasurementUnit::from("sierra_gas".to_string()),
-        MeasurementValue(total_cost),
-    )])
+    MeasurementValue(total_cost)
 }
 
 fn calculate_syscall_cairo_steps_measurements(

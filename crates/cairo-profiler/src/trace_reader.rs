@@ -18,6 +18,7 @@ use cairo_annotations::trace_data::{
     EntryPointType, ExecutionResources, SyscallUsage, VmExecutionResources,
 };
 use indoc::formatdoc;
+use std::collections::VecDeque;
 
 pub mod function_name;
 mod function_trace_builder;
@@ -113,6 +114,10 @@ pub fn collect_samples_from_trace(
     let mut current_entrypoint_call_stack = vec![];
     let sierra_gas_tracking: bool = trace.cumulative_resources.gas_consumed.unwrap_or_default() > 0;
 
+    if sierra_gas_tracking {
+        verify_trace_data_for_l2_gas(trace);
+    }
+
     collect_samples(
         &mut samples,
         &mut current_entrypoint_call_stack,
@@ -182,6 +187,7 @@ fn collect_samples<'a>(
             versioned_constants,
             sierra_gas_tracking,
             calldata_lengths,
+            &mut VecDeque::from(trace.entry_point.events_summary.clone().unwrap_or_default()),
         );
 
         let mut trigger_idx = 0;
@@ -307,10 +313,24 @@ fn collect_samples<'a>(
         );
     }
 
+    // todo: move?
+    let maybe_entrypoint_l2_gas = if trace.entry_point.entry_point_type
+        == EntryPointType::Constructor
+        || !sierra_gas_tracking
+    {
+        None
+    } else {
+        let entrypoint_factor = trace.entry_point.calldata_len.map_or(0, |c| c * 5120); // todo: szymczyk
+        let signature_factor = trace.entry_point.signature_len.map_or(0, |s| s * 5120);
+
+        Some(entrypoint_factor + signature_factor)
+    };
+
     samples.push(Sample::from(
         current_entrypoint_call_stack.clone(),
         &call_resources,
         &trace.used_l1_resources,
+        maybe_entrypoint_l2_gas,
     ));
 
     current_entrypoint_call_stack.pop();
@@ -366,6 +386,7 @@ fn collect_syscall_samples(
             versioned_constants,
             sierra_gas_tracking,
             Some(usage.linear_factor),
+            &HashMap::default(),
         );
         samples.push(sample);
     }
@@ -388,5 +409,19 @@ fn map_entrypoint_to_syscall(entry_point: &CallEntryPoint) -> &str {
             CallType::Delegate => "LibraryCall",
         },
         EntryPointType::L1Handler => "L1Handler",
+    }
+}
+
+fn verify_trace_data_for_l2_gas(trace: &CallTraceV1) {
+    if trace.entry_point.calldata_len.is_none()
+        || trace.entry_point.signature_len.is_none()
+        || trace.entry_point.events_summary.is_none()
+    {
+        let message = formatdoc! {
+            "The trace file does not contain either one of calldata_len, signature_len or events_summary. \
+             This may lead to inaccurate l2 gas measurements. \
+             Consider using `snforge` >= `0.49.0`."
+        };
+        ui::warn(message);
     }
 }

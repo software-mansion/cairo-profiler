@@ -2,6 +2,7 @@ use cairo_annotations::annotations::profiler::FunctionName;
 use cairo_annotations::trace_data::{ExecutionResources, L1Resources};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
+use std::ops::Add;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Sample {
@@ -63,11 +64,20 @@ impl PartialEq<i64> for MeasurementValue {
     }
 }
 
+impl Add for MeasurementValue {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        MeasurementValue(self.0 + other.0)
+    }
+}
+
 impl Sample {
     pub fn from(
         call_stack: Vec<FunctionCall>,
         resources: &ExecutionResources,
         l1_resources: &L1Resources,
+        l2_gas: Option<usize>,
     ) -> Self {
         let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
             (
@@ -85,6 +95,10 @@ impl Sample {
             (
                 MeasurementUnit::from("sierra_gas".to_string()),
                 MeasurementValue(i64::try_from(resources.gas_consumed.unwrap_or(0)).unwrap()),
+            ),
+            (
+                MeasurementUnit::from("l2_gas".to_string()),
+                MeasurementValue(i64::try_from(l2_gas.unwrap_or(0)).unwrap()),
             ),
         ]
         .into_iter()
