@@ -965,7 +965,7 @@ fn tree_more_nested_calls_than_triggers_missing_call_contract() {
             [WARNING] The trace file does not contain either one of calldata_len, signature_len or events_summary. This may lead to inaccurate l2 gas measurements. Consider using `snforge` >= `0.49.0`.
             [ERROR] There are no syscalls left in the program trace, but at least one unhandled call in trace file CallEntryPoint { class_hash: Some(ClassHash(0x117)), entry_point_type: External, entry_point_selector: EntryPointSelector(0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b), contract_address: ContractAddress(0x1724987234973219347210837402), call_type: Call, contract_name: Some("SNFORGE_TEST_CODE"), function_name: Some("SNFORGE_TEST_CODE_FUNCTION"), calldata_len: Some(0), events_summary: None, signature_len: None }!
             
-            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:260:13:
+            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:265:13:
             Too many EntryPointCalls for triggers
             note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
             "#
@@ -995,7 +995,7 @@ fn tree_more_triggers_than_nested_calls() {
             [WARNING] The trace file does not contain either one of calldata_len, signature_len or events_summary. This may lead to inaccurate l2 gas measurements. Consider using `snforge` >= `0.49.0`.
             [ERROR] Found syscall CallContract in the program trace, that do not have corresponding calls in trace file!
             
-            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:209:17:
+            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:211:17:
             Too few EntryPointCalls for triggers
             note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
             "
@@ -1025,7 +1025,7 @@ fn tree_mismatched_syscall_with_entrypoint() {
             [WARNING] The trace file does not contain either one of calldata_len, signature_len or events_summary. This may lead to inaccurate l2 gas measurements. Consider using `snforge` >= `0.49.0`.
             [ERROR] Found syscall CallContract in the program trace, that do not corresponds to the next call from trace file CallEntryPoint { class_hash: Some(ClassHash(0x117)), entry_point_type: External, entry_point_selector: EntryPointSelector(0x17340c6779204ea2a91c87d1c2226a3aebda65c64da3672a36893c4330ea27b), contract_address: ContractAddress(0x1724987234973219347210837402), call_type: Call, contract_name: Some("SNFORGE_TEST_CODE"), function_name: Some("SNFORGE_TEST_CODE_FUNCTION"), calldata_len: Some(0), events_summary: None, signature_len: None }!
             
-            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:250:17:
+            thread 'main' panicked at crates/cairo-profiler/src/trace_reader.rs:255:17:
             Trigger does not match entrypoint
             note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
             "#

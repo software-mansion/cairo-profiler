@@ -153,15 +153,25 @@ fn calculate_syscall_gas_measurements(
         computation_resources.clone(),
     );
 
-    let value = events.get(call).map_or(0, |evs| {
+    let value: i64 = events.get(call).map_or(0, |evs| {
         evs.iter()
-            .map(|e| e.keys_len * 10240 + e.data_len * 5120) // todo: szymczyk
+            .map(|e| {
+                let keys = e.keys_len as u64;
+                let data = e.data_len as u64;
+
+                let amount = versioned_constants
+                    .archival_data_gas_costs
+                    .gas_per_data_felt
+                    * (versioned_constants.archival_data_gas_costs.event_key_factor * keys + data);
+
+                i64::try_from(amount.to_integer()).expect("l2 gas cost value overflowed i64")
+            })
             .sum()
     });
 
     measurements.insert(
         MeasurementUnit::from("l2_gas".to_string()),
-        computation_resources + MeasurementValue(i64::try_from(value).unwrap()),
+        computation_resources + MeasurementValue(value),
     );
 
     measurements

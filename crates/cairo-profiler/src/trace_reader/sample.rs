@@ -77,7 +77,7 @@ impl Sample {
         call_stack: Vec<FunctionCall>,
         resources: &ExecutionResources,
         l1_resources: &L1Resources,
-        l2_gas: Option<usize>,
+        l2_gas: Option<i64>,
     ) -> Self {
         let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
             (
@@ -98,7 +98,7 @@ impl Sample {
             ),
             (
                 MeasurementUnit::from("l2_gas".to_string()),
-                MeasurementValue(i64::try_from(l2_gas.unwrap_or(0)).unwrap()),
+                MeasurementValue(l2_gas.unwrap_or(0)),
             ),
         ]
         .into_iter()
