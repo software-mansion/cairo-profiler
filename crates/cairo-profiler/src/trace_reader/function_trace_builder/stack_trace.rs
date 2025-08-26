@@ -9,6 +9,7 @@ use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use std::collections::HashMap;
 
+#[expect(clippy::too_many_arguments)]
 pub fn trace_to_samples(
     functions_stack_traces: HashMap<Vec<FunctionCall>, ChargedResources>,
     syscall_stack_traces: OrderedHashMap<Vec<FunctionCall>, i64>,
@@ -17,10 +18,18 @@ pub fn trace_to_samples(
     sierra_gas_tracking: bool,
     entrypoint_calldata_lengths: Vec<usize>,
     events: &HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>>,
+    in_transaction_entrypoint: bool,
 ) -> Vec<Sample> {
     let function_samples: Vec<Sample> = functions_stack_traces
         .into_iter()
-        .map(|(call_stack, cr)| map_function_trace_to_sample(call_stack, cr, function_casm_sizes))
+        .map(|(call_stack, cr)| {
+            map_function_trace_to_sample(
+                call_stack,
+                cr,
+                function_casm_sizes,
+                in_transaction_entrypoint,
+            )
+        })
         .collect();
 
     let mut syscall_samples: Vec<Sample> = Vec::new();
@@ -45,8 +54,9 @@ fn map_function_trace_to_sample(
     call_stack: Vec<FunctionCall>,
     cr: ChargedResources,
     casm_sizes: &HashMap<Vec<FunctionCall>, i64>,
+    in_transaction_entrypoint: bool,
 ) -> Sample {
-    let measurements: HashMap<MeasurementUnit, MeasurementValue> = vec![
+    let mut measurements = vec![
         (
             MeasurementUnit::from("steps".to_string()),
             MeasurementValue(i64::try_from(cr.steps.0).unwrap()),
@@ -59,10 +69,19 @@ fn map_function_trace_to_sample(
             MeasurementUnit::from("casm_size".to_string()),
             MeasurementValue(*casm_sizes.get(&call_stack.clone()).unwrap_or(&0)),
         ),
-    ]
-    .into_iter()
-    .filter(|(_, value)| *value != 0)
-    .collect();
+    ];
+
+    if in_transaction_entrypoint {
+        measurements.push((
+            MeasurementUnit::from("l2_gas".to_string()),
+            MeasurementValue(i64::try_from(cr.sierra_gas_consumed.0).unwrap()),
+        ));
+    }
+
+    let measurements: HashMap<MeasurementUnit, MeasurementValue> = measurements
+        .into_iter()
+        .filter(|(_, value)| *value != 0)
+        .collect();
 
     Sample {
         call_stack,

@@ -190,6 +190,7 @@ fn collect_samples<'a>(
             sierra_gas_tracking,
             calldata_lengths,
             &mut VecDeque::from(trace.entry_point.events_summary.clone().unwrap_or_default()),
+            is_tx_entrypoint,
         );
 
         let mut trigger_idx = 0;

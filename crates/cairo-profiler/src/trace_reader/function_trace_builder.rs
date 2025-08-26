@@ -112,6 +112,7 @@ pub fn collect_function_level_profiling_info(
     sierra_gas_tracking: bool,
     entrypoint_calldata_lengths: Vec<usize>,
     events: &mut VecDeque<SummedUpEvent>,
+    in_transaction_entrypoint: bool,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
     let precost_info = compute_precost_info(program).expect("Failed to compute pre-cost info");
@@ -371,6 +372,7 @@ pub fn collect_function_level_profiling_info(
         sierra_gas_tracking,
         entrypoint_calldata_lengths,
         &events_map,
+        in_transaction_entrypoint,
     );
 
     FunctionLevelProfilingInfo {
