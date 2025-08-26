@@ -11,7 +11,7 @@ use crate::trace_reader::function_trace_builder::stack_trace::{
 use crate::trace_reader::sample::{FunctionCall, InternalFunctionCall, Sample};
 use crate::versioned_constants_reader::VersionedConstants;
 use cairo_annotations::annotations::profiler::{FunctionName, ProfilerAnnotationsV1};
-use cairo_annotations::trace_data::CasmLevelInfo;
+use cairo_annotations::trace_data::{CasmLevelInfo, SummedUpEvent};
 use cairo_annotations::{MappingResult, map_pcs_to_sierra_statement_ids};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -25,7 +25,7 @@ use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metadata};
 use cairo_lang_sierra_type_size::get_type_size_map;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::ops::{AddAssign, SubAssign};
 
 mod cost;
@@ -112,6 +112,7 @@ pub fn collect_function_level_profiling_info(
     sierra_gas_tracking: bool,
     entrypoint_calldata_lengths: Vec<usize>,
     in_transaction: bool,
+    events: &mut VecDeque<SummedUpEvent>,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
     let precost_info = compute_precost_info(program).expect("Failed to compute pre-cost info");
@@ -156,6 +157,9 @@ pub fn collect_function_level_profiling_info(
     // a vector of calls for each `nested_call`. These calls can be one of:
     // Deploy, CallContract, or LibraryCall syscalls
     let mut nested_call_triggers: Vec<Vec<FunctionCall>> = Vec::new();
+    // Each EmitEvent syscall should have a corresponding event containing keys and data length
+    // taken from trace file. Later on the data is used to estimate l2 gas cost of this syscall.
+    let mut events_map: HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>> = HashMap::new();
 
     let libfunc_map: HashMap<u64, String> = program
         .libfunc_declarations
@@ -284,6 +288,8 @@ pub fn collect_function_level_profiling_info(
                                 &current_call_stack,
                                 &mut nested_call_triggers,
                                 &mut syscall_stack_traces,
+                                &mut events_map,
+                                events,
                             );
                         }
                     }
@@ -366,6 +372,7 @@ pub fn collect_function_level_profiling_info(
         sierra_gas_tracking,
         entrypoint_calldata_lengths,
         in_transaction,
+        &events_map,
     );
 
     FunctionLevelProfilingInfo {
@@ -450,6 +457,7 @@ fn effective_call_stack(
     }
 }
 
+#[expect(clippy::too_many_arguments)]
 fn register_syscall(
     syscall: &StarknetConcreteLibfunc,
     sierra_statement_idx: StatementIdx,
@@ -457,6 +465,8 @@ fn register_syscall(
     current_call_stack: &VecWithLimitedCapacity<FunctionCall>,
     nested_call_triggers: &mut Vec<Vec<FunctionCall>>,
     syscall_stack_traces: &mut OrderedHashMap<Vec<FunctionCall>, i64>,
+    events_map: &mut HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>>,
+    events: &mut VecDeque<SummedUpEvent>,
 ) {
     *in_syscall_idx = Some(sierra_statement_idx);
 
@@ -471,6 +481,15 @@ fn register_syscall(
         | StarknetConcreteLibfunc::CallContract(_)
         | StarknetConcreteLibfunc::LibraryCall(_) => {
             nested_call_triggers.push(current_call_stack_with_syscall.clone().into());
+        }
+        StarknetConcreteLibfunc::EmitEvent(_) => {
+            if !events.is_empty() {
+                events_map
+                    .entry(current_call_stack_with_syscall.clone().into())
+                    .or_default()
+                    .push(events.front().unwrap().clone());
+                events.pop_front();
+            }
         }
         _ => {}
     }
