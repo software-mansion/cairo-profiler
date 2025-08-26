@@ -23,6 +23,7 @@ cairo-annotations.workspace = true
 prettytable-rs.workspace = true
 regex.workspace = true
 console.workspace = true
+num-rational = { workspace = true, features = ["serde"] }
 
 cairo-lang-sierra.workspace = true
 cairo-lang-sierra-to-casm.workspace = true
