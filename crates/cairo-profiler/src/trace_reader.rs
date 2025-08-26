@@ -445,22 +445,3 @@ fn is_priced_transaction(entrypoint: &CallEntryPoint) -> bool {
     entrypoint.entry_point_type != EntryPointType::Constructor
         && entrypoint.call_type != CallType::Delegate
 }
-
-fn verify_trace_data_for_l2_gas(trace: &CallTraceV1) {
-    if trace.entry_point.calldata_len.is_none()
-        || trace.entry_point.signature_len.is_none()
-        || trace.entry_point.events_summary.is_none()
-    {
-        let message = formatdoc! {
-            "The trace file does not contain either one of calldata_len, signature_len or events_summary. \
-             This may lead to inaccurate l2 gas measurements. \
-             Consider using `snforge` >= `0.49.0`."
-        };
-        ui::warn(message);
-    }
-}
-
-fn is_priced_transaction(entrypoint: &CallEntryPoint) -> bool {
-    entrypoint.entry_point_type != EntryPointType::Constructor
-        && entrypoint.call_type != CallType::Delegate
-}
