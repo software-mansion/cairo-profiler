@@ -399,8 +399,5 @@ fn map_entrypoint_to_syscall(entry_point: &CallEntryPoint) -> &str {
 }
 
 fn is_transaction_entrypoint(parent: &FunctionName) -> bool {
-    parent
-        == &FunctionName(String::from(
-            "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n",
-        ))
+    parent.0.as_str() == "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n"
 }
