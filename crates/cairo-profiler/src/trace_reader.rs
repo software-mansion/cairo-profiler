@@ -434,11 +434,9 @@ fn verify_trace_data_for_l2_gas(trace: &CallTraceV1) {
         || trace.entry_point.signature_len.is_none()
         || trace.entry_point.events_summary.is_none()
     {
-        let message = formatdoc! {
-            "The trace file does not contain either one of calldata_len, signature_len or events_summary. \
+        let message = "The trace file does not contain either one of calldata_len, signature_len or events_summary. \
              This may lead to inaccurate l2 gas measurements. \
-             Consider using `snforge` >= `0.49.0`."
-        };
+             Consider using `snforge` >= `0.49.0`.";
         ui::warn(message);
     }
 }
