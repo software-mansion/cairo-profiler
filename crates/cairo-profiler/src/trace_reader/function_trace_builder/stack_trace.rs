@@ -102,7 +102,14 @@ pub fn map_syscall_trace_to_sample(
             &function_name
                 .0
                 .parse::<DeprecatedSyscallSelector>()
-                .expect("Failed to map function to SyscallSelector"),
+                .expect(
+                    "Failed to map function to SyscallSelector.\n\n\
+                          This usually means that a syscall was encountered that the current cairo-profiler \
+                          version does not yet recognise. \n\
+                          Try updating cairo-profiler to the latest version, and if the issue persists, \
+                          consider opening a bug report: https://github.com/software-mansion/cairo-profiler/issues/new",
+                )
+            ,
         )
         .unwrap();
 
