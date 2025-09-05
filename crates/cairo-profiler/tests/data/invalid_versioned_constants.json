@@ -1,4 +1,18 @@
 {
+    "archival_data_gas_costs": {
+        "gas_per_data_felt": [
+            5120,
+            1
+        ],
+        "event_key_factor": [
+            2,
+            1
+        ],
+        "gas_per_code_byte": [
+            1280,
+            1
+        ]
+    },
     "os_resources": {
         "execute_syscalls": {
             "DelegateCall": {

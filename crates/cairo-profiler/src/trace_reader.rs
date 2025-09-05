@@ -18,6 +18,7 @@ use cairo_annotations::trace_data::{
     EntryPointType, ExecutionResources, SyscallUsage, VmExecutionResources,
 };
 use indoc::formatdoc;
+use std::collections::VecDeque;
 
 pub mod function_name;
 mod function_trace_builder;
@@ -113,6 +114,10 @@ pub fn collect_samples_from_trace(
     let mut current_entrypoint_call_stack = vec![];
     let sierra_gas_tracking: bool = trace.cumulative_resources.gas_consumed.unwrap_or_default() > 0;
 
+    if sierra_gas_tracking {
+        verify_trace_data_for_l2_gas(trace);
+    }
+
     collect_samples(
         &mut samples,
         &mut current_entrypoint_call_stack,
@@ -121,12 +126,13 @@ pub fn collect_samples_from_trace(
         profiler_config,
         versioned_constants,
         sierra_gas_tracking,
+        false,
     )?;
 
     Ok(samples)
 }
 
-#[expect(clippy::too_many_lines)]
+#[expect(clippy::too_many_lines, clippy::too_many_arguments)]
 fn collect_samples<'a>(
     samples: &mut Vec<Sample>,
     current_entrypoint_call_stack: &mut Vec<FunctionCall>,
@@ -135,6 +141,7 @@ fn collect_samples<'a>(
     profiler_config: &ProfilerConfig,
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
+    is_tx_entrypoint: bool,
 ) -> Result<&'a ExecutionResources> {
     let function_name = FunctionName::from_entry_point_params(
         trace.entry_point.contract_name.clone(),
@@ -172,6 +179,7 @@ fn collect_samples<'a>(
             }
         }
         let mut entrypoint_calls = entrypoint_calls.into_iter().peekable();
+        let in_transaction = !is_transaction_entrypoint(&function_name);
 
         let function_level_profiling_info = collect_function_level_profiling_info(
             &compiled_artifacts.sierra_program,
@@ -182,6 +190,8 @@ fn collect_samples<'a>(
             versioned_constants,
             sierra_gas_tracking,
             calldata_lengths,
+            in_transaction,
+            &mut VecDeque::from(trace.entry_point.events_summary.clone().unwrap_or_default()),
         );
 
         let mut trigger_idx = 0;
@@ -204,6 +214,7 @@ fn collect_samples<'a>(
             };
 
             let expected_syscall = map_entrypoint_to_syscall(&sub_trace.entry_point);
+            let is_tx_entrypoint = is_transaction_entrypoint(&function_name);
 
             if traced_syscall == expected_syscall {
                 entrypoint_calls.next();
@@ -220,6 +231,7 @@ fn collect_samples<'a>(
                     profiler_config,
                     versioned_constants,
                     sierra_gas_tracking,
+                    is_tx_entrypoint,
                 )?);
             } else if expected_syscall == "Deploy" {
                 // snforge can sometimes insert a Deploy nested_call that is not a syscall!
@@ -232,6 +244,7 @@ fn collect_samples<'a>(
                     profiler_config,
                     versioned_constants,
                     sierra_gas_tracking,
+                    is_tx_entrypoint,
                 )?);
             } else if traced_syscall == "Deploy" {
                 // keep looking for matching nested_call
@@ -281,6 +294,7 @@ fn collect_samples<'a>(
                     profiler_config,
                     versioned_constants,
                     sierra_gas_tracking,
+                    false,
                 )?);
             }
         }
@@ -307,10 +321,28 @@ fn collect_samples<'a>(
         );
     }
 
+    let maybe_entrypoint_l2_gas =
+        if is_tx_entrypoint && sierra_gas_tracking && is_priced_transaction(&trace.entry_point) {
+            let total_data_size: u64 = (trace.entry_point.calldata_len.unwrap_or_default()
+                + trace.entry_point.signature_len.unwrap_or_default())
+            .try_into()?;
+            let amount: i64 = (versioned_constants
+                .archival_data_gas_costs
+                .gas_per_data_felt
+                * total_data_size)
+                .to_integer()
+                .try_into()?;
+
+            Some(amount)
+        } else {
+            None
+        };
+
     samples.push(Sample::from(
         current_entrypoint_call_stack.clone(),
         &call_resources,
         &trace.used_l1_resources,
+        maybe_entrypoint_l2_gas,
     ));
 
     current_entrypoint_call_stack.pop();
@@ -366,6 +398,8 @@ fn collect_syscall_samples(
             versioned_constants,
             sierra_gas_tracking,
             Some(usage.linear_factor),
+            false,
+            &HashMap::default(),
         );
         samples.push(sample);
     }
@@ -389,4 +423,25 @@ fn map_entrypoint_to_syscall(entry_point: &CallEntryPoint) -> &str {
         },
         EntryPointType::L1Handler => "L1Handler",
     }
+}
+
+fn is_transaction_entrypoint(parent: &FunctionName) -> bool {
+    parent.0.as_str() == "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n"
+}
+
+fn verify_trace_data_for_l2_gas(trace: &CallTraceV1) {
+    if trace.entry_point.calldata_len.is_none()
+        || trace.entry_point.signature_len.is_none()
+        || trace.entry_point.events_summary.is_none()
+    {
+        let message = "The trace file does not contain either one of calldata_len, signature_len or events_summary. \
+             This may lead to inaccurate l2 gas measurements. \
+             Consider using `snforge` >= `0.49.0`.";
+        ui::warn(message);
+    }
+}
+
+fn is_priced_transaction(entrypoint: &CallEntryPoint) -> bool {
+    entrypoint.entry_point_type != EntryPointType::Constructor
+        && entrypoint.call_type != CallType::Delegate
 }

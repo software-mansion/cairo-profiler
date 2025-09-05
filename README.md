@@ -111,6 +111,19 @@ view, closely mimicking `pprof` output. There are two ways to view the profile:
 
 By default, the top 10 `calls` samples will be shown. This can be changed using `--limit` and `--sample` flags.
 
+### l2 gas profiling
+
+If the trace file was generated with snforge 0.49.0+ (with sierra gas tracking enabled), an `l2 gas` sample will be available.
+
+This measurement includes:
+- function and syscall execution resources (i.e. used sierra gas)
+- transaction calldata and signatures
+- keys and data of emitted events
+
+It does _not_ include:
+- constructor calldata (for DEPLOY_ACCOUNT transactions)
+- ABI and CASM/Sierra bytecode (for DECLARE transactions)
+
 #### Examples:
 
 Viewing directly after building the profile:

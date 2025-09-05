@@ -205,9 +205,9 @@ checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
 name = "cairo-annotations"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a46c8836608a014faf85fb2e5b99de2de5e7a6da18ff72fb6d3451f3812838e4"
+checksum = "9cf5733820437d7b9e59d47a0f060852f1701f72e893f45d48fff59d4f8a4656"
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-to-casm",
@@ -396,6 +396,7 @@ dependencies = [
  "flate2",
  "indoc",
  "itertools",
+ "num-rational",
  "prettytable-rs",
  "project-root",
  "prost",
@@ -1156,6 +1157,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
 dependencies = [
  "num-traits",
+]
+
+[[package]]
+name = "num-rational"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f83d14da390562dca69fc84082e73e548e1ad308d24accdedd2720017cb37824"
+dependencies = [
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+ "serde",
 ]
 
 [[package]]

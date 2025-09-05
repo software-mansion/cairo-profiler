@@ -1,15 +1,19 @@
 use anyhow::{Context, Result};
 use cairo_annotations::trace_data::{DeprecatedSyscallSelector, VmExecutionResources};
 use camino::Utf8PathBuf;
+use num_rational::Ratio;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 
+pub type ResourceCost = Ratio<u64>;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VersionedConstants {
     pub os_resources: OsResources,
     pub os_constants: OsConstants,
+    pub archival_data_gas_costs: ArchivalDataGasCosts,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -57,6 +61,13 @@ pub struct BuiltinGasCosts {
     pub ecdsa: u64,
 }
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize, Eq, PartialEq)]
+pub struct ArchivalDataGasCosts {
+    pub gas_per_data_felt: ResourceCost,
+    pub event_key_factor: ResourceCost,
+    pub gas_per_code_byte: ResourceCost,
+}
+
 /// Reads and parses the resource map file at given path
 /// It also checks that the file have cost information about all required libfuncs (syscalls)
 pub fn read_and_parse_versioned_constants_file(
@@ -97,8 +108,17 @@ pub fn read_and_parse_versioned_constants_file(
         ));
     }
 
+    let parsed_archival_data_gas_cost = json_value
+        .get("archival_data_gas_costs")
+        .context("Invalid versioned constants file format: field 'archival_data_gas_cost' not found in versioned constants file")?;
+    let archival_data_gas_costs: ArchivalDataGasCosts =
+        serde_json::from_value(parsed_archival_data_gas_cost.clone()).context(
+            "Failed to deserialize 'archival_data_gas_cost' field into ArchivalDataGasCosts struct",
+        )?;
+
     Ok(VersionedConstants {
         os_resources,
         os_constants,
+        archival_data_gas_costs,
     })
 }

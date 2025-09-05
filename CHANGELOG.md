@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- l2 gas profiling
+
 ## [0.11.0] - 2025.08.07
 
 ### Fixed
