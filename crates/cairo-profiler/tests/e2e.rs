@@ -1207,3 +1207,242 @@ fn view_syscall_with_no_calldata_factor() {
             "#
         ));
 }
+
+#[test]
+fn view_no_l2_gas_sample_for_steps() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root
+                .join("crates/cairo-profiler/tests/contracts/l2_gas/precompiled_cairo_steps/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("l2_verification_integrationtest_test_l2_without_signature.json")
+        .assert()
+        .success();
+
+    let output = SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--list-samples")
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+
+    let output_str = str::from_utf8(&output).expect("Output was not valid utf-8");
+
+    assert!(
+        !output_str.contains("l2 gas"),
+        "Output contains: {}, 'l2 gas' is wrongly here",
+        &output_str
+    );
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("l2_verification_integrationtest_test_l2_with_signature.json")
+        .assert()
+        .success();
+
+    let output = SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--list-samples")
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+
+    let output_str = str::from_utf8(&output).expect("Output was not valid utf-8");
+
+    assert!(
+        !output_str.contains("l2 gas"),
+        "Output contains: {}, 'l2 gas' is wrongly here",
+        &output_str
+    );
+}
+
+#[test]
+fn view_l2_gas_no_signature() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root
+                .join("crates/cairo-profiler/tests/contracts/l2_gas/precompiled_sierra_gas/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("l2_verification_integrationtest_test_l2_without_signature.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("l2 gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 271500 l2 gas, 100.00% of 271500 l2 gas total
+            Showing top 42 nodes out of 42
+            
+                     flat |  flat% |    sum% |           cum |    cum% |  
+            --------------+--------+---------+---------------+---------+---------------------------------------------------------------------------------
+             69800 l2 gas | 25.71% |  25.71% |  83000 l2 gas |  30.57% | "l2_verification::erc20::ERC20::StorageImpl::transfer_helper" 
+             31400 l2 gas | 11.57% |  37.27% |  31400 l2 gas |  11.57% | "l2_verification::erc20::ERC20::StorageImpl::approve_helper" 
+             30800 l2 gas | 11.34% |  48.62% |  37400 l2 gas |  13.78% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__allowance" 
+             29250 l2 gas | 10.77% |  59.39% |  39150 l2 gas |  14.42% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__balance_of" 
+             19800 l2 gas |  7.29% |  66.69% |  19800 l2 gas |   7.29% | "core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::read" 
+             17050 l2 gas |  6.28% |  72.97% |  17050 l2 gas |   6.28% | "l2_verification::erc20::ERC20::constructor" 
+             16500 l2 gas |  6.08% |  79.04% |  16500 l2 gas |   6.08% | "core::starknet::storage::StorableStoragePointer0OffsetReadAccess::read" 
+             14000 l2 gas |  5.16% |  84.20% |  33000 l2 gas |  12.15% | "l2_verification::erc20::ERC20::IERC20Impl::increase_allowance" 
+             13800 l2 gas |  5.08% |  89.28% |  32800 l2 gas |  12.08% | "l2_verification::erc20::ERC20::StorageImpl::spend_allowance" 
+              8800 l2 gas |  3.24% |  92.52% |  83100 l2 gas |  30.61% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer_from" 
+              7800 l2 gas |  2.87% |  95.40% |  24850 l2 gas |   9.15% | "l2_verification::erc20::ERC20::__wrapper__constructor" 
+              6600 l2 gas |  2.43% |  97.83% |  48100 l2 gas |  17.72% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer" 
+              5900 l2 gas |  2.17% | 100.00% |  38900 l2 gas |  14.33% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__increase_allowance" 
+                 0 l2 gas |  0.00% | 100.00% | 246650 l2 gas |  90.85% | "CallContract" 
+                 0 l2 gas |  0.00% | 100.00% |  37400 l2 gas |  13.78% | "Contract: ERC20\nFunction: allowance\n" 
+                 0 l2 gas |  0.00% | 100.00% |  39150 l2 gas |  14.42% | "Contract: ERC20\nFunction: balance_of\n" 
+                 0 l2 gas |  0.00% | 100.00% |  24850 l2 gas |   9.15% | "Contract: ERC20\nFunction: constructor\n" 
+                 0 l2 gas |  0.00% | 100.00% |  38900 l2 gas |  14.33% | "Contract: ERC20\nFunction: increase_allowance\n" 
+                 0 l2 gas |  0.00% | 100.00% |  48100 l2 gas |  17.72% | "Contract: ERC20\nFunction: transfer\n" 
+                 0 l2 gas |  0.00% | 100.00% |  83100 l2 gas |  30.61% | "Contract: ERC20\nFunction: transfer_from\n" 
+                 0 l2 gas |  0.00% | 100.00% | 271500 l2 gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "EmitEvent" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "GetExecutionInfo" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "StorageRead" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "StorageWrite" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "core::array::ArrayImpl" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "core::array::SpanFelt252Serde::deserialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "core::array::serialize_array_helper" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "core::result::ResultSerde::deserialize" 
+                 0 l2 gas |  0.00% | 100.00% |  37400 l2 gas |  13.78% | "l2_verification::erc20::IERC20DispatcherImpl::allowance" 
+                 0 l2 gas |  0.00% | 100.00% |  39150 l2 gas |  14.42% | "l2_verification::erc20::IERC20DispatcherImpl::balance_of" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "l2_verification_integrationtest::test_l2::deploy_erc20" 
+                 0 l2 gas |  0.00% | 100.00% | 246650 l2 gas |  90.85% | "l2_verification_integrationtest::test_l2::without_signature" 
+                 0 l2 gas |  0.00% | 100.00% | 246650 l2 gas |  90.85% | "l2_verification_integrationtest::test_l2::without_signature_return_wrapper" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::BlockInfoMockSerde::serialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::ExecutionInfoMockImpl::default" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::ExecutionInfoMockSerde::serialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::TxInfoMockImpl::default" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::TxInfoMockSerde::serialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::cheat_execution_info" 
+            "#
+        ));
+}
+
+#[test]
+fn view_l2_gas_with_signature() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root
+                .join("crates/cairo-profiler/tests/contracts/l2_gas/precompiled_sierra_gas/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("l2_verification_integrationtest_test_l2_with_signature.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("2137")
+        .arg("--sample")
+        .arg("l2 gas")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+            r#"
+            
+            Showing nodes accounting for 271500 l2 gas, 100.00% of 271500 l2 gas total
+            Showing top 42 nodes out of 42
+            
+                     flat |  flat% |    sum% |           cum |    cum% |  
+            --------------+--------+---------+---------------+---------+---------------------------------------------------------------------------------
+             69800 l2 gas | 25.71% |  25.71% |  83000 l2 gas |  30.57% | "l2_verification::erc20::ERC20::StorageImpl::transfer_helper" 
+             31400 l2 gas | 11.57% |  37.27% |  31400 l2 gas |  11.57% | "l2_verification::erc20::ERC20::StorageImpl::approve_helper" 
+             30800 l2 gas | 11.34% |  48.62% |  37400 l2 gas |  13.78% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__allowance" 
+             29250 l2 gas | 10.77% |  59.39% |  39150 l2 gas |  14.42% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__balance_of" 
+             19800 l2 gas |  7.29% |  66.69% |  19800 l2 gas |   7.29% | "core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::read" 
+             17050 l2 gas |  6.28% |  72.97% |  17050 l2 gas |   6.28% | "l2_verification::erc20::ERC20::constructor" 
+             16500 l2 gas |  6.08% |  79.04% |  16500 l2 gas |   6.08% | "core::starknet::storage::StorableStoragePointer0OffsetReadAccess::read" 
+             14000 l2 gas |  5.16% |  84.20% |  33000 l2 gas |  12.15% | "l2_verification::erc20::ERC20::IERC20Impl::increase_allowance" 
+             13800 l2 gas |  5.08% |  89.28% |  32800 l2 gas |  12.08% | "l2_verification::erc20::ERC20::StorageImpl::spend_allowance" 
+              8800 l2 gas |  3.24% |  92.52% |  83100 l2 gas |  30.61% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer_from" 
+              7800 l2 gas |  2.87% |  95.40% |  24850 l2 gas |   9.15% | "l2_verification::erc20::ERC20::__wrapper__constructor" 
+              6600 l2 gas |  2.43% |  97.83% |  48100 l2 gas |  17.72% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer" 
+              5900 l2 gas |  2.17% | 100.00% |  38900 l2 gas |  14.33% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__increase_allowance" 
+                 0 l2 gas |  0.00% | 100.00% | 246650 l2 gas |  90.85% | "CallContract" 
+                 0 l2 gas |  0.00% | 100.00% |  37400 l2 gas |  13.78% | "Contract: ERC20\nFunction: allowance\n" 
+                 0 l2 gas |  0.00% | 100.00% |  39150 l2 gas |  14.42% | "Contract: ERC20\nFunction: balance_of\n" 
+                 0 l2 gas |  0.00% | 100.00% |  24850 l2 gas |   9.15% | "Contract: ERC20\nFunction: constructor\n" 
+                 0 l2 gas |  0.00% | 100.00% |  38900 l2 gas |  14.33% | "Contract: ERC20\nFunction: increase_allowance\n" 
+                 0 l2 gas |  0.00% | 100.00% |  48100 l2 gas |  17.72% | "Contract: ERC20\nFunction: transfer\n" 
+                 0 l2 gas |  0.00% | 100.00% |  83100 l2 gas |  30.61% | "Contract: ERC20\nFunction: transfer_from\n" 
+                 0 l2 gas |  0.00% | 100.00% | 271500 l2 gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "EmitEvent" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "GetExecutionInfo" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "StorageRead" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "StorageWrite" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "core::array::ArrayImpl" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "core::array::SpanFelt252Serde::deserialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "core::array::serialize_array_helper" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "core::result::ResultSerde::deserialize" 
+                 0 l2 gas |  0.00% | 100.00% |  37400 l2 gas |  13.78% | "l2_verification::erc20::IERC20DispatcherImpl::allowance" 
+                 0 l2 gas |  0.00% | 100.00% |  39150 l2 gas |  14.42% | "l2_verification::erc20::IERC20DispatcherImpl::balance_of" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "l2_verification_integrationtest::test_l2::deploy_erc20" 
+                 0 l2 gas |  0.00% | 100.00% | 246650 l2 gas |  90.85% | "l2_verification_integrationtest::test_l2::with_signature" 
+                 0 l2 gas |  0.00% | 100.00% | 246650 l2 gas |  90.85% | "l2_verification_integrationtest::test_l2::with_signature_return_wrapper" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::BlockInfoMockSerde::serialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::ExecutionInfoMockImpl::default" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::ExecutionInfoMockSerde::serialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::TxInfoMockImpl::default" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::TxInfoMockSerde::serialize" 
+                 0 l2 gas |  0.00% | 100.00% |      0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::cheat_execution_info" 
+            "#
+        ));
+}
