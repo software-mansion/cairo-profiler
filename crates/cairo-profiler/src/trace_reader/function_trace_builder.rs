@@ -111,6 +111,7 @@ pub fn collect_function_level_profiling_info(
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
     entrypoint_calldata_lengths: Vec<usize>,
+    in_transaction: bool,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
     let precost_info = compute_precost_info(program).expect("Failed to compute pre-cost info");
@@ -364,6 +365,7 @@ pub fn collect_function_level_profiling_info(
         versioned_constants,
         sierra_gas_tracking,
         entrypoint_calldata_lengths,
+        in_transaction,
     );
 
     FunctionLevelProfilingInfo {
