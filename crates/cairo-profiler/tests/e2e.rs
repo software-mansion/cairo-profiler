@@ -488,26 +488,26 @@ fn view_sierra_gas() {
         .stdout_eq(indoc!(
             r#"
 
-            Showing nodes accounting for 151388 sierra gas, 100.00% of 151388 sierra gas total
+            Showing nodes accounting for 152560 sierra gas, 100.00% of 152560 sierra gas total
             Showing top 15 nodes out of 15
             
                          flat |  flat% |    sum% |               cum |    cum% |  
             ------------------+--------+---------+-------------------+---------+--------------------------------------------------------------------------------------------------------------
-             90388 sierra gas | 59.71% |  59.71% | 104188 sierra gas |  68.82% | "CallContract" 
-             10200 sierra gas |  6.74% |  66.44% |  17900 sierra gas |  11.82% | "core::result::ResultSerde::deserialize" 
-             10000 sierra gas |  6.61% |  73.05% |  10000 sierra gas |   6.61% | "StorageRead" 
-              8700 sierra gas |  5.75% |  78.80% |   8700 sierra gas |   5.75% | "snforge_std::cheatcode::execute_cheatcode" 
-              6400 sierra gas |  4.23% |  83.02% | 148988 sierra gas |  98.41% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
-              3900 sierra gas |  2.58% |  85.60% |   3900 sierra gas |   2.58% | "core::array::SpanFelt252Serde::deserialize" 
-              3800 sierra gas |  2.51% |  88.11% |   3800 sierra gas |   2.51% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
-              3700 sierra gas |  2.44% |  90.55% |  13700 sierra gas |   9.05% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
-              3400 sierra gas |  2.25% |  92.80% |  18300 sierra gas |  12.09% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
-              3400 sierra gas |  2.25% |  95.05% |  15000 sierra gas |   9.91% | "snforge_std::cheatcodes::contract_class::declare" 
-              2800 sierra gas |  1.85% |  96.90% |   2800 sierra gas |   1.85% | "core::array::serialize_array_helper" 
-              2300 sierra gas |  1.52% |  98.41% | 151288 sierra gas |  99.93% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
-              2200 sierra gas |  1.45% |  99.87% |   5100 sierra gas |   3.37% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-               100 sierra gas |  0.07% |  99.93% |  13800 sierra gas |   9.12% | "Contract: HelloStarknet\nFunction: get_balance\n" 
-               100 sierra gas |  0.07% | 100.00% | 151388 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             91560 sierra gas | 60.02% |  60.02% | 105360 sierra gas |  69.06% | "CallContract" 
+             10200 sierra gas |  6.69% |  66.70% |  17900 sierra gas |  11.73% | "core::result::ResultSerde::deserialize" 
+             10000 sierra gas |  6.55% |  73.26% |  10000 sierra gas |   6.55% | "StorageRead" 
+              8700 sierra gas |  5.70% |  78.96% |   8700 sierra gas |   5.70% | "snforge_std::cheatcode::execute_cheatcode" 
+              6400 sierra gas |  4.20% |  83.15% | 150160 sierra gas |  98.43% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value_return_wrapper" 
+              3900 sierra gas |  2.56% |  85.71% |   3900 sierra gas |   2.56% | "core::array::SpanFelt252Serde::deserialize" 
+              3800 sierra gas |  2.49% |  88.20% |   3800 sierra gas |   2.49% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+              3700 sierra gas |  2.43% |  90.63% |  13700 sierra gas |   8.98% | "balance_simple::HelloStarknet::__wrapper__HelloStarknetImpl__get_balance" 
+              3400 sierra gas |  2.23% |  92.86% |  18300 sierra gas |  12.00% | "snforge_std::cheatcodes::contract_class::ContractClassImpl::deploy" 
+              3400 sierra gas |  2.23% |  95.08% |  15000 sierra gas |   9.83% | "snforge_std::cheatcodes::contract_class::declare" 
+              2800 sierra gas |  1.84% |  96.92% |   2800 sierra gas |   1.84% | "core::array::serialize_array_helper" 
+              2300 sierra gas |  1.51% |  98.43% | 152460 sierra gas |  99.93% | "balance_simple_integrationtest::test_contract::test_cannot_increase_balance_with_zero_value" 
+              2200 sierra gas |  1.44% |  99.87% |   5100 sierra gas |   3.34% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+               100 sierra gas |  0.07% |  99.93% |  13800 sierra gas |   9.05% | "Contract: HelloStarknet\nFunction: get_balance\n" 
+               100 sierra gas |  0.07% | 100.00% | 152560 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
             "#
         ));
 }
@@ -1067,32 +1067,32 @@ fn view_syscall_with_calldata_factor_multiple() {
         .stdout_eq(indoc!(
             r#"
             
-            Showing nodes accounting for 515900 sierra gas, 100.00% of 515900 sierra gas total
+            Showing nodes accounting for 583440 sierra gas, 100.00% of 583440 sierra gas total
             Showing top 21 nodes out of 21
             
                           flat |  flat% |    sum% |               cum |    cum% |  
             -------------------+--------+---------+-------------------+---------+-----------------------------------------------------------------------------
-             246100 sierra gas | 47.70% |  47.70% | 465700 sierra gas |  90.27% | "Deploy" 
-             107600 sierra gas | 20.86% |  68.56% | 107600 sierra gas |  20.86% | "core::keccak::finalize_padding" 
-              40000 sierra gas |  7.75% |  76.31% |  40000 sierra gas |   7.75% | "Keccak" 
-              36000 sierra gas |  6.98% |  83.29% |  36000 sierra gas |   6.98% | "core::keccak::keccak_u256s_le_inputs[637-804]" 
-              13200 sierra gas |  2.56% |  85.85% | 120800 sierra gas |  23.42% | "core::keccak::add_padding" 
-               8700 sierra gas |  1.69% |  87.54% |   8700 sierra gas |   1.69% | "snforge_std::cheatcode::execute_cheatcode" 
-               7600 sierra gas |  1.47% |  89.01% |   7600 sierra gas |   1.47% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
-               7100 sierra gas |  1.38% |  90.39% | 105500 sierra gas |  20.45% | "scaled_syscall::GasConstructorChecker::constructor" 
-               7100 sierra gas |  1.38% |  91.76% | 105500 sierra gas |  20.45% | "scaled_syscall::GasConstructorCheckerButDifferent::constructor" 
-               7000 sierra gas |  1.36% |  93.12% |  14600 sierra gas |   2.83% | "core::result::ResultSerde::deserialize" 
-               6800 sierra gas |  1.32% |  94.44% |  31700 sierra gas |   6.14% | "snforge_std::cheatcodes::contract_class::declare" 
-               6700 sierra gas |  1.30% |  95.74% | 513500 sierra gas |  99.53% | "scaled_syscall::deploy_syscall_cost_return_wrapper" 
-               4900 sierra gas |  0.95% |  96.69% | 110400 sierra gas |  21.40% | "scaled_syscall::GasConstructorChecker::__wrapper__constructor" 
-               4500 sierra gas |  0.87% |  97.56% |   4500 sierra gas |   0.87% | "core::array::serialize_array_helper" 
-               4300 sierra gas |  0.83% |  98.39% | 252349 sierra gas |  48.91% | "scaled_syscall::declare_deploy_a_contract" 
-               3500 sierra gas |  0.68% |  99.07% | 109000 sierra gas |  21.13% | "scaled_syscall::GasConstructorCheckerButDifferent::__wrapper__constructor" 
-               2300 sierra gas |  0.45% |  99.52% | 515800 sierra gas |  99.98% | "scaled_syscall::deploy_syscall_cost" 
-               2200 sierra gas |  0.43% |  99.94% |   5100 sierra gas |   0.99% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-                100 sierra gas |  0.02% |  99.96% | 110500 sierra gas |  21.42% | "Contract: GasConstructorChecker\nFunction: constructor\n" 
-                100 sierra gas |  0.02% |  99.98% | 109100 sierra gas |  21.15% | "Contract: GasConstructorCheckerButDifferent\nFunction: constructor\n" 
-                100 sierra gas |  0.02% | 100.00% | 515900 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             313640 sierra gas | 53.76% |  53.76% | 533240 sierra gas |  91.40% | "Deploy" 
+             107600 sierra gas | 18.44% |  72.20% | 107600 sierra gas |  18.44% | "core::keccak::finalize_padding" 
+              40000 sierra gas |  6.86% |  79.06% |  40000 sierra gas |   6.86% | "Keccak" 
+              36000 sierra gas |  6.17% |  85.23% |  36000 sierra gas |   6.17% | "core::keccak::keccak_u256s_le_inputs[637-804]" 
+              13200 sierra gas |  2.26% |  87.49% | 120800 sierra gas |  20.70% | "core::keccak::add_padding" 
+               8700 sierra gas |  1.49% |  88.98% |   8700 sierra gas |   1.49% | "snforge_std::cheatcode::execute_cheatcode" 
+               7600 sierra gas |  1.30% |  90.28% |   7600 sierra gas |   1.30% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+               7100 sierra gas |  1.22% |  91.50% | 105500 sierra gas |  18.08% | "scaled_syscall::GasConstructorChecker::constructor" 
+               7100 sierra gas |  1.22% |  92.72% | 105500 sierra gas |  18.08% | "scaled_syscall::GasConstructorCheckerButDifferent::constructor" 
+               7000 sierra gas |  1.20% |  93.92% |  14600 sierra gas |   2.50% | "core::result::ResultSerde::deserialize" 
+               6800 sierra gas |  1.17% |  95.08% |  31700 sierra gas |   5.43% | "snforge_std::cheatcodes::contract_class::declare" 
+               6700 sierra gas |  1.15% |  96.23% | 581040 sierra gas |  99.59% | "scaled_syscall::deploy_syscall_cost_return_wrapper" 
+               4900 sierra gas |  0.84% |  97.07% | 110400 sierra gas |  18.92% | "scaled_syscall::GasConstructorChecker::__wrapper__constructor" 
+               4500 sierra gas |  0.77% |  97.84% |   4500 sierra gas |   0.77% | "core::array::serialize_array_helper" 
+               4300 sierra gas |  0.74% |  98.58% | 282070 sierra gas |  48.35% | "scaled_syscall::declare_deploy_a_contract" 
+               3500 sierra gas |  0.60% |  99.18% | 109000 sierra gas |  18.68% | "scaled_syscall::GasConstructorCheckerButDifferent::__wrapper__constructor" 
+               2300 sierra gas |  0.39% |  99.57% | 583340 sierra gas |  99.98% | "scaled_syscall::deploy_syscall_cost" 
+               2200 sierra gas |  0.38% |  99.95% |   5100 sierra gas |   0.87% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+                100 sierra gas |  0.02% |  99.97% | 110500 sierra gas |  18.94% | "Contract: GasConstructorChecker\nFunction: constructor\n" 
+                100 sierra gas |  0.02% |  99.98% | 109100 sierra gas |  18.70% | "Contract: GasConstructorCheckerButDifferent\nFunction: constructor\n" 
+                100 sierra gas |  0.02% | 100.00% | 583440 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
             "#
         ));
 }
@@ -1132,28 +1132,28 @@ fn view_syscall_with_calldata_factor_single() {
         .stdout_eq(indoc!(
             r#"
             
-            Showing nodes accounting for 262249 sierra gas, 100.00% of 262249 sierra gas total
+            Showing nodes accounting for 291970 sierra gas, 100.00% of 291970 sierra gas total
             Showing top 17 nodes out of 17
             
                           flat |  flat% |    sum% |               cum |    cum% |  
             -------------------+--------+---------+-------------------+---------+-----------------------------------------------------------------------------
-             122249 sierra gas | 46.62% |  46.62% | 231349 sierra gas |  88.22% | "Deploy" 
-              53800 sierra gas | 20.51% |  67.13% |  53800 sierra gas |  20.51% | "core::keccak::finalize_padding" 
-              20000 sierra gas |  7.63% |  74.76% |  20000 sierra gas |   7.63% | "Keccak" 
-              18000 sierra gas |  6.86% |  81.62% |  18000 sierra gas |   6.86% | "core::keccak::keccak_u256s_le_inputs[637-804]" 
-               7100 sierra gas |  2.71% |  84.33% | 105500 sierra gas |  40.23% | "scaled_syscall::GasConstructorCheckerButDifferent::constructor" 
-               6700 sierra gas |  2.55% |  86.88% | 259849 sierra gas |  99.08% | "scaled_syscall::deploy_syscall_cost_but_different_return_wrapper" 
-               6600 sierra gas |  2.52% |  89.40% |  60400 sierra gas |  23.03% | "core::keccak::add_padding" 
-               5800 sierra gas |  2.21% |  91.61% |   5800 sierra gas |   2.21% | "snforge_std::cheatcode::execute_cheatcode" 
-               3800 sierra gas |  1.45% |  93.06% |   3800 sierra gas |   1.45% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
-               3500 sierra gas |  1.33% |  94.39% |   7300 sierra gas |   2.78% | "core::result::ResultSerde::deserialize" 
-               3500 sierra gas |  1.33% |  95.73% | 109000 sierra gas |  41.56% | "scaled_syscall::GasConstructorCheckerButDifferent::__wrapper__constructor" 
-               3400 sierra gas |  1.30% |  97.03% |  16700 sierra gas |   6.37% | "snforge_std::cheatcodes::contract_class::declare" 
-               3100 sierra gas |  1.18% |  98.21% |   3100 sierra gas |   1.18% | "core::array::serialize_array_helper" 
-               2300 sierra gas |  0.88% |  99.08% | 262149 sierra gas |  99.96% | "scaled_syscall::deploy_syscall_cost_but_different" 
-               2200 sierra gas |  0.84% |  99.92% |   5100 sierra gas |   1.94% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-                100 sierra gas |  0.04% |  99.96% | 109100 sierra gas |  41.60% | "Contract: GasConstructorCheckerButDifferent\nFunction: constructor\n" 
-                100 sierra gas |  0.04% | 100.00% | 262249 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+             151970 sierra gas | 52.05% |  52.05% | 261070 sierra gas |  89.42% | "Deploy" 
+              53800 sierra gas | 18.43% |  70.48% |  53800 sierra gas |  18.43% | "core::keccak::finalize_padding" 
+              20000 sierra gas |  6.85% |  77.33% |  20000 sierra gas |   6.85% | "Keccak" 
+              18000 sierra gas |  6.17% |  83.49% |  18000 sierra gas |   6.17% | "core::keccak::keccak_u256s_le_inputs[637-804]" 
+               7100 sierra gas |  2.43% |  85.92% | 105500 sierra gas |  36.13% | "scaled_syscall::GasConstructorCheckerButDifferent::constructor" 
+               6700 sierra gas |  2.29% |  88.22% | 289570 sierra gas |  99.18% | "scaled_syscall::deploy_syscall_cost_but_different_return_wrapper" 
+               6600 sierra gas |  2.26% |  90.48% |  60400 sierra gas |  20.69% | "core::keccak::add_padding" 
+               5800 sierra gas |  1.99% |  92.46% |   5800 sierra gas |   1.99% | "snforge_std::cheatcode::execute_cheatcode" 
+               3800 sierra gas |  1.30% |  93.77% |   3800 sierra gas |   1.30% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
+               3500 sierra gas |  1.20% |  94.97% |   7300 sierra gas |   2.50% | "core::result::ResultSerde::deserialize" 
+               3500 sierra gas |  1.20% |  96.16% | 109000 sierra gas |  37.33% | "scaled_syscall::GasConstructorCheckerButDifferent::__wrapper__constructor" 
+               3400 sierra gas |  1.16% |  97.33% |  16700 sierra gas |   5.72% | "snforge_std::cheatcodes::contract_class::declare" 
+               3100 sierra gas |  1.06% |  98.39% |   3100 sierra gas |   1.06% | "core::array::serialize_array_helper" 
+               2300 sierra gas |  0.79% |  99.18% | 291870 sierra gas |  99.97% | "scaled_syscall::deploy_syscall_cost_but_different" 
+               2200 sierra gas |  0.75% |  99.93% |   5100 sierra gas |   1.75% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+                100 sierra gas |  0.03% |  99.97% | 109100 sierra gas |  37.37% | "Contract: GasConstructorCheckerButDifferent\nFunction: constructor\n" 
+                100 sierra gas |  0.03% | 100.00% | 291970 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
             "#
         ));
 }
@@ -1198,20 +1198,20 @@ fn view_syscall_with_no_calldata_factor() {
         .stdout_eq(indoc!(
             r#"
             
-            Showing nodes accounting for 122188 sierra gas, 100.00% of 122188 sierra gas total
+            Showing nodes accounting for 123360 sierra gas, 100.00% of 123360 sierra gas total
             Showing top 9 nodes out of 9
             
                          flat |  flat% |    sum% |               cum |    cum% |  
             ------------------+--------+---------+-------------------+---------+----------------------------------------------------------------------------------------------------------------------------------
-             90388 sierra gas | 73.97% |  73.97% | 110388 sierra gas |  90.34% | "CallContract" 
-             10000 sierra gas |  8.18% |  82.16% |  10000 sierra gas |   8.18% | "StorageRead" 
-             10000 sierra gas |  8.18% |  90.34% |  10000 sierra gas |   8.18% | "StorageWrite" 
-              4300 sierra gas |  3.52% |  93.86% | 119788 sierra gas |  98.04% | "scaled_syscall::test_increase_balance_return_wrapper" 
-              2900 sierra gas |  2.37% |  96.24% |   2900 sierra gas |   2.37% | "snforge_std::cheatcode::execute_cheatcode" 
-              2300 sierra gas |  1.88% |  98.12% | 122088 sierra gas |  99.92% | "scaled_syscall::test_increase_balance" 
-              2200 sierra gas |  1.80% |  99.92% |   5100 sierra gas |   4.17% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
-               100 sierra gas |  0.08% | 100.00% | 122188 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
-                 0 sierra gas |  0.00% | 100.00% |  20000 sierra gas |  16.37% | "Contract: <unknown>\nAddress: 0x000fa8e78a86a612746455cfeb98012e67ec3426b41a20278d5e7237bcab7413\nFunction: increase_balance\n" 
+             91560 sierra gas | 74.22% |  74.22% | 111560 sierra gas |  90.43% | "CallContract" 
+             10000 sierra gas |  8.11% |  82.33% |  10000 sierra gas |   8.11% | "StorageRead" 
+             10000 sierra gas |  8.11% |  90.43% |  10000 sierra gas |   8.11% | "StorageWrite" 
+              4300 sierra gas |  3.49% |  93.92% | 120960 sierra gas |  98.05% | "scaled_syscall::test_increase_balance_return_wrapper" 
+              2900 sierra gas |  2.35% |  96.27% |   2900 sierra gas |   2.35% | "snforge_std::cheatcode::execute_cheatcode" 
+              2300 sierra gas |  1.86% |  98.14% | 123260 sierra gas |  99.92% | "scaled_syscall::test_increase_balance" 
+              2200 sierra gas |  1.78% |  99.92% |   5100 sierra gas |   4.13% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
+               100 sierra gas |  0.08% | 100.00% | 123360 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                 0 sierra gas |  0.00% | 100.00% |  20000 sierra gas |  16.21% | "Contract: <unknown>\nAddress: 0x000fa8e78a86a612746455cfeb98012e67ec3426b41a20278d5e7237bcab7413\nFunction: increase_balance\n" 
             "#
         ));
 }
@@ -1317,36 +1317,36 @@ fn view_l2_gas_no_signature() {
         .stdout_eq(indoc!(
             r#"
             
-            Showing nodes accounting for 1009856 l2 gas, 100.00% of 1009856 l2 gas total
+            Showing nodes accounting for 1010060 l2 gas, 100.00% of 1010060 l2 gas total
             Showing top 42 nodes out of 42
             
                       flat |  flat% |    sum% |            cum |    cum% |  
             ---------------+--------+---------+----------------+---------+---------------------------------------------------------------------------------
-             220000 l2 gas | 21.79% |  21.79% |  220000 l2 gas |  21.79% | "StorageRead" 
-             203600 l2 gas | 20.16% |  41.95% |  203600 l2 gas |  20.16% | "EmitEvent" 
-             190000 l2 gas | 18.81% |  60.76% |  190000 l2 gas |  18.81% | "StorageWrite" 
-              69800 l2 gas |  6.91% |  67.67% |  324440 l2 gas |  32.13% | "l2_verification::erc20::ERC20::StorageImpl::transfer_helper" 
-              37716 l2 gas |  3.73% |  71.41% |   37716 l2 gas |   3.73% | "GetExecutionInfo" 
+             220000 l2 gas | 21.78% |  21.78% |  220000 l2 gas |  21.78% | "StorageRead" 
+             203600 l2 gas | 20.16% |  41.94% |  203600 l2 gas |  20.16% | "EmitEvent" 
+             190000 l2 gas | 18.81% |  60.75% |  190000 l2 gas |  18.81% | "StorageWrite" 
+              69800 l2 gas |  6.91% |  67.66% |  324440 l2 gas |  32.12% | "l2_verification::erc20::ERC20::StorageImpl::transfer_helper" 
+              37920 l2 gas |  3.75% |  71.41% |   37920 l2 gas |   3.75% | "GetExecutionInfo" 
               31400 l2 gas |  3.11% |  74.52% |  152840 l2 gas |  15.13% | "l2_verification::erc20::ERC20::StorageImpl::approve_helper" 
               30800 l2 gas |  3.05% |  77.57% |   77400 l2 gas |   7.66% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__allowance" 
-              29250 l2 gas |  2.90% |  80.46% |   99150 l2 gas |   9.82% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__balance_of" 
-              20480 l2 gas |  2.03% |  82.49% |   97880 l2 gas |   9.69% | "Contract: ERC20\nFunction: allowance\n" 
-              20480 l2 gas |  2.03% |  84.52% |  317592 l2 gas |  31.45% | "Contract: ERC20\nFunction: transfer_from\n" 
+              29250 l2 gas |  2.90% |  80.47% |   99150 l2 gas |   9.82% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__balance_of" 
+              20480 l2 gas |  2.03% |  82.50% |   97880 l2 gas |   9.69% | "Contract: ERC20\nFunction: allowance\n" 
+              20480 l2 gas |  2.03% |  84.52% |  317660 l2 gas |  31.45% | "Contract: ERC20\nFunction: transfer_from\n" 
               19800 l2 gas |  1.96% |  86.48% |  139800 l2 gas |  13.84% | "core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::read" 
               17050 l2 gas |  1.69% |  88.17% |  127770 l2 gas |  12.65% | "l2_verification::erc20::ERC20::constructor" 
-              16500 l2 gas |  1.63% |  89.80% |  116500 l2 gas |  11.54% | "core::starknet::storage::StorableStoragePointer0OffsetReadAccess::read" 
-              15360 l2 gas |  1.52% |  91.32% |  114510 l2 gas |  11.34% | "Contract: ERC20\nFunction: balance_of\n" 
-              15360 l2 gas |  1.52% |  92.84% |  147552 l2 gas |  14.61% | "Contract: ERC20\nFunction: increase_allowance\n" 
-              15360 l2 gas |  1.52% |  94.37% |  196752 l2 gas |  19.48% | "Contract: ERC20\nFunction: transfer\n" 
-              14000 l2 gas |  1.39% |  95.75% |  126292 l2 gas |  12.51% | "l2_verification::erc20::ERC20::IERC20Impl::increase_allowance" 
+              16500 l2 gas |  1.63% |  89.80% |  116500 l2 gas |  11.53% | "core::starknet::storage::StorableStoragePointer0OffsetReadAccess::read" 
+              15360 l2 gas |  1.52% |  91.33% |  114510 l2 gas |  11.34% | "Contract: ERC20\nFunction: balance_of\n" 
+              15360 l2 gas |  1.52% |  92.85% |  147620 l2 gas |  14.61% | "Contract: ERC20\nFunction: increase_allowance\n" 
+              15360 l2 gas |  1.52% |  94.37% |  196820 l2 gas |  19.49% | "Contract: ERC20\nFunction: transfer\n" 
+              14000 l2 gas |  1.39% |  95.75% |  126360 l2 gas |  12.51% | "l2_verification::erc20::ERC20::IERC20Impl::increase_allowance" 
               13800 l2 gas |  1.37% |  97.12% |  113520 l2 gas |  11.24% | "l2_verification::erc20::ERC20::StorageImpl::spend_allowance" 
-               8800 l2 gas |  0.87% |  97.99% |  297112 l2 gas |  29.42% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer_from" 
+               8800 l2 gas |  0.87% |  97.99% |  297180 l2 gas |  29.42% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer_from" 
                7800 l2 gas |  0.77% |  98.76% |  135570 l2 gas |  13.42% | "l2_verification::erc20::ERC20::__wrapper__constructor" 
-               6600 l2 gas |  0.65% |  99.42% |  181392 l2 gas |  17.96% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer" 
-               5900 l2 gas |  0.58% | 100.00% |  132192 l2 gas |  13.09% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__increase_allowance" 
-                  0 l2 gas |  0.00% | 100.00% |  874286 l2 gas |  86.58% | "CallContract" 
+               6600 l2 gas |  0.65% |  99.42% |  181460 l2 gas |  17.97% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer" 
+               5900 l2 gas |  0.58% | 100.00% |  132260 l2 gas |  13.09% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__increase_allowance" 
+                  0 l2 gas |  0.00% | 100.00% |  874490 l2 gas |  86.58% | "CallContract" 
                   0 l2 gas |  0.00% | 100.00% |  135570 l2 gas |  13.42% | "Contract: ERC20\nFunction: constructor\n" 
-                  0 l2 gas |  0.00% | 100.00% | 1009856 l2 gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                  0 l2 gas |  0.00% | 100.00% | 1010060 l2 gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "core::array::ArrayImpl" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "core::array::SpanFelt252Serde::deserialize" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "core::array::serialize_array_helper" 
@@ -1354,8 +1354,8 @@ fn view_l2_gas_no_signature() {
                   0 l2 gas |  0.00% | 100.00% |   97880 l2 gas |   9.69% | "l2_verification::erc20::IERC20DispatcherImpl::allowance" 
                   0 l2 gas |  0.00% | 100.00% |  114510 l2 gas |  11.34% | "l2_verification::erc20::IERC20DispatcherImpl::balance_of" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "l2_verification_integrationtest::test_l2::deploy_erc20" 
-                  0 l2 gas |  0.00% | 100.00% |  874286 l2 gas |  86.58% | "l2_verification_integrationtest::test_l2::without_signature" 
-                  0 l2 gas |  0.00% | 100.00% |  874286 l2 gas |  86.58% | "l2_verification_integrationtest::test_l2::without_signature_return_wrapper" 
+                  0 l2 gas |  0.00% | 100.00% |  874490 l2 gas |  86.58% | "l2_verification_integrationtest::test_l2::without_signature" 
+                  0 l2 gas |  0.00% | 100.00% |  874490 l2 gas |  86.58% | "l2_verification_integrationtest::test_l2::without_signature_return_wrapper" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::BlockInfoMockSerde::serialize" 
@@ -1404,36 +1404,36 @@ fn view_l2_gas_with_signature() {
         .stdout_eq(indoc!(
             r#"
             
-            Showing nodes accounting for 1050816 l2 gas, 100.00% of 1050816 l2 gas total
+            Showing nodes accounting for 1051020 l2 gas, 100.00% of 1051020 l2 gas total
             Showing top 42 nodes out of 42
             
                       flat |  flat% |    sum% |            cum |    cum% |  
             ---------------+--------+---------+----------------+---------+---------------------------------------------------------------------------------
-             220000 l2 gas | 20.94% |  20.94% |  220000 l2 gas |  20.94% | "StorageRead" 
-             203600 l2 gas | 19.38% |  40.31% |  203600 l2 gas |  19.38% | "EmitEvent" 
-             190000 l2 gas | 18.08% |  58.39% |  190000 l2 gas |  18.08% | "StorageWrite" 
-              69800 l2 gas |  6.64% |  65.04% |  324440 l2 gas |  30.88% | "l2_verification::erc20::ERC20::StorageImpl::transfer_helper" 
-              37716 l2 gas |  3.59% |  68.62% |   37716 l2 gas |   3.59% | "GetExecutionInfo" 
-              31400 l2 gas |  2.99% |  71.61% |  152840 l2 gas |  14.54% | "l2_verification::erc20::ERC20::StorageImpl::approve_helper" 
-              30800 l2 gas |  2.93% |  74.54% |   77400 l2 gas |   7.37% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__allowance" 
+             220000 l2 gas | 20.93% |  20.93% |  220000 l2 gas |  20.93% | "StorageRead" 
+             203600 l2 gas | 19.37% |  40.30% |  203600 l2 gas |  19.37% | "EmitEvent" 
+             190000 l2 gas | 18.08% |  58.38% |  190000 l2 gas |  18.08% | "StorageWrite" 
+              69800 l2 gas |  6.64% |  65.02% |  324440 l2 gas |  30.87% | "l2_verification::erc20::ERC20::StorageImpl::transfer_helper" 
+              37920 l2 gas |  3.61% |  68.63% |   37920 l2 gas |   3.61% | "GetExecutionInfo" 
+              31400 l2 gas |  2.99% |  71.62% |  152840 l2 gas |  14.54% | "l2_verification::erc20::ERC20::StorageImpl::approve_helper" 
+              30800 l2 gas |  2.93% |  74.55% |   77400 l2 gas |   7.36% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__allowance" 
               30720 l2 gas |  2.92% |  77.47% |  108120 l2 gas |  10.29% | "Contract: ERC20\nFunction: allowance\n" 
               30720 l2 gas |  2.92% |  80.39% |  129870 l2 gas |  12.36% | "Contract: ERC20\nFunction: balance_of\n" 
-              29250 l2 gas |  2.78% |  83.17% |   99150 l2 gas |   9.44% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__balance_of" 
-              25600 l2 gas |  2.44% |  85.61% |  322712 l2 gas |  30.71% | "Contract: ERC20\nFunction: transfer_from\n" 
-              20480 l2 gas |  1.95% |  87.56% |  152672 l2 gas |  14.53% | "Contract: ERC20\nFunction: increase_allowance\n" 
-              20480 l2 gas |  1.95% |  89.51% |  201872 l2 gas |  19.21% | "Contract: ERC20\nFunction: transfer\n" 
+              29250 l2 gas |  2.78% |  83.18% |   99150 l2 gas |   9.43% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__balance_of" 
+              25600 l2 gas |  2.44% |  85.61% |  322780 l2 gas |  30.71% | "Contract: ERC20\nFunction: transfer_from\n" 
+              20480 l2 gas |  1.95% |  87.56% |  152740 l2 gas |  14.53% | "Contract: ERC20\nFunction: increase_allowance\n" 
+              20480 l2 gas |  1.95% |  89.51% |  201940 l2 gas |  19.21% | "Contract: ERC20\nFunction: transfer\n" 
               19800 l2 gas |  1.88% |  91.39% |  139800 l2 gas |  13.30% | "core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::read" 
-              17050 l2 gas |  1.62% |  93.01% |  127770 l2 gas |  12.16% | "l2_verification::erc20::ERC20::constructor" 
-              16500 l2 gas |  1.57% |  94.59% |  116500 l2 gas |  11.09% | "core::starknet::storage::StorableStoragePointer0OffsetReadAccess::read" 
-              14000 l2 gas |  1.33% |  95.92% |  126292 l2 gas |  12.02% | "l2_verification::erc20::ERC20::IERC20Impl::increase_allowance" 
+              17050 l2 gas |  1.62% |  93.02% |  127770 l2 gas |  12.16% | "l2_verification::erc20::ERC20::constructor" 
+              16500 l2 gas |  1.57% |  94.59% |  116500 l2 gas |  11.08% | "core::starknet::storage::StorableStoragePointer0OffsetReadAccess::read" 
+              14000 l2 gas |  1.33% |  95.92% |  126360 l2 gas |  12.02% | "l2_verification::erc20::ERC20::IERC20Impl::increase_allowance" 
               13800 l2 gas |  1.31% |  97.23% |  113520 l2 gas |  10.80% | "l2_verification::erc20::ERC20::StorageImpl::spend_allowance" 
-               8800 l2 gas |  0.84% |  98.07% |  297112 l2 gas |  28.27% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer_from" 
+               8800 l2 gas |  0.84% |  98.07% |  297180 l2 gas |  28.28% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer_from" 
                7800 l2 gas |  0.74% |  98.81% |  135570 l2 gas |  12.90% | "l2_verification::erc20::ERC20::__wrapper__constructor" 
-               6600 l2 gas |  0.63% |  99.44% |  181392 l2 gas |  17.26% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer" 
-               5900 l2 gas |  0.56% | 100.00% |  132192 l2 gas |  12.58% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__increase_allowance" 
-                  0 l2 gas |  0.00% | 100.00% |  915246 l2 gas |  87.10% | "CallContract" 
+               6600 l2 gas |  0.63% |  99.44% |  181460 l2 gas |  17.27% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__transfer" 
+               5900 l2 gas |  0.56% | 100.00% |  132260 l2 gas |  12.58% | "l2_verification::erc20::ERC20::__wrapper__IERC20Impl__increase_allowance" 
+                  0 l2 gas |  0.00% | 100.00% |  915450 l2 gas |  87.10% | "CallContract" 
                   0 l2 gas |  0.00% | 100.00% |  135570 l2 gas |  12.90% | "Contract: ERC20\nFunction: constructor\n" 
-                  0 l2 gas |  0.00% | 100.00% | 1050816 l2 gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
+                  0 l2 gas |  0.00% | 100.00% | 1051020 l2 gas | 100.00% | "Contract: SNFORGE_TEST_CODE\nFunction: SNFORGE_TEST_CODE_FUNCTION\n" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "core::array::ArrayImpl" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "core::array::SpanFelt252Serde::deserialize" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "core::array::serialize_array_helper" 
@@ -1441,8 +1441,8 @@ fn view_l2_gas_with_signature() {
                   0 l2 gas |  0.00% | 100.00% |  108120 l2 gas |  10.29% | "l2_verification::erc20::IERC20DispatcherImpl::allowance" 
                   0 l2 gas |  0.00% | 100.00% |  129870 l2 gas |  12.36% | "l2_verification::erc20::IERC20DispatcherImpl::balance_of" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "l2_verification_integrationtest::test_l2::deploy_erc20" 
-                  0 l2 gas |  0.00% | 100.00% |  915246 l2 gas |  87.10% | "l2_verification_integrationtest::test_l2::with_signature" 
-                  0 l2 gas |  0.00% | 100.00% |  915246 l2 gas |  87.10% | "l2_verification_integrationtest::test_l2::with_signature_return_wrapper" 
+                  0 l2 gas |  0.00% | 100.00% |  915450 l2 gas |  87.10% | "l2_verification_integrationtest::test_l2::with_signature" 
+                  0 l2 gas |  0.00% | 100.00% |  915450 l2 gas |  87.10% | "l2_verification_integrationtest::test_l2::with_signature_return_wrapper" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "snforge_std::cheatcode::execute_cheatcode_and_deserialize" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "snforge_std::cheatcodes::contract_class::DeclareResultSerde::deserialize" 
                   0 l2 gas |  0.00% | 100.00% |       0 l2 gas |   0.00% | "snforge_std::cheatcodes::execution_info::BlockInfoMockSerde::serialize" 

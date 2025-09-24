@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2025.09.24
+
+### Fixed
+
+- sierra gas estimations for syscalls were inaccurate, because of a bug in builtins counting logic 
+
 ## [0.12.0] - 2025.09.05
 
 ### Added

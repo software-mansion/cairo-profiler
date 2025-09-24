@@ -232,7 +232,7 @@ fn computation_resources(
                 &versioned_constants.os_constants.builtin_gas_costs,
             ))
             .expect("Overflow while converting builtin_gas_cost to usize")
-            .checked_add(amount)
+            .checked_mul(amount)
             .expect("Overflow while calculating sierra gas from builtins")
         })
         .sum();
