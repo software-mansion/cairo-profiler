@@ -1,7 +1,9 @@
+use anyhow::{Error, anyhow};
 use cairo_annotations::annotations::profiler::FunctionName;
 use cairo_annotations::trace_data::{ContractAddress, EntryPointSelector};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use regex::Regex;
+use std::convert::TryFrom;
 use std::sync::LazyLock;
 
 static RE_LOOP_FUNC: LazyLock<Regex> = LazyLock::new(|| {
@@ -12,6 +14,25 @@ static RE_MONOMORPHIZATION: LazyLock<Regex> = LazyLock::new(|| {
         .expect("Failed to create regex for normalizing monomorphized generic function names")
 });
 
+#[derive(PartialEq)]
+pub enum ExternalTool {
+    Snforge,
+    ScarbExecute,
+}
+
+impl TryFrom<Option<&str>> for ExternalTool {
+    type Error = Error;
+
+    fn try_from(name: Option<&str>) -> Result<Self, Self::Error> {
+        match name {
+            Some(s) if s.starts_with("SCARB_EXECUTE") => Ok(ExternalTool::ScarbExecute),
+            Some(s) if s.starts_with("SNFORGE") => Ok(ExternalTool::Snforge),
+            Some(s) => Err(anyhow!("Unknown external tool: {s}")),
+            None => Err(anyhow!("Missing contract name for external tool")),
+        }
+    }
+}
+
 pub trait FunctionNameExt {
     fn from_entry_point_params(
         contract_name: Option<String>,
@@ -19,6 +40,7 @@ pub trait FunctionNameExt {
         contract_address: ContractAddress,
         function_selector: EntryPointSelector,
         show_details: bool,
+        tool: &ExternalTool,
     ) -> FunctionName;
     #[must_use]
     fn from_sierra_statement_idx(
@@ -39,6 +61,7 @@ impl FunctionNameExt for FunctionName {
         contract_address: ContractAddress,
         function_selector: EntryPointSelector,
         show_details: bool,
+        external_tool: &ExternalTool,
     ) -> FunctionName {
         let (contract_name, address) = match contract_name {
             Some(name) if show_details => (name, Some(contract_address.0)),
@@ -61,9 +84,14 @@ impl FunctionNameExt for FunctionName {
             Some(selector) => format!("Selector: {}\n", selector.to_fixed_hex_string()),
         };
 
-        FunctionName(format!(
-            "Contract: {contract_name}\n{contract_address}Function: {function_name}\n{selector}",
-        ))
+        match external_tool {
+            ExternalTool::Snforge => FunctionName(format!(
+                "Contract: {contract_name}\n{contract_address}Function: {function_name}\n{selector}",
+            )),
+            ExternalTool::ScarbExecute => {
+                FunctionName(format!("{contract_name}\nFunction: {function_name}"))
+            }
+        }
     }
 
     /// Get `FunctionName` from given `sierra_statement_idx` and `sierra_program`

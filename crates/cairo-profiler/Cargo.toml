@@ -19,7 +19,7 @@ camino.workspace = true
 anyhow.workspace = true
 itertools.workspace = true
 indoc.workspace = true
-cairo-annotations.workspace = true
+cairo-annotations = { workspace = true, features = ["cairo-lang"] }
 prettytable-rs.workspace = true
 regex.workspace = true
 console.workspace = true

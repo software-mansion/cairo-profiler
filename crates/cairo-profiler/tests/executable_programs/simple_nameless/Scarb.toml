@@ -1,0 +1,13 @@
+[package]
+name = "simple_nameless"
+version = "0.1.0"
+edition = "2024_07"
+
+[dependencies]
+cairo_execute = "2.12"
+
+[executable]
+sierra = true
+
+[cairo]
+enable-gas = false

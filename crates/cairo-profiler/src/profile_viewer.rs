@@ -6,7 +6,7 @@ use flate2::read::GzDecoder;
 use prettytable::{Table, format};
 use prost::Message;
 use regex::Regex;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::Read;
 use std::num::NonZeroUsize;
@@ -69,6 +69,7 @@ fn get_profile_data(
         // e.g. it may happen that someone tries to hide with a very broad regex (extreme example being '.*'),
         // which would mean we may silently omit looooooots of sample values
         let sample_length = sample.location_id.len() - 1;
+        let mut seen_in_sample = HashSet::new();
 
         for (idx, &loc_id) in sample.location_id.iter().enumerate() {
             let is_last_function = idx == sample_length;
@@ -93,7 +94,10 @@ fn get_profile_data(
             }
 
             let entry = profile_map.entry(function_name.clone()).or_default();
-            entry.cumulative += sample_value;
+            if seen_in_sample.insert(function_name.clone()) {
+                entry.cumulative += sample_value;
+            }
+
             if idx == 0 {
                 entry.flat += sample_value;
             }

@@ -1,4 +1,5 @@
 use crate::cli::build_profile::BuildProfile;
+use crate::trace_reader::function_name::ExternalTool;
 
 pub struct ProfilerConfig {
     pub show_details: bool,
@@ -6,16 +7,24 @@ pub struct ProfilerConfig {
     pub split_generics: bool,
     pub show_inlined_functions: bool,
     pub show_libfuncs: bool,
+    pub cairo_enable_gas: bool,
+    pub external_tool: ExternalTool,
 }
 
-impl From<&BuildProfile> for ProfilerConfig {
-    fn from(cli: &BuildProfile) -> ProfilerConfig {
+impl ProfilerConfig {
+    pub(crate) fn new(
+        cli: &BuildProfile,
+        cairo_enable_gas: bool,
+        external_tool: ExternalTool,
+    ) -> ProfilerConfig {
         ProfilerConfig {
             show_details: cli.show_details,
             max_function_stack_trace_depth: cli.max_function_stack_trace_depth,
             split_generics: cli.split_generics,
             show_inlined_functions: cli.show_inlined_functions,
             show_libfuncs: cli.show_libfuncs,
+            cairo_enable_gas,
+            external_tool,
         }
     }
 }

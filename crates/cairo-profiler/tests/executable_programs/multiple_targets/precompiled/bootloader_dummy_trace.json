@@ -1,0 +1,297 @@
+{
+    "entry_point":
+    {
+        "class_hash": null,
+        "entry_point_type": "EXTERNAL",
+        "entry_point_selector": "0x0",
+        "contract_address": "0x0",
+        "call_type": "Call",
+        "contract_name": "SCARB_EXECUTE\nTarget: bootloader",
+        "function_name": "multiple_targets::dummy",
+        "calldata_len": null,
+        "events_summary": null,
+        "signature_len": null
+    },
+    "used_execution_resources":
+    {
+        "vm_resources":
+        {
+            "n_steps": 0,
+            "n_memory_holes": 0,
+            "builtin_instance_counter":
+            {}
+        },
+        "gas_consumed": 5000,
+        "syscall_counter": null
+    },
+    "used_l1_resources":
+    {
+        "l2_l1_message_sizes":
+        []
+    },
+    "nested_calls":
+    [],
+    "cairo_execution_info":
+    {
+        "source_sierra_path": "dummy.executable.sierra.json",
+        "casm_level_info":
+        {
+            "run_with_call_header": true,
+            "vm_trace":
+            [
+                {
+                    "pc": 7,
+                    "ap": 113,
+                    "fp": 113
+                },
+                {
+                    "pc": 8,
+                    "ap": 114,
+                    "fp": 113
+                },
+                {
+                    "pc": 9,
+                    "ap": 115,
+                    "fp": 113
+                },
+                {
+                    "pc": 11,
+                    "ap": 117,
+                    "fp": 113
+                },
+                {
+                    "pc": 18,
+                    "ap": 119,
+                    "fp": 119
+                },
+                {
+                    "pc": 20,
+                    "ap": 121,
+                    "fp": 119
+                },
+                {
+                    "pc": 21,
+                    "ap": 122,
+                    "fp": 119
+                },
+                {
+                    "pc": 23,
+                    "ap": 122,
+                    "fp": 119
+                },
+                {
+                    "pc": 32,
+                    "ap": 122,
+                    "fp": 119
+                },
+                {
+                    "pc": 34,
+                    "ap": 123,
+                    "fp": 119
+                },
+                {
+                    "pc": 36,
+                    "ap": 124,
+                    "fp": 119
+                },
+                {
+                    "pc": 38,
+                    "ap": 125,
+                    "fp": 119
+                },
+                {
+                    "pc": 40,
+                    "ap": 126,
+                    "fp": 119
+                },
+                {
+                    "pc": 41,
+                    "ap": 127,
+                    "fp": 119
+                },
+                {
+                    "pc": 42,
+                    "ap": 128,
+                    "fp": 119
+                },
+                {
+                    "pc": 43,
+                    "ap": 129,
+                    "fp": 119
+                },
+                {
+                    "pc": 44,
+                    "ap": 130,
+                    "fp": 119
+                },
+                {
+                    "pc": 46,
+                    "ap": 131,
+                    "fp": 119
+                },
+                {
+                    "pc": 48,
+                    "ap": 132,
+                    "fp": 119
+                },
+                {
+                    "pc": 50,
+                    "ap": 133,
+                    "fp": 119
+                },
+                {
+                    "pc": 51,
+                    "ap": 133,
+                    "fp": 119
+                },
+                {
+                    "pc": 52,
+                    "ap": 134,
+                    "fp": 119
+                },
+                {
+                    "pc": 53,
+                    "ap": 134,
+                    "fp": 119
+                },
+                {
+                    "pc": 54,
+                    "ap": 135,
+                    "fp": 119
+                },
+                {
+                    "pc": 55,
+                    "ap": 136,
+                    "fp": 119
+                },
+                {
+                    "pc": 56,
+                    "ap": 137,
+                    "fp": 119
+                },
+                {
+                    "pc": 58,
+                    "ap": 138,
+                    "fp": 119
+                },
+                {
+                    "pc": 59,
+                    "ap": 138,
+                    "fp": 119
+                },
+                {
+                    "pc": 60,
+                    "ap": 138,
+                    "fp": 119
+                },
+                {
+                    "pc": 83,
+                    "ap": 140,
+                    "fp": 140
+                },
+                {
+                    "pc": 84,
+                    "ap": 141,
+                    "fp": 140
+                },
+                {
+                    "pc": 86,
+                    "ap": 141,
+                    "fp": 140
+                },
+                {
+                    "pc": 99,
+                    "ap": 141,
+                    "fp": 140
+                },
+                {
+                    "pc": 100,
+                    "ap": 142,
+                    "fp": 140
+                },
+                {
+                    "pc": 101,
+                    "ap": 143,
+                    "fp": 140
+                },
+                {
+                    "pc": 62,
+                    "ap": 143,
+                    "fp": 119
+                },
+                {
+                    "pc": 63,
+                    "ap": 143,
+                    "fp": 119
+                },
+                {
+                    "pc": 64,
+                    "ap": 143,
+                    "fp": 119
+                },
+                {
+                    "pc": 65,
+                    "ap": 144,
+                    "fp": 119
+                },
+                {
+                    "pc": 67,
+                    "ap": 145,
+                    "fp": 119
+                },
+                {
+                    "pc": 69,
+                    "ap": 145,
+                    "fp": 119
+                },
+                {
+                    "pc": 71,
+                    "ap": 146,
+                    "fp": 119
+                },
+                {
+                    "pc": 72,
+                    "ap": 146,
+                    "fp": 119
+                },
+                {
+                    "pc": 74,
+                    "ap": 147,
+                    "fp": 119
+                },
+                {
+                    "pc": 75,
+                    "ap": 148,
+                    "fp": 119
+                },
+                {
+                    "pc": 77,
+                    "ap": 149,
+                    "fp": 119
+                },
+                {
+                    "pc": 13,
+                    "ap": 149,
+                    "fp": 113
+                },
+                {
+                    "pc": 15,
+                    "ap": 150,
+                    "fp": 113
+                },
+                {
+                    "pc": 16,
+                    "ap": 150,
+                    "fp": 113
+                },
+                {
+                    "pc": 17,
+                    "ap": 151,
+                    "fp": 113
+                }
+            ],
+            "program_offset": 17
+        },
+        "enable_gas": false
+    }
+}
