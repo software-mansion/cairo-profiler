@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@1.89
+      - uses: dtolnay/rust-toolchain@1.100
         with:
           components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2.8.0
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
       - uses: arduino/setup-protoc@v3
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
       - run: cargo test --release
 
   rustfmt:
@@ -26,10 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@1.89
+      - uses: dtolnay/rust-toolchain@1.100
         with:
           components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2.8.0
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
       - run: cargo fmt --check
 
   clippy:
@@ -40,10 +40,10 @@ jobs:
       RUSTFLAGS: "-Dwarnings"
     steps:
       - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@1.89
+      - uses: dtolnay/rust-toolchain@1.100
         with:
           components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2.8.0
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
       - uses: arduino/setup-protoc@v3
       - run: cargo lint
 
@@ -53,4 +53,4 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: typos-action
-        uses: crate-ci/typos@65f69f021b736bdbe548ce72200500752d42b40e # v1.35.7
+        uses: crate-ci/typos@40156d6074bf731adb169cfb8234954971dbc487 # v1.37.1
