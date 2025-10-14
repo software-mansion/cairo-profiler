@@ -23,7 +23,7 @@ use cairo_lang_sierra_gas::core_libfunc_cost::core_libfunc_cost;
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_to_casm::circuit::CircuitsInfo;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
-use cairo_lang_sierra_to_casm::metadata::{Metadata, calc_metadata};
+use cairo_lang_sierra_to_casm::metadata::{Metadata, MetadataComputationConfig, calc_metadata};
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use std::collections::{HashMap, VecDeque};
@@ -327,7 +327,7 @@ pub fn collect_function_level_profiling_info(
                                     precost_info,
                                     &sierra_statement_idx,
                                     libfunc.unwrap(),
-                                    &profiler_info_provider.unwrap(),
+                                    &profiler_info_provider.expect("fatal: enable-gas was set in cairo, but program infos is unavailable!"),
                                 );
 
                                 add_builtin_sierra_costs(
@@ -525,7 +525,7 @@ fn add_builtin_sierra_costs(
             *functions_stack_traces
                 .entry(libfunc_call_stack.clone().into())
                 .or_default() += ChargedResources {
-                steps: Default::default(),
+                steps: Steps::default(),
                 sierra_gas_consumed: SierraGasConsumed(
                     usize::try_from(post_cost)
                         .expect("Overflow while converting post_cost to usize"),
@@ -553,7 +553,8 @@ fn compute_program_infos(
     .expect("Failed to compute circuits info");
     let type_sizes =
         get_type_size_map(program, sierra_program_registry).expect("Failed to get type-size map");
-    let metadata = calc_metadata(program, Default::default()).expect("Failed to compute metadata");
+    let metadata = calc_metadata(program, MetadataComputationConfig::default())
+        .expect("Failed to compute metadata");
 
     ProgramInfos {
         precost_info,

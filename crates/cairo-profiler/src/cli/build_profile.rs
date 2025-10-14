@@ -94,10 +94,9 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
         ExternalTool::try_from(serialized_trace.entry_point.contract_name.as_deref())?;
     let profiler_config = ProfilerConfig::new(args, cairo_enable_gas, external_tool);
 
-    if serialized_trace.entry_point.calldata_len.is_none()
-        && profiler_config.cairo_enable_gas
-        && profiler_config.external_tool == ExternalTool::Snforge
-    {
+    let missing_calldata_factors = serialized_trace.entry_point.calldata_len.is_none();
+    let using_snforge_for_trace = profiler_config.external_tool == ExternalTool::Snforge;
+    if missing_calldata_factors && cairo_enable_gas && using_snforge_for_trace {
         ui::warn(
             "Missing calldata_factors for scaled syscalls - resource estimations may not be accurate. Consider using snforge 0.48+ for trace generation.",
         );

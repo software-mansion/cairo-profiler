@@ -14,7 +14,7 @@ static RE_MONOMORPHIZATION: LazyLock<Regex> = LazyLock::new(|| {
         .expect("Failed to create regex for normalizing monomorphized generic function names")
 });
 
-#[derive(PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum ExternalTool {
     Snforge,
     ScarbExecute,
@@ -40,7 +40,7 @@ pub trait FunctionNameExt {
         contract_address: ContractAddress,
         function_selector: EntryPointSelector,
         show_details: bool,
-        tool: &ExternalTool,
+        tool: ExternalTool,
     ) -> FunctionName;
     #[must_use]
     fn from_sierra_statement_idx(
@@ -61,7 +61,7 @@ impl FunctionNameExt for FunctionName {
         contract_address: ContractAddress,
         function_selector: EntryPointSelector,
         show_details: bool,
-        external_tool: &ExternalTool,
+        external_tool: ExternalTool,
     ) -> FunctionName {
         let (contract_name, address) = match contract_name {
             Some(name) if show_details => (name, Some(contract_address.0)),

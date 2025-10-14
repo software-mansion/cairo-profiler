@@ -7,7 +7,9 @@ use cairo_annotations::trace_data::{CallTraceNode, CallTraceV1};
 use cairo_lang_sierra::debug_info::DebugInfo;
 use cairo_lang_sierra::program::{Program, ProgramArtifact, VersionedProgram};
 use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraToCasmConfig};
-use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
+use cairo_lang_sierra_to_casm::metadata::{
+    MetadataComputationConfig, calc_metadata, calc_metadata_ap_change_only,
+};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::{Utf8Path, Utf8PathBuf};
@@ -132,7 +134,7 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
 
             let statements_functions_map = maybe_get_statements_functions_map(debug_info);
             let metadata = if cairo_enable_gas {
-                calc_metadata(&program, Default::default())
+                calc_metadata(&program, MetadataComputationConfig::default())
                     .with_context(|| "Failed calculating Sierra variables (gas enabled).")?
             } else {
                 calc_metadata_ap_change_only(&program)

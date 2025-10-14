@@ -149,7 +149,7 @@ fn collect_samples<'a>(
         trace.entry_point.contract_address.clone(),
         trace.entry_point.entry_point_selector.clone(),
         profiler_config.show_details,
-        &profiler_config.external_tool,
+        profiler_config.external_tool,
     );
     current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(function_name.clone()));
     let mut children_resources = ExecutionResources::default();
