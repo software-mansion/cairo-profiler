@@ -91,7 +91,7 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
         .and_then(|info| info.enable_gas)
         .unwrap_or(true);
     let external_tool =
-        ExternalTool::try_from(serialized_trace.entry_point.contract_name.as_deref())?;
+        ExternalTool::from_contract_prefix(serialized_trace.entry_point.contract_name.as_deref())?;
     let profiler_config = ProfilerConfig::new(args, cairo_enable_gas, external_tool);
 
     let missing_calldata_factors = serialized_trace.entry_point.calldata_len.is_none();

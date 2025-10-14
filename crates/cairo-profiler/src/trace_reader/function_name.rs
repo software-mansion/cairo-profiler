@@ -3,7 +3,6 @@ use cairo_annotations::annotations::profiler::FunctionName;
 use cairo_annotations::trace_data::{ContractAddress, EntryPointSelector};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use regex::Regex;
-use std::convert::TryFrom;
 use std::sync::LazyLock;
 
 static RE_LOOP_FUNC: LazyLock<Regex> = LazyLock::new(|| {
@@ -20,10 +19,8 @@ pub enum ExternalTool {
     ScarbExecute,
 }
 
-impl TryFrom<Option<&str>> for ExternalTool {
-    type Error = Error;
-
-    fn try_from(name: Option<&str>) -> Result<Self, Self::Error> {
+impl ExternalTool {
+    pub fn from_contract_prefix(name: Option<&str>) -> Result<Self, Error> {
         match name {
             Some(s) if s.starts_with("SCARB_EXECUTE") => Ok(ExternalTool::ScarbExecute),
             Some(s) if s.starts_with("SNFORGE") => Ok(ExternalTool::Snforge),
