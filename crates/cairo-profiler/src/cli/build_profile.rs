@@ -3,6 +3,7 @@ use crate::profile_viewer::print_profile;
 use crate::profiler_config::ProfilerConfig;
 use crate::sierra_loader::collect_and_compile_all_sierra_programs;
 use crate::trace_reader::collect_samples_from_trace;
+use crate::trace_reader::function_name::ExternalTool;
 use crate::ui;
 use crate::versioned_constants_reader::read_and_parse_versioned_constants_file;
 use anyhow::{Context, Result};
@@ -84,14 +85,27 @@ pub fn run_build_profile(args: &BuildProfile) -> Result<()> {
     let VersionedCallTrace::V1(serialized_trace) =
         serde_json::from_str(&data).context("Failed to deserialize call trace")?;
 
-    if serialized_trace.entry_point.calldata_len.is_none() {
+    let cairo_enable_gas = serialized_trace
+        .cairo_execution_info
+        .as_ref()
+        .and_then(|info| info.enable_gas)
+        .unwrap_or(true);
+    let external_tool =
+        ExternalTool::from_contract_prefix(serialized_trace.entry_point.contract_name.as_deref())?;
+    let profiler_config = ProfilerConfig::new(args, cairo_enable_gas, external_tool);
+
+    let missing_calldata_factors = serialized_trace.entry_point.calldata_len.is_none();
+    let using_snforge_for_trace = profiler_config.external_tool == ExternalTool::Snforge;
+    if missing_calldata_factors && cairo_enable_gas && using_snforge_for_trace {
         ui::warn(
             "Missing calldata_factors for scaled syscalls - resource estimations may not be accurate. Consider using snforge 0.48+ for trace generation.",
         );
     }
 
-    let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(&serialized_trace)?;
-    let profiler_config = ProfilerConfig::from(args);
+    let compiled_artifacts_cache = collect_and_compile_all_sierra_programs(
+        &serialized_trace,
+        profiler_config.cairo_enable_gas,
+    )?;
 
     if profiler_config.show_inlined_functions
         && !compiled_artifacts_cache.statements_functions_maps_are_present()

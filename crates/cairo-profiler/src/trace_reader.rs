@@ -114,7 +114,7 @@ pub fn collect_samples_from_trace(
     let mut current_entrypoint_call_stack = vec![];
     let sierra_gas_tracking: bool = trace.cumulative_resources.gas_consumed.unwrap_or_default() > 0;
 
-    if sierra_gas_tracking {
+    if sierra_gas_tracking && profiler_config.cairo_enable_gas {
         verify_trace_data_for_l2_gas(trace);
     }
 
@@ -149,6 +149,7 @@ fn collect_samples<'a>(
         trace.entry_point.contract_address.clone(),
         trace.entry_point.entry_point_selector.clone(),
         profiler_config.show_details,
+        profiler_config.external_tool,
     );
     current_entrypoint_call_stack.push(FunctionCall::EntrypointCall(function_name.clone()));
     let mut children_resources = ExecutionResources::default();
@@ -192,6 +193,7 @@ fn collect_samples<'a>(
             calldata_lengths,
             in_transaction,
             &mut VecDeque::from(trace.entry_point.events_summary.clone().unwrap_or_default()),
+            profiler_config.cairo_enable_gas,
         );
 
         let mut trigger_idx = 0;

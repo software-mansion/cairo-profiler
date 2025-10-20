@@ -1,0 +1,29 @@
+[package]
+name = "multiple_targets"
+version = "0.1.0"
+edition = "2024_07"
+
+[dependencies]
+cairo_execute = "2.12"
+
+[[target.executable]]
+name = "with_syscalls"
+function = "multiple_targets::with_syscalls"
+sierra = true
+allow-syscalls = true
+
+[[target.executable]]
+name = "with_arguments"
+function = "multiple_targets::with_arguments"
+sierra = true
+
+[[target.executable]]
+name = "dummy"
+function = "multiple_targets::dummy"
+sierra = true
+
+[cairo]
+enable-gas = false
+
+[tool.cairo-profiler]
+tracked-resource = "sierra-gas"

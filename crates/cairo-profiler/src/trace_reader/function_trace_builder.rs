@@ -20,10 +20,11 @@ use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_gas::compute_precost_info;
 use cairo_lang_sierra_gas::core_libfunc_cost::core_libfunc_cost;
+use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_to_casm::circuit::CircuitsInfo;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
-use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metadata};
-use cairo_lang_sierra_type_size::get_type_size_map;
+use cairo_lang_sierra_to_casm::metadata::{Metadata, MetadataComputationConfig, calc_metadata};
+use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use std::collections::{HashMap, VecDeque};
 use std::ops::{AddAssign, SubAssign};
@@ -100,6 +101,13 @@ impl AddAssign for ChargedResources {
     }
 }
 
+pub struct ProgramInfos {
+    pub precost_info: GasInfo,
+    pub circuits_info: CircuitsInfo,
+    pub type_sizes: TypeSizeMap,
+    pub metadata: Metadata,
+}
+
 /// Collects profiling info of the current run using the trace.
 #[expect(clippy::too_many_lines, clippy::too_many_arguments)]
 pub fn collect_function_level_profiling_info(
@@ -113,21 +121,11 @@ pub fn collect_function_level_profiling_info(
     entrypoint_calldata_lengths: Vec<usize>,
     in_transaction: bool,
     events: &mut VecDeque<SummedUpEvent>,
+    cairo_enable_gas: bool,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
-    let precost_info = compute_precost_info(program).expect("Failed to compute pre-cost info");
-
-    let circuits_info = CircuitsInfo::new(
-        sierra_program_registry,
-        program.type_declarations.iter().map(|td| &td.id),
-    )
-    .expect("Failed to compute circuits info");
-    let type_sizes =
-        get_type_size_map(program, sierra_program_registry).expect("Failed to get type-size map");
-
-    let metadata_config = MetadataComputationConfig::default();
-    let metadata =
-        calc_metadata(program, metadata_config.clone()).expect("Failed to compute metadata");
+    let maybe_program_infos =
+        cairo_enable_gas.then(|| compute_program_infos(program, sierra_program_registry));
 
     let mut call_stack = CallStack::new(function_level_config.max_function_stack_trace_depth);
 
@@ -227,12 +225,15 @@ pub fn collect_function_level_profiling_info(
             panic!("Failed fetching statement index {}", sierra_statement_idx.0);
         };
 
-        let profiler_info_provider = ProfilerInvocationInfo {
-            type_sizes: &type_sizes,
-            circuits_info: &circuits_info,
-            metadata: &metadata,
-            idx: sierra_statement_idx,
-        };
+        let profiler_info_provider =
+            maybe_program_infos
+                .as_ref()
+                .map(|infos| ProfilerInvocationInfo {
+                    type_sizes: &infos.type_sizes,
+                    circuits_info: &infos.circuits_info,
+                    metadata: &infos.metadata,
+                    idx: sierra_statement_idx,
+                });
 
         match gen_statement {
             GenStatement::Invocation(invocation) => {
@@ -316,12 +317,17 @@ pub fn collect_function_level_profiling_info(
                                 sierra_gas_tracking,
                             );
 
-                            if sierra_gas_tracking {
+                            // We can only calculate a libfunc additional cost when tracking sierra
+                            // and when gas was enabled during cairo compilation, otherwise the info
+                            // cannot be obtained at all
+                            if sierra_gas_tracking && cairo_enable_gas {
+                                let precost_info =
+                                    &maybe_program_infos.as_ref().unwrap().precost_info;
                                 let cost_vector = core_libfunc_cost(
-                                    &precost_info,
+                                    precost_info,
                                     &sierra_statement_idx,
-                                    libfunc.unwrap(),
-                                    &profiler_info_provider,
+                                    libfunc.expect("fatal: expected libfunc, but did not found in sierra registry"),
+                                    &profiler_info_provider.expect("fatal: enable-gas was set in cairo, but program infos is unavailable!"),
                                 );
 
                                 add_builtin_sierra_costs(
@@ -371,7 +377,7 @@ pub fn collect_function_level_profiling_info(
         versioned_constants,
         sierra_gas_tracking,
         entrypoint_calldata_lengths,
-        in_transaction,
+        in_transaction && cairo_enable_gas,
         &events_map,
     );
 
@@ -519,7 +525,7 @@ fn add_builtin_sierra_costs(
             *functions_stack_traces
                 .entry(libfunc_call_stack.clone().into())
                 .or_default() += ChargedResources {
-                steps: Default::default(),
+                steps: Steps::default(),
                 sierra_gas_consumed: SierraGasConsumed(
                     usize::try_from(post_cost)
                         .expect("Overflow while converting post_cost to usize"),
@@ -532,5 +538,28 @@ fn add_builtin_sierra_costs(
         } else if branch_cost.konst > *libfunc_appearance_tracker {
             *libfunc_appearance_tracker += 100;
         }
+    }
+}
+
+fn compute_program_infos(
+    program: &Program,
+    sierra_program_registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+) -> ProgramInfos {
+    let precost_info = compute_precost_info(program).expect("Failed to compute pre-cost info");
+    let circuits_info = CircuitsInfo::new(
+        sierra_program_registry,
+        program.type_declarations.iter().map(|td| &td.id),
+    )
+    .expect("Failed to compute circuits info");
+    let type_sizes =
+        get_type_size_map(program, sierra_program_registry).expect("Failed to get type-size map");
+    let metadata = calc_metadata(program, MetadataComputationConfig::default())
+        .expect("Failed to compute metadata");
+
+    ProgramInfos {
+        precost_info,
+        circuits_info,
+        type_sizes,
+        metadata,
     }
 }

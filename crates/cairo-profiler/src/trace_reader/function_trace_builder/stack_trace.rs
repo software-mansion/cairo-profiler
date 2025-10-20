@@ -17,13 +17,13 @@ pub fn trace_to_samples(
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
     entrypoint_calldata_lengths: Vec<usize>,
-    in_transaction: bool,
+    calculate_l2_gas: bool,
     events: &HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>>,
 ) -> Vec<Sample> {
     let function_samples: Vec<Sample> = functions_stack_traces
         .into_iter()
         .map(|(call_stack, cr)| {
-            map_function_trace_to_sample(call_stack, cr, function_casm_sizes, in_transaction)
+            map_function_trace_to_sample(call_stack, cr, function_casm_sizes, calculate_l2_gas)
         })
         .collect();
 
@@ -37,7 +37,7 @@ pub fn trace_to_samples(
             versioned_constants,
             sierra_gas_tracking,
             calldata_lengths_iter.next(),
-            in_transaction,
+            calculate_l2_gas,
             events,
         );
         syscall_samples.push(sample);
@@ -50,7 +50,7 @@ fn map_function_trace_to_sample(
     call_stack: Vec<FunctionCall>,
     cr: ChargedResources,
     casm_sizes: &HashMap<Vec<FunctionCall>, i64>,
-    in_transaction: bool,
+    calculate_l2_gas: bool,
 ) -> Sample {
     let mut measurements = vec![
         (
@@ -67,7 +67,7 @@ fn map_function_trace_to_sample(
         ),
     ];
 
-    if in_transaction {
+    if calculate_l2_gas {
         measurements.push((
             MeasurementUnit::from("l2_gas".to_string()),
             MeasurementValue(i64::try_from(cr.sierra_gas_consumed.0).unwrap()),
@@ -91,7 +91,7 @@ pub fn map_syscall_trace_to_sample(
     versioned_constants: &VersionedConstants,
     sierra_gas_tracking: bool,
     calldata_factor: Option<usize>,
-    in_transaction: bool,
+    calculate_l2_gas: bool,
     events: &HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>>,
 ) -> Sample {
     let function_name = call_stack.last().unwrap().function_name();
@@ -144,7 +144,7 @@ pub fn map_syscall_trace_to_sample(
             invocations,
             versioned_constants,
             &call_stack,
-            in_transaction,
+            calculate_l2_gas,
             events,
         )
     } else {
@@ -167,7 +167,7 @@ fn calculate_syscall_gas_measurements(
     invocations: i64,
     versioned_constants: &VersionedConstants,
     call: &Vec<FunctionCall>,
-    in_transaction: bool,
+    calculate_l2_gas: bool,
     events: &HashMap<Vec<FunctionCall>, Vec<SummedUpEvent>>,
 ) -> HashMap<MeasurementUnit, MeasurementValue> {
     let mut measurements: HashMap<MeasurementUnit, MeasurementValue> = HashMap::new();
@@ -178,7 +178,7 @@ fn calculate_syscall_gas_measurements(
         computation_resources.clone(),
     );
 
-    if in_transaction {
+    if calculate_l2_gas {
         let calc_event_cost = |e: &SummedUpEvent| -> i64 {
             let keys = e.keys_len as u64;
             let data = e.data_len as u64;

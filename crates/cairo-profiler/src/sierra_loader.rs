@@ -7,7 +7,9 @@ use cairo_annotations::trace_data::{CallTraceNode, CallTraceV1};
 use cairo_lang_sierra::debug_info::DebugInfo;
 use cairo_lang_sierra::program::{Program, ProgramArtifact, VersionedProgram};
 use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraToCasmConfig};
-use cairo_lang_sierra_to_casm::metadata::calc_metadata;
+use cairo_lang_sierra_to_casm::metadata::{
+    MetadataComputationConfig, calc_metadata, calc_metadata_ap_change_only,
+};
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::{Utf8Path, Utf8PathBuf};
@@ -46,9 +48,10 @@ impl CompiledArtifactsCache {
 
 pub fn collect_and_compile_all_sierra_programs(
     trace: &CallTraceV1,
+    cairo_enable_gas: bool,
 ) -> Result<CompiledArtifactsCache> {
     let mut compiled_artifacts_cache = CompiledArtifactsCache::new();
-    collect_compiled_artifacts(trace, &mut compiled_artifacts_cache)?;
+    collect_compiled_artifacts(trace, &mut compiled_artifacts_cache, cairo_enable_gas)?;
 
     Ok(compiled_artifacts_cache)
 }
@@ -56,17 +59,19 @@ pub fn collect_and_compile_all_sierra_programs(
 fn collect_compiled_artifacts(
     trace: &CallTraceV1,
     compiled_artifacts_cache: &mut CompiledArtifactsCache,
+    cairo_enable_gas: bool,
 ) -> Result<()> {
     if let Some(cairo_execution_info) = &trace.cairo_execution_info {
         compile_sierra_and_add_compiled_artifacts_to_cache(
             &cairo_execution_info.source_sierra_path,
             compiled_artifacts_cache,
+            cairo_enable_gas,
         )?;
     }
 
     for sub_trace_node in &trace.nested_calls {
         if let CallTraceNode::EntryPointCall(sub_trace) = sub_trace_node {
-            collect_compiled_artifacts(sub_trace, compiled_artifacts_cache)?;
+            collect_compiled_artifacts(sub_trace, compiled_artifacts_cache, cairo_enable_gas)?;
         }
     }
 
@@ -76,6 +81,7 @@ fn collect_compiled_artifacts(
 fn compile_sierra_and_add_compiled_artifacts_to_cache(
     sierra_path: &Utf8Path,
     compiled_artifacts_cache: &mut CompiledArtifactsCache,
+    cairo_enable_gas: bool,
 ) -> Result<()> {
     let absolute_sierra_path = sierra_path
         .canonicalize_utf8()
@@ -127,13 +133,19 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 .context("Failed to extract program artifact from versioned program. Make sure your versioned program is of version 1")?;
 
             let statements_functions_map = maybe_get_statements_functions_map(debug_info);
+            let metadata = if cairo_enable_gas {
+                calc_metadata(&program, MetadataComputationConfig::default())
+                    .with_context(|| "Failed calculating Sierra variables (gas enabled).")?
+            } else {
+                calc_metadata_ap_change_only(&program)
+                    .with_context(|| "Failed calculating Sierra variables (gas disabled).")?
+            };
 
             let casm = cairo_lang_sierra_to_casm::compiler::compile(
                 &program,
-                &calc_metadata(&program, Default::default())
-                    .with_context(|| "Failed calculating Sierra variables.")?,
+                &metadata,
                 SierraToCasmConfig {
-                    gas_usage_check: true,
+                    gas_usage_check: cairo_enable_gas,
                     max_bytecode_size: usize::MAX,
                 },
             )
