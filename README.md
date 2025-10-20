@@ -67,7 +67,7 @@ trace in the [expected](https://docs.rs/cairo-annotations/0.2.0/cairo_annotation
 ### Integrated tools
 
 - [x] [Starknet Foundry](https://github.com/foundry-rs/starknet-foundry) - check how to use it with `cairo-profiler` [here](https://foundry-rs.github.io/starknet-foundry/snforge-advanced-features/profiling.html)
-- [x] [Scarb Execute](https://github.com/foundry-rs/starknet-foundry) - check how to use it with `cairo-profiler` [here]()
+- [x] [Scarb Execute](https://github.com/foundry-rs/starknet-foundry) - check how to use it with `cairo-profiler` [here](https://docs.swmansion.com/scarb/docs/extensions/execute.html#profiling-your-cairo-program)
 
 ## Usage
 
