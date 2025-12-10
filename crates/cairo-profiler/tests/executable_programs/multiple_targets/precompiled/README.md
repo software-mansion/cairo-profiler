@@ -13,4 +13,4 @@ and change paths in respective trace files to point to correct .json files:
 Then copy trace + compiled files in here and repeat with `scarb execute (...) --target="bootloader"` (remember to copy its trace file and change paths as well).
 
 Generated using:
-- scarb <//todo(szymczyk): TBD, do before merge//>
+- scarb 2.13.1

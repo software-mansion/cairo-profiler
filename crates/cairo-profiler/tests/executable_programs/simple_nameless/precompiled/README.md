@@ -5,4 +5,4 @@ To re-generate run `scarb execute --save-profiler-trace-data` , and change paths
 Then copy trace + compiled files in here and repeat with `scarb execute --save-profiler-trace-data --target="bootloader"` (remember to copy its trace file and change paths as well).
 
 Generated using:
-- scarb <//todo(szymczyk): TBD, do before merge//>
+- scarb 2.13.1
