@@ -102,9 +102,8 @@ pub fn read_and_parse_versioned_constants_file(
 
     if !missing_libfuncs.is_empty() {
         return Err(anyhow::anyhow!(
-            "Missing libfuncs cost in versioned constants file: {:?}.\n\
-            Make sure to include costs of these libfuncs in the aforementioned file.",
-            missing_libfuncs
+            "Missing libfuncs cost in versioned constants file: {missing_libfuncs:?}.\n\
+            Make sure to include costs of these libfuncs in the aforementioned file."
         ));
     }
 

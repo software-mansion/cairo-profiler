@@ -164,8 +164,7 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
         }
 
         return Err(anyhow!(
-            "Failed to deserialize sierra saved under path: {}",
-            absolute_sierra_path
+            "Failed to deserialize sierra saved under path: {absolute_sierra_path}"
         ));
     }
 
