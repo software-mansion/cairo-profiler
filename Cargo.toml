@@ -35,7 +35,7 @@ num-rational = "0.4.2"
 
 cairo-lang-sierra = "2.12.0"
 cairo-lang-sierra-to-casm = "2.12.0"
-cairo-lang-starknet-classes = "2.12.0"
+cairo-lang-starknet-classes = "2.15.0"
 cairo-lang-sierra-gas = "2.12.0"
 cairo-lang-sierra-type-size = "2.12.0"
 cairo-lang-sierra-ap-change = "2.12.0"
