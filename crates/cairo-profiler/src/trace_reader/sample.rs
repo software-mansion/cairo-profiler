@@ -106,9 +106,9 @@ impl Sample {
         .collect();
 
         for (builtin, count) in &resources.vm_resources.builtin_instance_counter {
-            assert!(!measurements.contains_key(&MeasurementUnit::from(builtin.to_string())));
+            assert!(!measurements.contains_key(&MeasurementUnit::from(builtin.clone())));
             measurements.insert(
-                MeasurementUnit::from(builtin.to_string()),
+                MeasurementUnit::from(builtin.clone()),
                 MeasurementValue(i64::try_from(*count).unwrap()),
             );
         }

@@ -290,7 +290,7 @@ fn calculate_syscall_cairo_steps_measurements(
 
     for (builtin, b_count) in &resources.builtin_instance_counter {
         measurements.insert(
-            MeasurementUnit::from(builtin.to_string()),
+            MeasurementUnit::from(builtin.clone()),
             MeasurementValue(multiply_resource_by_invocations(*b_count, invocations)),
         );
     }
