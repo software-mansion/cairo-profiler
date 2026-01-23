@@ -10,6 +10,7 @@ use cairo_lang_sierra_to_casm::compiler::{CairoProgramDebugInfo, SierraToCasmCon
 use cairo_lang_sierra_to_casm::metadata::{
     MetadataComputationConfig, calc_metadata, calc_metadata_ap_change_only,
 };
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use camino::{Utf8Path, Utf8PathBuf};
@@ -22,6 +23,7 @@ pub struct CompiledArtifactsCache(HashMap<Utf8PathBuf, CompiledArtifacts>);
 
 pub struct CompiledArtifacts {
     pub sierra_program: Program,
+    pub sierra_program_info: ProgramRegistryInfo,
     pub casm_debug_info: CairoProgramDebugInfo,
     pub statements_functions_map: Option<ProfilerAnnotationsV1>,
 }
@@ -97,6 +99,8 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
             let program = contract_class
                 .extract_sierra_program()
                 .context("Failed to extract sierra program from contract code")?;
+            let program_info = ProgramRegistryInfo::new(&program)
+                .context("Failed to create program registry info")?;
 
             let statements_functions_map =
                 maybe_get_statements_functions_map(contract_class.sierra_program_debug_info);
@@ -119,6 +123,7 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 absolute_sierra_path,
                 CompiledArtifacts {
                     sierra_program: program,
+                    sierra_program_info: program_info,
                     casm_debug_info,
                     statements_functions_map,
                 },
@@ -131,18 +136,25 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
             let ProgramArtifact{ program, debug_info} = versioned_program
                 .into_v1()
                 .context("Failed to extract program artifact from versioned program. Make sure your versioned program is of version 1")?;
+            let program_info = ProgramRegistryInfo::new(&program)
+                .context("Failed to create program registry info")?;
 
             let statements_functions_map = maybe_get_statements_functions_map(debug_info);
             let metadata = if cairo_enable_gas {
-                calc_metadata(&program, MetadataComputationConfig::default())
-                    .with_context(|| "Failed calculating Sierra variables (gas enabled).")?
+                calc_metadata(
+                    &program,
+                    &program_info,
+                    MetadataComputationConfig::default(),
+                )
+                .with_context(|| "Failed calculating Sierra variables (gas enabled).")?
             } else {
-                calc_metadata_ap_change_only(&program)
+                calc_metadata_ap_change_only(&program, &program_info)
                     .with_context(|| "Failed calculating Sierra variables (gas disabled).")?
             };
 
             let casm = cairo_lang_sierra_to_casm::compiler::compile(
                 &program,
+                &program_info,
                 &metadata,
                 SierraToCasmConfig {
                     gas_usage_check: cairo_enable_gas,
@@ -155,6 +167,7 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 absolute_sierra_path,
                 CompiledArtifacts {
                     sierra_program: program,
+                    sierra_program_info: program_info,
                     casm_debug_info: casm.debug_info,
                     statements_functions_map,
                 },

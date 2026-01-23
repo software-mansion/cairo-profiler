@@ -184,6 +184,7 @@ fn collect_samples<'a>(
 
         let function_level_profiling_info = collect_function_level_profiling_info(
             &compiled_artifacts.sierra_program,
+            &compiled_artifacts.sierra_program_info,
             &compiled_artifacts.casm_debug_info,
             &cairo_execution_info.casm_level_info,
             compiled_artifacts.statements_functions_map.as_ref(),
