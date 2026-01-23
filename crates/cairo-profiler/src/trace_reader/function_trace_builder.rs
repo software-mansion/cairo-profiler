@@ -324,7 +324,7 @@ pub fn collect_function_level_profiling_info(
                             if sierra_gas_tracking && cairo_enable_gas {
                                 let precost_info =
                                     &maybe_program_infos.as_ref().unwrap().precost_info;
-                                let cost_vector = core_libfunc_cost(
+                                let cost_vector: Vec<OrderedHashMap<CostTokenType, i64>> = core_libfunc_cost(
                                     precost_info,
                                     &sierra_statement_idx,
                                     libfunc.expect("fatal: expected libfunc, but did not found in sierra registry"),

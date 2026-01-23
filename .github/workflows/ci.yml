@@ -14,10 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
       - uses: arduino/setup-protoc@v3
       - uses: actions/setup-go@v6
+
+      - name: Force Clean
+        run: cargo clean
+
       - run: cargo test --release
 
   rustfmt:
@@ -26,8 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
       - run: cargo fmt --check
 
   clippy:
@@ -39,9 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
       - uses: arduino/setup-protoc@v3
+      - name: Force Clean
+        run: cargo clean
       - run: cargo lint
 
   typos:
