@@ -70,7 +70,6 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.93
           target: ${{ matrix.target }}
 
       - name: Install cross

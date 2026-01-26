@@ -16,10 +16,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v3
       - uses: actions/setup-go@v6
-
-      - name: Force Clean
-        run: cargo clean
-
       - run: cargo test --release
 
   rustfmt:
@@ -40,8 +36,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v3
-      - name: Force Clean
-        run: cargo clean
       - run: cargo lint
 
   typos:

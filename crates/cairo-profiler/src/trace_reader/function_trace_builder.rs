@@ -26,6 +26,7 @@ use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use cairo_lang_sierra_to_casm::metadata::{Metadata, MetadataComputationConfig, calc_metadata};
 use cairo_lang_sierra_type_size::{ProgramRegistryInfo, TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use std::collections::{HashMap, VecDeque};
 use std::ops::{AddAssign, SubAssign};
 
@@ -324,7 +325,7 @@ pub fn collect_function_level_profiling_info(
                             if sierra_gas_tracking && cairo_enable_gas {
                                 let precost_info =
                                     &maybe_program_infos.as_ref().unwrap().precost_info;
-                                let cost_vector: Vec<OrderedHashMap<CostTokenType, i64>> = core_libfunc_cost(
+                                let cost_vector = core_libfunc_cost(
                                     precost_info,
                                     &sierra_statement_idx,
                                     libfunc.expect("fatal: expected libfunc, but did not found in sierra registry"),
@@ -507,7 +508,7 @@ fn register_syscall(
 }
 
 fn add_builtin_sierra_costs(
-    cost_vector: &Vec<OrderedHashMap<CostTokenType, i64>>,
+    cost_vector: &Vec<SmallOrderedMap<CostTokenType, i64>>,
     libfunc_appearance_tracker: &mut i64,
     versioned_constants: &VersionedConstants,
     functions_stack_traces: &mut HashMap<Vec<FunctionCall>, ChargedResources>,

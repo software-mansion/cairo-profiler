@@ -7,8 +7,7 @@ use cairo_lang_sierra_gas::core_libfunc_cost::InvocationCostInfoProvider;
 use cairo_lang_sierra_to_casm::circuit::CircuitsInfo;
 use cairo_lang_sierra_to_casm::metadata::Metadata;
 use cairo_lang_sierra_type_size::TypeSizeMap;
-use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{casts::IntoOrPanic, small_ordered_map::SmallOrderedMap};
 use serde::{Deserialize, Serialize};
 
 pub struct ProfilerInvocationInfo<'a> {
@@ -72,7 +71,7 @@ pub struct CostEntry {
 }
 
 impl CostEntry {
-    pub fn from_map(map: &OrderedHashMap<CostTokenType, i64>) -> Self {
+    pub fn from_map(map: &SmallOrderedMap<CostTokenType, i64>) -> Self {
         Self {
             pedersen: *map.get(&CostTokenType::Pedersen).unwrap_or(&0),
             poseidon: *map.get(&CostTokenType::Poseidon).unwrap_or(&0),
