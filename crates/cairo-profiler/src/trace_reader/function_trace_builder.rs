@@ -24,8 +24,9 @@ use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_to_casm::circuit::CircuitsInfo;
 use cairo_lang_sierra_to_casm::compiler::CairoProgramDebugInfo;
 use cairo_lang_sierra_to_casm::metadata::{Metadata, MetadataComputationConfig, calc_metadata};
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_type_size::{ProgramRegistryInfo, TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use std::collections::{HashMap, VecDeque};
 use std::ops::{AddAssign, SubAssign};
 
@@ -112,6 +113,7 @@ pub struct ProgramInfos {
 #[expect(clippy::too_many_lines, clippy::too_many_arguments)]
 pub fn collect_function_level_profiling_info(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     casm_debug_info: &CairoProgramDebugInfo,
     casm_level_info: &CasmLevelInfo,
     statements_functions_map: Option<&ProfilerAnnotationsV1>,
@@ -124,8 +126,8 @@ pub fn collect_function_level_profiling_info(
     cairo_enable_gas: bool,
 ) -> FunctionLevelProfilingInfo {
     let sierra_program_registry = &ProgramRegistry::<CoreType, CoreLibfunc>::new(program).unwrap();
-    let maybe_program_infos =
-        cairo_enable_gas.then(|| compute_program_infos(program, sierra_program_registry));
+    let maybe_program_infos = cairo_enable_gas
+        .then(|| compute_program_infos(program, program_info, sierra_program_registry));
 
     let mut call_stack = CallStack::new(function_level_config.max_function_stack_trace_depth);
 
@@ -506,7 +508,7 @@ fn register_syscall(
 }
 
 fn add_builtin_sierra_costs(
-    cost_vector: &Vec<OrderedHashMap<CostTokenType, i64>>,
+    cost_vector: &Vec<SmallOrderedMap<CostTokenType, i64>>,
     libfunc_appearance_tracker: &mut i64,
     versioned_constants: &VersionedConstants,
     functions_stack_traces: &mut HashMap<Vec<FunctionCall>, ChargedResources>,
@@ -543,9 +545,11 @@ fn add_builtin_sierra_costs(
 
 fn compute_program_infos(
     program: &Program,
+    program_info: &ProgramRegistryInfo,
     sierra_program_registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> ProgramInfos {
-    let precost_info = compute_precost_info(program).expect("Failed to compute pre-cost info");
+    let precost_info =
+        compute_precost_info(program, program_info).expect("Failed to compute pre-cost info");
     let circuits_info = CircuitsInfo::new(
         sierra_program_registry,
         program.type_declarations.iter().map(|td| &td.id),
@@ -553,7 +557,7 @@ fn compute_program_infos(
     .expect("Failed to compute circuits info");
     let type_sizes =
         get_type_size_map(program, sierra_program_registry).expect("Failed to get type-size map");
-    let metadata = calc_metadata(program, MetadataComputationConfig::default())
+    let metadata = calc_metadata(program, program_info, MetadataComputationConfig::default())
         .expect("Failed to compute metadata");
 
     ProgramInfos {
