@@ -2213,3 +2213,104 @@ fn view_execute_with_arguments_standalone_sierra_gas() {
             "#
         ));
 }
+
+#[test]
+fn view_different_syscalls() {
+    let project_root = project_root::get_project_root().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
+    temp_dir
+        .copy_from(
+            project_root.join("crates/cairo-profiler/tests/contracts/other_syscalls/precompiled/"),
+            &["*.json"],
+        )
+        .unwrap();
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("build-profile")
+        .arg("trace_other_syscalls.json")
+        .assert()
+        .success();
+
+    // stdout asserts were generated using `go tool pprof -top profile.pb.gz` command
+    // when changing any view_* tests please always generate expected output using this tool
+    // formatting was changed manually, since it differs a bit between pprof and cairo-profiler view
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("13")
+        .arg("--sample")
+        .arg("syscall usage")
+        .arg("--hide")
+        .arg("^(core|other_syscalls)::")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+        r#"
+
+            Active filter:
+            hide=^(core|other_syscalls)::
+
+            Showing nodes accounting for 15 syscall usage, 100.00% of 15 syscall usage total
+            Showing top 13 nodes out of 19
+
+                        flat |  flat% |    sum% |              cum |   cum% |  
+            -----------------+--------+---------+------------------+--------+--------------------------
+             2 syscall usage | 13.33% |  13.33% |  2 syscall usage | 13.33% | "Secp256k1GetXy" 
+             2 syscall usage | 13.33% |  26.67% |  2 syscall usage | 13.33% | "Secp256r1Mul" 
+             1 syscall usage |  6.67% |  33.33% | 14 syscall usage | 93.33% | "CallContract" 
+             1 syscall usage |  6.67% |  40.00% |  1 syscall usage |  6.67% | "Deploy" 
+             1 syscall usage |  6.67% |  46.67% |  1 syscall usage |  6.67% | "Keccak" 
+             1 syscall usage |  6.67% |  53.33% |  1 syscall usage |  6.67% | "Secp256k1Add" 
+             1 syscall usage |  6.67% |  60.00% |  1 syscall usage |  6.67% | "Secp256k1GetPointFromX" 
+             1 syscall usage |  6.67% |  66.67% |  1 syscall usage |  6.67% | "Secp256k1Mul" 
+             1 syscall usage |  6.67% |  73.33% |  1 syscall usage |  6.67% | "Secp256k1New" 
+             1 syscall usage |  6.67% |  80.00% |  1 syscall usage |  6.67% | "Secp256r1Add" 
+             1 syscall usage |  6.67% |  86.67% |  1 syscall usage |  6.67% | "Secp256r1GetPointFromX" 
+             1 syscall usage |  6.67% |  93.33% |  1 syscall usage |  6.67% | "Secp256r1GetXy" 
+             1 syscall usage |  6.67% | 100.00% |  1 syscall usage |  6.67% | "Secp256r1New" 
+        "#
+        ));
+
+    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+        .current_dir(&temp_dir)
+        .arg("view")
+        .arg("profile.pb.gz")
+        .arg("--limit")
+        .arg("13")
+        .arg("--sample")
+        .arg("l2 gas")
+        .arg("--hide")
+        .arg("^(core|other_syscalls)::")
+        .assert()
+        .success()
+        .stdout_eq(indoc!(
+        r#"
+
+            Active filter:
+            hide=^(core|other_syscalls)::
+
+            Showing nodes accounting for 35700180 l2 gas, 100.00% of 35700180 l2 gas total
+            Showing top 13 nodes out of 19
+
+                        flat |  flat% |    sum% |             cum |    cum% |  
+            -----------------+--------+---------+-----------------+---------+------------------------------------------------------
+             27023740 l2 gas | 75.70% |  75.70% | 27023740 l2 gas |  75.70% | "Secp256r1Mul" 
+              8143850 l2 gas | 22.81% |  98.51% |  8143850 l2 gas |  22.81% | "Secp256k1Mul" 
+               143800 l2 gas |  0.40% |  98.91% | 35700180 l2 gas | 100.00% | "Contract: SyscallProxy/nFunction: other_syscalls/n" 
+                63490 l2 gas |  0.18% |  99.09% |    63490 l2 gas |   0.18% | "Secp256r1Add" 
+                61630 l2 gas |  0.17% |  99.26% |    61630 l2 gas |   0.17% | "Secp256r1New" 
+                54680 l2 gas |  0.15% |  99.41% |    54680 l2 gas |   0.15% | "Secp256r1GetPointFromX" 
+                48750 l2 gas |  0.14% |  99.55% |    48750 l2 gas |   0.14% | "Secp256k1New" 
+                43340 l2 gas |  0.12% |  99.67% |    43340 l2 gas |   0.12% | "Secp256k1GetXy" 
+                43230 l2 gas |  0.12% |  99.79% |    43230 l2 gas |   0.12% | "Secp256k1Add" 
+                41800 l2 gas |  0.12% |  99.91% |    41800 l2 gas |   0.12% | "Secp256k1GetPointFromX" 
+                21870 l2 gas |  0.06% |  99.97% |    21870 l2 gas |   0.06% | "Secp256r1GetXy" 
+                10000 l2 gas |  0.03% | 100.00% |    10000 l2 gas |   0.03% | "Keccak" 
+                    0 l2 gas |  0.00% | 100.00% | 35700180 l2 gas | 100.00% | "CallContract" 
+        "#
+        ));
+}

@@ -1,0 +1,17 @@
+[package]
+name = "other_syscalls"
+version = "0.1.0"
+edition = "2024_07"
+
+[dependencies]
+starknet = "2.15"
+
+[dev-dependencies]
+snforge_std = "0.55.0"
+assert_macros = "2.15"
+
+[[target.starknet-contract]]
+sierra = true
+
+[tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]

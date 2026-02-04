@@ -6,6 +6,9 @@ use cairo_annotations::trace_data::{
     DeprecatedSyscallSelector, SummedUpEvent, VmExecutionResources,
 };
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
+use cairo_lang_sierra::extensions::starknet::secp256::{
+    Secp256ConcreteLibfunc, Secp256OpConcreteLibfunc,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use std::collections::HashMap;
 
@@ -303,8 +306,9 @@ pub fn map_syscall_to_selector(syscall: &StarknetConcreteLibfunc) -> DeprecatedS
         StarknetConcreteLibfunc::Deploy(_) => DeprecatedSyscallSelector::Deploy,
         StarknetConcreteLibfunc::EmitEvent(_) => DeprecatedSyscallSelector::EmitEvent,
         StarknetConcreteLibfunc::GetBlockHash(_) => DeprecatedSyscallSelector::GetBlockHash,
-        StarknetConcreteLibfunc::GetExecutionInfo(_) => DeprecatedSyscallSelector::GetExecutionInfo,
-        StarknetConcreteLibfunc::GetExecutionInfoV2(_) => {
+        StarknetConcreteLibfunc::GetExecutionInfo(_)
+        | StarknetConcreteLibfunc::GetExecutionInfoV2(_)
+        | StarknetConcreteLibfunc::GetExecutionInfoV3(_) => {
             DeprecatedSyscallSelector::GetExecutionInfo
         }
         StarknetConcreteLibfunc::Keccak(_) => DeprecatedSyscallSelector::Keccak,
@@ -317,6 +321,31 @@ pub fn map_syscall_to_selector(syscall: &StarknetConcreteLibfunc) -> DeprecatedS
             DeprecatedSyscallSelector::Sha256ProcessBlock
         }
         StarknetConcreteLibfunc::MetaTxV0(_) => DeprecatedSyscallSelector::MetaTxV0,
+        StarknetConcreteLibfunc::Secp256(concrete) => match concrete {
+            Secp256ConcreteLibfunc::K1(k1_secp256_concrete_libfunc) => {
+                match k1_secp256_concrete_libfunc {
+                    Secp256OpConcreteLibfunc::New(_) => DeprecatedSyscallSelector::Secp256k1New,
+                    Secp256OpConcreteLibfunc::Add(_) => DeprecatedSyscallSelector::Secp256k1Add,
+                    Secp256OpConcreteLibfunc::Mul(_) => DeprecatedSyscallSelector::Secp256k1Mul,
+                    Secp256OpConcreteLibfunc::GetPointFromX(_) => {
+                        DeprecatedSyscallSelector::Secp256k1GetPointFromX
+                    }
+                    Secp256OpConcreteLibfunc::GetXy(_) => DeprecatedSyscallSelector::Secp256k1GetXy,
+                }
+            }
+            Secp256ConcreteLibfunc::R1(r1_secp256_concrete_libfunc) => {
+                match r1_secp256_concrete_libfunc {
+                    Secp256OpConcreteLibfunc::New(_) => DeprecatedSyscallSelector::Secp256r1New,
+                    Secp256OpConcreteLibfunc::Add(_) => DeprecatedSyscallSelector::Secp256r1Add,
+                    Secp256OpConcreteLibfunc::Mul(_) => DeprecatedSyscallSelector::Secp256r1Mul,
+                    Secp256OpConcreteLibfunc::GetPointFromX(_) => {
+                        DeprecatedSyscallSelector::Secp256r1GetPointFromX
+                    }
+                    Secp256OpConcreteLibfunc::GetXy(_) => DeprecatedSyscallSelector::Secp256r1GetXy,
+                }
+            }
+        },
+        StarknetConcreteLibfunc::GetClassHashAt(_) => DeprecatedSyscallSelector::GetClassHashAt,
         _ => panic!("Missing mapping to a syscall"),
     }
 }
