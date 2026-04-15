@@ -330,7 +330,7 @@ pub fn collect_function_level_profiling_info(
                                     &maybe_program_infos.as_ref().unwrap().precost_info;
                                 let cost_vector = core_libfunc_cost(
                                     precost_info,
-                                    &sierra_statement_idx,
+                                    sierra_statement_idx,
                                     libfunc.expect("fatal: expected libfunc, but did not found in sierra registry"),
                                     &profiler_info_provider.expect("fatal: enable-gas was set in cairo, but program infos is unavailable!"),
                                 );

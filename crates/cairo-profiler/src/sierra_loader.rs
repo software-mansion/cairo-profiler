@@ -96,10 +96,10 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
         let raw_sierra = fs::read_to_string(&absolute_sierra_path)?;
 
         if let Ok(contract_class) = serde_json::from_str::<ContractClass>(&raw_sierra) {
-            let program = contract_class
-                .extract_sierra_program()
+            let extracted = contract_class
+                .extract_sierra_program(true)
                 .context("Failed to extract sierra program from contract code")?;
-            let program_info = ProgramRegistryInfo::new(&program)
+            let program_info = ProgramRegistryInfo::new(&extracted.program)
                 .context("Failed to create program registry info")?;
 
             let statements_functions_map =
@@ -111,9 +111,14 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
                 ..contract_class
             };
 
+            let extracted_for_compile = contract_class
+                .extract_sierra_program(false)
+                .context("Failed to extract sierra program from contract code")?;
+
             let (_casm_contract_class, casm_debug_info) =
                 CasmContractClass::from_contract_class_with_debug_info(
                     contract_class,
+                    extracted_for_compile,
                     false,
                     usize::MAX,
                 )
@@ -122,7 +127,7 @@ fn compile_sierra_and_add_compiled_artifacts_to_cache(
             compiled_artifacts_cache.0.insert(
                 absolute_sierra_path,
                 CompiledArtifacts {
-                    sierra_program: program,
+                    sierra_program: extracted.program,
                     sierra_program_info: program_info,
                     casm_debug_info,
                     statements_functions_map,
