@@ -493,14 +493,12 @@ fn register_syscall(
         | StarknetConcreteLibfunc::LibraryCall(_) => {
             nested_call_triggers.push(current_call_stack_with_syscall.clone().into());
         }
-        StarknetConcreteLibfunc::EmitEvent(_) => {
-            if !events.is_empty() {
-                events_map
-                    .entry(current_call_stack_with_syscall.clone().into())
-                    .or_default()
-                    .push(events.front().unwrap().clone());
-                events.pop_front();
-            }
+        StarknetConcreteLibfunc::EmitEvent(_) if !events.is_empty() => {
+            events_map
+                .entry(current_call_stack_with_syscall.clone().into())
+                .or_default()
+                .push(events.front().unwrap().clone());
+            events.pop_front();
         }
         _ => {}
     }
