@@ -1,0 +1,70 @@
+name: Compatibility Test
+
+on:
+  schedule:
+    # Run twice a week: Monday and Thursday at 00:00 UTC
+    - cron: "0 0 * * 1,4"
+  workflow_dispatch:
+
+jobs:
+  get-latest-release:
+    name: Get latest release tag
+    runs-on: ubuntu-latest
+    outputs:
+      latest-tag: ${{ steps.get-tag.outputs.tag }}
+    steps:
+      - name: Get latest release tag
+        id: get-tag
+        run: |
+          TAG=$(gh release list --repo ${{ github.repository }} --limit 1 --json tagName -q '.[0].tagName')
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    name: Test ${{ matrix.ref }}
+    needs: get-latest-release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ref:
+          - main
+          - ${{ needs.get-latest-release.outputs.latest-tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.ref }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: arduino/setup-protoc@v3
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Install Scarb
+        uses: software-mansion/setup-scarb@v1
+
+      - name: Install Starknet Foundry
+        uses: foundry-rs/setup-snfoundry@v3
+
+      - run: exit 1;
+
+      - name: Run tests
+        run: cargo test --release
+
+  notify_failed:
+    runs-on: ubuntu-latest
+    if: always() && needs.test.result == 'failure'
+    needs: [test]
+    steps:
+      - name: Notifying about check fail!
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_SCHEDULED_CHECK_FAILURE_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            {
+              "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
