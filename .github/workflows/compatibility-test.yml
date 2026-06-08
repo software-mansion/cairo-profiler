@@ -3,7 +3,7 @@ name: Compatibility Test
 on:
   schedule:
     # Run twice a week: Monday and Thursday at 00:00 UTC
-    - cron: '0 0 * * 1,4'
+    - cron: "0 0 * * 1,4"
   workflow_dispatch:
 
 jobs:
@@ -51,3 +51,18 @@ jobs:
 
       - name: Run tests
         run: cargo test --release
+
+  notify_failed:
+    runs-on: ubuntu-latest
+    if: always() && needs.test.result == 'failure'
+    needs: [test]
+    steps:
+      - name: Notifying about check fail!
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_SCHEDULED_CHECK_FAILURE_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            {
+              "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
