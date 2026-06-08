@@ -49,6 +49,8 @@ jobs:
       - name: Install Starknet Foundry
         uses: foundry-rs/setup-snfoundry@v3
 
+      - run: exit 1;
+
       - name: Run tests
         run: cargo test --release
 
