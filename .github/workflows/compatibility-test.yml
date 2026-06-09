@@ -22,7 +22,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test:
-    name: Test ${{ matrix.ref }}
+    name: Test ${{ matrix.ref }} with Scarb ${{ matrix.scarb-version }}
     needs: get-latest-release
     runs-on: ubuntu-latest
     strategy:
@@ -30,6 +30,9 @@ jobs:
         ref:
           - main
           - ${{ needs.get-latest-release.outputs.latest-tag }}
+        scarb-version:
+          - latest
+          - nightly
     steps:
       - uses: actions/checkout@v6
         with:
@@ -45,6 +48,8 @@ jobs:
 
       - name: Install Scarb
         uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: ${{ matrix.scarb-version }}
 
       - name: Install Starknet Foundry
         uses: foundry-rs/setup-snfoundry@v3
