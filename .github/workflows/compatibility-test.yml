@@ -21,11 +21,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  test:
-    name: Test ${{ matrix.ref }}
+  test-stable:
+    name: Test ${{ matrix.ref }} with Scarb stable
     needs: get-latest-release
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         ref:
           - main
@@ -45,6 +46,8 @@ jobs:
 
       - name: Install Scarb
         uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: latest
 
       - name: Install Starknet Foundry
         uses: foundry-rs/setup-snfoundry@v3
@@ -52,12 +55,48 @@ jobs:
       - name: Run tests
         run: cargo test --release
 
-  notify_failed:
+  test-nightly:
+    name: Test ${{ matrix.ref }} with Scarb nightly
+    needs: get-latest-release
     runs-on: ubuntu-latest
-    if: always() && needs.test.result == 'failure'
-    needs: [test]
+    strategy:
+      fail-fast: false
+      matrix:
+        ref:
+          - main
+          - ${{ needs.get-latest-release.outputs.latest-tag }}
     steps:
-      - name: Notifying about check fail!
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.ref }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: arduino/setup-protoc@v3
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Install Scarb
+        uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: nightly
+
+      - name: Install Starknet Foundry
+        uses: foundry-rs/setup-snfoundry@v3
+
+      - name: Run tests
+        run: cargo test --release
+
+  # Stable failures always notify — no deduplication.
+  notify_stable_failed:
+    name: Notify on stable failure
+    runs-on: ubuntu-latest
+    if: always() && needs.test-stable.result == 'failure'
+    needs: [test-stable]
+    steps:
+      - name: Notifying about stable check fail!
         uses: slackapi/slack-github-action@v3.0.3
         with:
           webhook: ${{ secrets.SLACK_SCHEDULED_CHECK_FAILURE_WEBHOOK_URL }}
@@ -66,3 +105,51 @@ jobs:
             {
               "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             }
+
+  # Nightly failures notify only once per Scarb stable version. The cache key is
+  # the current Scarb stable release tag, so a new stable release resets alerting
+  # automatically (the key changes -> cache miss -> notification allowed again).
+  notify_nightly_failed:
+    name: Notify on nightly failure (deduped per Scarb stable)
+    runs-on: ubuntu-latest
+    if: always() && needs.test-nightly.result == 'failure'
+    needs: [test-nightly]
+    steps:
+      - name: Get current Scarb stable version
+        id: stable
+        run: |
+          VER=$(gh release list --repo software-mansion/scarb \
+                  --exclude-pre-releases --limit 1 \
+                  --json tagName -q '.[0].tagName')
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if already notified for this Scarb stable
+        id: dedup
+        uses: actions/cache/restore@v4
+        with:
+          path: .notified
+          key: notified-scarb-nightly-${{ steps.stable.outputs.version }}
+
+      - name: Notifying about nightly check fail!
+        if: steps.dedup.outputs.cache-hit != 'true'
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          webhook: ${{ secrets.SLACK_SCHEDULED_CHECK_FAILURE_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            {
+              "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+
+      - name: Record that we notified for this stable
+        if: steps.dedup.outputs.cache-hit != 'true'
+        run: mkdir -p .notified && echo "${{ github.run_id }}" > .notified/run
+
+      - name: Save notification marker
+        if: steps.dedup.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .notified
+          key: notified-scarb-nightly-${{ steps.stable.outputs.version }}
