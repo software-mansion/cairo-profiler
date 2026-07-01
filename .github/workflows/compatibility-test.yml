@@ -32,7 +32,7 @@ jobs:
           - main
           - ${{ needs.get-latest-release.outputs.latest-tag }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ matrix.ref }}
 
@@ -50,7 +50,7 @@ jobs:
           scarb-version: latest
 
       - name: Install Starknet Foundry
-        uses: foundry-rs/setup-snfoundry@v3
+        uses: foundry-rs/setup-snfoundry@v6
 
       - name: Run tests
         run: cargo test --release
@@ -66,7 +66,7 @@ jobs:
           - main
           - ${{ needs.get-latest-release.outputs.latest-tag }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ matrix.ref }}
 
@@ -84,7 +84,7 @@ jobs:
           scarb-version: nightly
 
       - name: Install Starknet Foundry
-        uses: foundry-rs/setup-snfoundry@v3
+        uses: foundry-rs/setup-snfoundry@v6
 
       - name: Run tests
         run: cargo test --release
@@ -127,7 +127,7 @@ jobs:
 
       - name: Check if already notified for this Scarb stable
         id: dedup
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .notified
           key: notified-scarb-nightly-${{ steps.stable.outputs.version }}
@@ -149,7 +149,7 @@ jobs:
 
       - name: Save notification marker
         if: steps.dedup.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .notified
           key: notified-scarb-nightly-${{ steps.stable.outputs.version }}

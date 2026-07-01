@@ -14,11 +14,11 @@ jobs:
       version: ${{ steps.version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Get version from Cargo.toml
         id: lookupVersion
-        uses: mikefarah/yq@751d8ad57b84f1794661bc70c0afb92a22ad7b3c #v4.53.2
+        uses: mikefarah/yq@1b9b4ac5187171d2e5e3129be0cfa827c7f9d53d #v4.53.3
         with:
           cmd: yq -oy '"v" + .workspace.package.version' 'Cargo.toml'
 
@@ -66,7 +66,7 @@ jobs:
             os: windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -130,7 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-binaries, get-version]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Download artifacts
         uses: actions/download-artifact@v8
