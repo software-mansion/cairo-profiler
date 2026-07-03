@@ -275,6 +275,7 @@ pub fn collect_function_level_profiling_info(
                             | StarknetConcreteLibfunc::StorageRead(_)
                             | StarknetConcreteLibfunc::StorageWrite(_)
                             | StarknetConcreteLibfunc::Sha256ProcessBlock(_)
+                            | StarknetConcreteLibfunc::Sha512ProcessBlock(_)
                             | StarknetConcreteLibfunc::MetaTxV0(_)
                             | StarknetConcreteLibfunc::Secp256(_)
                             | StarknetConcreteLibfunc::GetExecutionInfoV3(_)

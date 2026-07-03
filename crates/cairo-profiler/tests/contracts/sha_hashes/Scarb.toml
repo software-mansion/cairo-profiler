@@ -1,0 +1,18 @@
+[package]
+name = "sha_hashes"
+version = "0.1.0"
+edition = "2024_07"
+
+[dependencies]
+starknet = "2.18.0"
+
+[dev-dependencies]
+snforge_std = "0.59.0"
+assert_macros = "2.18.0"
+
+[[target.starknet-contract]]
+sierra = true
+allowed-libfuncs-list.name = "all"
+
+[tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]
