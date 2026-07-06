@@ -2342,7 +2342,9 @@ fn view_different_syscalls() {
         .stdout
         .clone();
     assert!(
-        str::from_utf8(&sha_output).unwrap().contains("Sha512ProcessBlock"),
+        str::from_utf8(&sha_output)
+            .unwrap()
+            .contains("Sha512ProcessBlock"),
         "syscall usage output should contain 'Sha512ProcessBlock'"
     );
 }
