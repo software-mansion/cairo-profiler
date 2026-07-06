@@ -171,7 +171,7 @@ pub fn print_profile(
     let summary_resource_cost: i64 = sliced.iter().map(|(_key, profile)| profile.flat).sum();
     let cost_percentage = format!(
         "{:.2}%",
-        &sliced
+        sliced
             .last()
             .map(|(_key, profile)| profile.sum_p)
             .context("Failed to get current percentage from profile data")?

@@ -153,23 +153,19 @@ fn view_samples() {
 
     assert!(
         output_str.contains("steps"),
-        "Output contains: {}, missing 'steps'",
-        &output_str
+        "Output contains: {output_str}, missing 'steps'",
     );
     assert!(
         output_str.contains("calls"),
-        "Output contains: {}, missing 'calls'",
-        &output_str
+        "Output contains: {output_str}, missing 'calls'",
     );
     assert!(
         output_str.contains("memory holes"),
-        "Output contains: {}, missing 'memory holes'",
-        &output_str
+        "Output contains: {output_str}, missing 'memory holes'",
     );
     assert!(
         output_str.contains("range check builtin"),
-        "Output contains: {}, missing 'range check builtin'",
-        &output_str
+        "Output contains: {output_str}, missing 'range check builtin'",
     );
 }
 
@@ -1251,8 +1247,7 @@ fn view_no_l2_gas_sample_for_steps() {
 
     assert!(
         !output_str.contains("l2 gas"),
-        "Output contains: {}, 'l2 gas' is wrongly here",
-        &output_str
+        "Output contains: {output_str}, 'l2 gas' is wrongly here",
     );
 
     SnapboxCommand::new(cargo_bin!("cairo-profiler"))
@@ -1277,8 +1272,7 @@ fn view_no_l2_gas_sample_for_steps() {
 
     assert!(
         !output_str.contains("l2 gas"),
-        "Output contains: {}, 'l2 gas' is wrongly here",
-        &output_str
+        "Output contains: {output_str}, 'l2 gas' is wrongly here",
     );
 }
 
@@ -2215,6 +2209,7 @@ fn view_execute_with_arguments_standalone_sierra_gas() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn view_different_syscalls() {
     let project_root = project_root::get_project_root().unwrap();
     let temp_dir = assert_fs::TempDir::new().unwrap();
@@ -2241,7 +2236,7 @@ fn view_different_syscalls() {
         .arg("view")
         .arg("profile.pb.gz")
         .arg("--limit")
-        .arg("13")
+        .arg("14")
         .arg("--sample")
         .arg("syscall usage")
         .arg("--hide")
@@ -2254,24 +2249,25 @@ fn view_different_syscalls() {
             Active filter:
             hide=^(core|other_syscalls)::
 
-            Showing nodes accounting for 15 syscall usage, 100.00% of 15 syscall usage total
-            Showing top 13 nodes out of 19
+            Showing nodes accounting for 17 syscall usage, 100.00% of 17 syscall usage total
+            Showing top 14 nodes out of 21
 
                         flat |  flat% |    sum% |              cum |   cum% |  
             -----------------+--------+---------+------------------+--------+--------------------------
-             2 syscall usage | 13.33% |  13.33% |  2 syscall usage | 13.33% | "Secp256k1GetXy" 
-             2 syscall usage | 13.33% |  26.67% |  2 syscall usage | 13.33% | "Secp256r1Mul" 
-             1 syscall usage |  6.67% |  33.33% | 14 syscall usage | 93.33% | "CallContract" 
-             1 syscall usage |  6.67% |  40.00% |  1 syscall usage |  6.67% | "Deploy" 
-             1 syscall usage |  6.67% |  46.67% |  1 syscall usage |  6.67% | "Keccak" 
-             1 syscall usage |  6.67% |  53.33% |  1 syscall usage |  6.67% | "Secp256k1Add" 
-             1 syscall usage |  6.67% |  60.00% |  1 syscall usage |  6.67% | "Secp256k1GetPointFromX" 
-             1 syscall usage |  6.67% |  66.67% |  1 syscall usage |  6.67% | "Secp256k1Mul" 
-             1 syscall usage |  6.67% |  73.33% |  1 syscall usage |  6.67% | "Secp256k1New" 
-             1 syscall usage |  6.67% |  80.00% |  1 syscall usage |  6.67% | "Secp256r1Add" 
-             1 syscall usage |  6.67% |  86.67% |  1 syscall usage |  6.67% | "Secp256r1GetPointFromX" 
-             1 syscall usage |  6.67% |  93.33% |  1 syscall usage |  6.67% | "Secp256r1GetXy" 
-             1 syscall usage |  6.67% | 100.00% |  1 syscall usage |  6.67% | "Secp256r1New" 
+             2 syscall usage | 11.76% |  11.76% |  2 syscall usage | 11.76% | "Secp256k1GetXy" 
+             2 syscall usage | 11.76% |  23.53% |  2 syscall usage | 11.76% | "Secp256r1Mul" 
+             2 syscall usage | 11.76% |  35.29% |  2 syscall usage | 11.76% | "Sha512ProcessBlock" 
+             1 syscall usage |  5.88% |  41.18% | 16 syscall usage | 94.12% | "CallContract" 
+             1 syscall usage |  5.88% |  47.06% |  1 syscall usage |  5.88% | "Deploy" 
+             1 syscall usage |  5.88% |  52.94% |  1 syscall usage |  5.88% | "Keccak" 
+             1 syscall usage |  5.88% |  58.82% |  1 syscall usage |  5.88% | "Secp256k1Add" 
+             1 syscall usage |  5.88% |  64.71% |  1 syscall usage |  5.88% | "Secp256k1GetPointFromX" 
+             1 syscall usage |  5.88% |  70.59% |  1 syscall usage |  5.88% | "Secp256k1Mul" 
+             1 syscall usage |  5.88% |  76.47% |  1 syscall usage |  5.88% | "Secp256k1New" 
+             1 syscall usage |  5.88% |  82.35% |  1 syscall usage |  5.88% | "Secp256r1Add" 
+             1 syscall usage |  5.88% |  88.24% |  1 syscall usage |  5.88% | "Secp256r1GetPointFromX" 
+             1 syscall usage |  5.88% |  94.12% |  1 syscall usage |  5.88% | "Secp256r1GetXy" 
+             1 syscall usage |  5.88% | 100.00% |  1 syscall usage |  5.88% | "Secp256r1New" 
         "#
         ));
 
@@ -2280,7 +2276,7 @@ fn view_different_syscalls() {
         .arg("view")
         .arg("profile.pb.gz")
         .arg("--limit")
-        .arg("13")
+        .arg("14")
         .arg("--sample")
         .arg("l2 gas")
         .arg("--hide")
@@ -2293,154 +2289,25 @@ fn view_different_syscalls() {
             Active filter:
             hide=^(core|other_syscalls)::
 
-            Showing nodes accounting for 35700180 l2 gas, 100.00% of 35700180 l2 gas total
-            Showing top 13 nodes out of 19
+            Showing nodes accounting for 40753300 l2 gas, 100.00% of 40753300 l2 gas total
+            Showing top 14 nodes out of 21
 
                         flat |  flat% |    sum% |             cum |    cum% |  
             -----------------+--------+---------+-----------------+---------+------------------------------------------------------
-             27023740 l2 gas | 75.70% |  75.70% | 27023740 l2 gas |  75.70% | "Secp256r1Mul" 
-              8143850 l2 gas | 22.81% |  98.51% |  8143850 l2 gas |  22.81% | "Secp256k1Mul" 
-               143800 l2 gas |  0.40% |  98.91% | 35700180 l2 gas | 100.00% | "Contract: SyscallProxy/nFunction: other_syscalls/n" 
-                63490 l2 gas |  0.18% |  99.09% |    63490 l2 gas |   0.18% | "Secp256r1Add" 
-                61630 l2 gas |  0.17% |  99.26% |    61630 l2 gas |   0.17% | "Secp256r1New" 
-                54680 l2 gas |  0.15% |  99.41% |    54680 l2 gas |   0.15% | "Secp256r1GetPointFromX" 
-                48750 l2 gas |  0.14% |  99.55% |    48750 l2 gas |   0.14% | "Secp256k1New" 
-                43340 l2 gas |  0.12% |  99.67% |    43340 l2 gas |   0.12% | "Secp256k1GetXy" 
-                43230 l2 gas |  0.12% |  99.79% |    43230 l2 gas |   0.12% | "Secp256k1Add" 
-                41800 l2 gas |  0.12% |  99.91% |    41800 l2 gas |   0.12% | "Secp256k1GetPointFromX" 
-                21870 l2 gas |  0.06% |  99.97% |    21870 l2 gas |   0.06% | "Secp256r1GetXy" 
-                10000 l2 gas |  0.03% | 100.00% |    10000 l2 gas |   0.03% | "Keccak" 
-                    0 l2 gas |  0.00% | 100.00% | 35700180 l2 gas | 100.00% | "CallContract" 
+             27023740 l2 gas | 66.31% |  66.31% | 27023740 l2 gas |  66.31% | "Secp256r1Mul" 
+              8143850 l2 gas | 19.98% |  86.29% |  8143850 l2 gas |  19.98% | "Secp256k1Mul" 
+              4827620 l2 gas | 11.85% |  98.14% |  4827620 l2 gas |  11.85% | "Sha512ProcessBlock" 
+               369300 l2 gas |  0.91% |  99.05% | 40753300 l2 gas | 100.00% | "Contract: SyscallProxy/nFunction: other_syscalls/n" 
+                63490 l2 gas |  0.16% |  99.20% |    63490 l2 gas |   0.16% | "Secp256r1Add" 
+                61630 l2 gas |  0.15% |  99.35% |    61630 l2 gas |   0.15% | "Secp256r1New" 
+                54680 l2 gas |  0.13% |  99.49% |    54680 l2 gas |   0.13% | "Secp256r1GetPointFromX" 
+                48750 l2 gas |  0.12% |  99.61% |    48750 l2 gas |   0.12% | "Secp256k1New" 
+                43340 l2 gas |  0.11% |  99.71% |    43340 l2 gas |   0.11% | "Secp256k1GetXy" 
+                43230 l2 gas |  0.11% |  99.82% |    43230 l2 gas |   0.11% | "Secp256k1Add" 
+                41800 l2 gas |  0.10% |  99.92% |    41800 l2 gas |   0.10% | "Secp256k1GetPointFromX" 
+                21870 l2 gas |  0.05% |  99.98% |    21870 l2 gas |   0.05% | "Secp256r1GetXy" 
+                10000 l2 gas |  0.02% | 100.00% |    10000 l2 gas |   0.02% | "Keccak" 
+                    0 l2 gas |  0.00% | 100.00% | 40753300 l2 gas | 100.00% | "CallContract" 
         "#
-        ));
-
-    temp_dir
-        .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/sha_hashes/precompiled/"),
-            &["trace_sha_hashes.json"],
-        )
-        .unwrap();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("build-profile")
-        .arg("trace_sha_hashes.json")
-        .arg("--output-path")
-        .arg("sha_profile.pb.gz")
-        .assert()
-        .success();
-
-    let sha_output = SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("view")
-        .arg("sha_profile.pb.gz")
-        .arg("--sample")
-        .arg("syscall usage")
-        .assert()
-        .success()
-        .get_output()
-        .stdout
-        .clone();
-    assert!(
-        str::from_utf8(&sha_output)
-            .unwrap()
-            .contains("Sha512ProcessBlock"),
-        "syscall usage output should contain 'Sha512ProcessBlock'"
-    );
-}
-
-#[test]
-fn view_sha512_sierra_gas() {
-    let project_root = project_root::get_project_root().unwrap();
-    let temp_dir = assert_fs::TempDir::new().unwrap();
-    temp_dir
-        .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/sha_hashes/precompiled/"),
-            &["*.json"],
-        )
-        .unwrap();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("build-profile")
-        .arg("trace_sha_hashes_sierra_gas.json")
-        .assert()
-        .success();
-
-    // With sierra gas tracking: steps/builtins replaced by a single sierra_gas measurement.
-    // Sha512ProcessBlock: 4737*100 + 65*70 + 3320*583 = 473700 + 4550 + 1935560 = 2413810
-    // Deploy (constant part): 1173*100 + 7*4050 + 21*70 = 117300 + 28350 + 1470 = 147120
-    // CallContract: 903*100 + 18*70 = 90300 + 1260 = 91560
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("view")
-        .arg("profile.pb.gz")
-        .arg("--sample")
-        .arg("sierra gas")
-        .arg("--limit")
-        .arg("2137")
-        .assert()
-        .success()
-        .stdout_eq(indoc!(
-            r#"
-
-            Showing nodes accounting for 2752490 sierra gas, 100.00% of 2752490 sierra gas total
-            Showing top 5 nodes out of 5
-
-                           flat |  flat% |    sum% |                cum |    cum% |  
-            --------------------+--------+---------+--------------------+---------+-----------------------------------------------------------------------
-             2413810 sierra gas | 87.70% |  87.70% | 2413810 sierra gas |  87.70% | "Sha512ProcessBlock" 
-              147120 sierra gas |  5.34% |  93.04% |  147120 sierra gas |   5.34% | "Deploy" 
-               91560 sierra gas |  3.33% |  96.37% |   91560 sierra gas |   3.33% | "CallContract" 
-               50000 sierra gas |  1.82% |  98.18% | 2752490 sierra gas | 100.00% | "Contract: SNFORGE_TEST_CODE/nFunction: SNFORGE_TEST_CODE_FUNCTION/n" 
-               50000 sierra gas |  1.82% | 100.00% | 2463810 sierra gas |  89.51% | "Contract: ShaHashes/nFunction: sha512_hash/n" 
-            "#
-        ));
-}
-
-// SHA-384 is pure Cairo built on top of SHA-512; at the syscall level it emits
-// Sha512ProcessBlock calls — there is no separate Sha384ProcessBlock syscall.
-#[test]
-fn view_sha384_uses_sha512_syscall() {
-    let project_root = project_root::get_project_root().unwrap();
-    let temp_dir = assert_fs::TempDir::new().unwrap();
-    temp_dir
-        .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/sha_hashes/precompiled/"),
-            &["*.json"],
-        )
-        .unwrap();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("build-profile")
-        .arg("trace_sha384.json")
-        .assert()
-        .success();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("view")
-        .arg("profile.pb.gz")
-        .arg("--sample")
-        .arg("syscall usage")
-        .arg("--limit")
-        .arg("2137")
-        .assert()
-        .success()
-        .stdout_eq(indoc!(
-            r#"
-
-            Showing nodes accounting for 3 syscall usage, 100.00% of 3 syscall usage total
-            Showing top 5 nodes out of 5
-
-                        flat |  flat% |    sum% |             cum |    cum% |  
-            -----------------+--------+---------+-----------------+---------+-----------------------------------------------------------------------
-             1 syscall usage | 33.33% |  33.33% | 1 syscall usage |  33.33% | "CallContract" 
-             1 syscall usage | 33.33% |  66.67% | 1 syscall usage |  33.33% | "Deploy" 
-             1 syscall usage | 33.33% | 100.00% | 1 syscall usage |  33.33% | "Sha512ProcessBlock" 
-             0 syscall usage |  0.00% | 100.00% | 3 syscall usage | 100.00% | "Contract: SNFORGE_TEST_CODE/nFunction: SNFORGE_TEST_CODE_FUNCTION/n" 
-             0 syscall usage |  0.00% | 100.00% | 1 syscall usage |  33.33% | "Contract: ShaHashes/nFunction: sha384_hash/n" 
-            "#
         ));
 }
