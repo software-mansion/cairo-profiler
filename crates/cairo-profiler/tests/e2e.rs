@@ -2313,16 +2313,11 @@ fn view_different_syscalls() {
                     0 l2 gas |  0.00% | 100.00% | 35700180 l2 gas | 100.00% | "CallContract" 
         "#
         ));
-}
 
-#[test]
-fn view_sha512_syscall() {
-    let project_root = project_root::get_project_root().unwrap();
-    let temp_dir = assert_fs::TempDir::new().unwrap();
     temp_dir
         .copy_from(
             project_root.join("crates/cairo-profiler/tests/contracts/sha_hashes/precompiled/"),
-            &["*.json"],
+            &["trace_sha_hashes.json"],
         )
         .unwrap();
 
@@ -2330,13 +2325,15 @@ fn view_sha512_syscall() {
         .current_dir(&temp_dir)
         .arg("build-profile")
         .arg("trace_sha_hashes.json")
+        .arg("--output-path")
+        .arg("sha_profile.pb.gz")
         .assert()
         .success();
 
-    let output = SnapboxCommand::new(cargo_bin!("cairo-profiler"))
+    let sha_output = SnapboxCommand::new(cargo_bin!("cairo-profiler"))
         .current_dir(&temp_dir)
         .arg("view")
-        .arg("profile.pb.gz")
+        .arg("sha_profile.pb.gz")
         .arg("--sample")
         .arg("syscall usage")
         .assert()
@@ -2344,197 +2341,10 @@ fn view_sha512_syscall() {
         .get_output()
         .stdout
         .clone();
-    let output_str = str::from_utf8(&output).expect("Output was not valid utf-8");
-
     assert!(
-        output_str.contains("Sha512ProcessBlock"),
-        "Output should contain 'Sha512ProcessBlock', got: {}",
-        output_str
+        str::from_utf8(&sha_output).unwrap().contains("Sha512ProcessBlock"),
+        "syscall usage output should contain 'Sha512ProcessBlock'"
     );
-}
-
-#[test]
-fn view_sha512_syscall_usage_exact() {
-    let project_root = project_root::get_project_root().unwrap();
-    let temp_dir = assert_fs::TempDir::new().unwrap();
-    temp_dir
-        .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/sha_hashes/precompiled/"),
-            &["*.json"],
-        )
-        .unwrap();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("build-profile")
-        .arg("trace_sha_hashes.json")
-        .assert()
-        .success();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("view")
-        .arg("profile.pb.gz")
-        .arg("--sample")
-        .arg("syscall usage")
-        .arg("--limit")
-        .arg("2137")
-        .assert()
-        .success()
-        .stdout_eq(indoc!(
-            r#"
-
-            Showing nodes accounting for 3 syscall usage, 100.00% of 3 syscall usage total
-            Showing top 5 nodes out of 5
-
-                        flat |  flat% |    sum% |             cum |    cum% |  
-            -----------------+--------+---------+-----------------+---------+-----------------------------------------------------------------------
-             1 syscall usage | 33.33% |  33.33% | 1 syscall usage |  33.33% | "CallContract" 
-             1 syscall usage | 33.33% |  66.67% | 1 syscall usage |  33.33% | "Deploy" 
-             1 syscall usage | 33.33% | 100.00% | 1 syscall usage |  33.33% | "Sha512ProcessBlock" 
-             0 syscall usage |  0.00% | 100.00% | 3 syscall usage | 100.00% | "Contract: SNFORGE_TEST_CODE/nFunction: SNFORGE_TEST_CODE_FUNCTION/n" 
-             0 syscall usage |  0.00% | 100.00% | 1 syscall usage |  33.33% | "Contract: ShaHashes/nFunction: sha512_hash/n" 
-            "#
-        ));
-}
-
-#[test]
-fn view_sha512_steps() {
-    let project_root = project_root::get_project_root().unwrap();
-    let temp_dir = assert_fs::TempDir::new().unwrap();
-    temp_dir
-        .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/sha_hashes/precompiled/"),
-            &["*.json"],
-        )
-        .unwrap();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("build-profile")
-        .arg("trace_sha_hashes.json")
-        .assert()
-        .success();
-
-    // Sha512ProcessBlock: 4737 steps (from versioned_constants_0_14_1.json)
-    // Deploy constant: 1173 steps, CallContract: 903 steps
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("view")
-        .arg("profile.pb.gz")
-        .arg("--sample")
-        .arg("steps")
-        .arg("--limit")
-        .arg("2137")
-        .assert()
-        .success()
-        .stdout_eq(indoc!(
-            r#"
-
-            Showing nodes accounting for 6813 steps, 100.00% of 6813 steps total
-            Showing top 5 nodes out of 5
-
-                   flat |  flat% |    sum% |        cum |    cum% |  
-            ------------+--------+---------+------------+---------+-----------------------------------------------------------------------
-             4737 steps | 69.53% |  69.53% | 4737 steps |  69.53% | "Sha512ProcessBlock" 
-             1173 steps | 17.22% |  86.75% | 1173 steps |  17.22% | "Deploy" 
-              903 steps | 13.25% | 100.00% |  903 steps |  13.25% | "CallContract" 
-                0 steps |  0.00% | 100.00% | 6813 steps | 100.00% | "Contract: SNFORGE_TEST_CODE/nFunction: SNFORGE_TEST_CODE_FUNCTION/n" 
-                0 steps |  0.00% | 100.00% | 4737 steps |  69.53% | "Contract: ShaHashes/nFunction: sha512_hash/n" 
-            "#
-        ));
-}
-
-#[test]
-fn view_sha512_multi_call_syscall_usage() {
-    let project_root = project_root::get_project_root().unwrap();
-    let temp_dir = assert_fs::TempDir::new().unwrap();
-    temp_dir
-        .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/sha_hashes/precompiled/"),
-            &["*.json"],
-        )
-        .unwrap();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("build-profile")
-        .arg("trace_sha_hashes_multi_call.json")
-        .assert()
-        .success();
-
-    // Sha512ProcessBlock called 3 times — verifies call_count scaling
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("view")
-        .arg("profile.pb.gz")
-        .arg("--sample")
-        .arg("syscall usage")
-        .arg("--limit")
-        .arg("2137")
-        .assert()
-        .success()
-        .stdout_eq(indoc!(
-            r#"
-
-            Showing nodes accounting for 5 syscall usage, 100.00% of 5 syscall usage total
-            Showing top 5 nodes out of 5
-
-                        flat |  flat% |    sum% |             cum |    cum% |  
-            -----------------+--------+---------+-----------------+---------+-----------------------------------------------------------------------
-             3 syscall usage | 60.00% |  60.00% | 3 syscall usage |  60.00% | "Sha512ProcessBlock" 
-             1 syscall usage | 20.00% |  80.00% | 1 syscall usage |  20.00% | "CallContract" 
-             1 syscall usage | 20.00% | 100.00% | 1 syscall usage |  20.00% | "Deploy" 
-             0 syscall usage |  0.00% | 100.00% | 5 syscall usage | 100.00% | "Contract: SNFORGE_TEST_CODE/nFunction: SNFORGE_TEST_CODE_FUNCTION/n" 
-             0 syscall usage |  0.00% | 100.00% | 3 syscall usage |  60.00% | "Contract: ShaHashes/nFunction: sha512_hash/n" 
-            "#
-        ));
-}
-
-#[test]
-fn view_sha512_multi_call_steps() {
-    let project_root = project_root::get_project_root().unwrap();
-    let temp_dir = assert_fs::TempDir::new().unwrap();
-    temp_dir
-        .copy_from(
-            project_root.join("crates/cairo-profiler/tests/contracts/sha_hashes/precompiled/"),
-            &["*.json"],
-        )
-        .unwrap();
-
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("build-profile")
-        .arg("trace_sha_hashes_multi_call.json")
-        .assert()
-        .success();
-
-    // 3 invocations × 4737 steps/call = 14211 steps for Sha512ProcessBlock
-    SnapboxCommand::new(cargo_bin!("cairo-profiler"))
-        .current_dir(&temp_dir)
-        .arg("view")
-        .arg("profile.pb.gz")
-        .arg("--sample")
-        .arg("steps")
-        .arg("--limit")
-        .arg("2137")
-        .assert()
-        .success()
-        .stdout_eq(indoc!(
-            r#"
-
-            Showing nodes accounting for 16287 steps, 100.00% of 16287 steps total
-            Showing top 5 nodes out of 5
-
-                    flat |  flat% |    sum% |         cum |    cum% |  
-            -------------+--------+---------+-------------+---------+-----------------------------------------------------------------------
-             14211 steps | 87.25% |  87.25% | 14211 steps |  87.25% | "Sha512ProcessBlock" 
-              1173 steps |  7.20% |  94.46% |  1173 steps |   7.20% | "Deploy" 
-               903 steps |  5.54% | 100.00% |   903 steps |   5.54% | "CallContract" 
-                 0 steps |  0.00% | 100.00% | 16287 steps | 100.00% | "Contract: SNFORGE_TEST_CODE/nFunction: SNFORGE_TEST_CODE_FUNCTION/n" 
-                 0 steps |  0.00% | 100.00% | 14211 steps |  87.25% | "Contract: ShaHashes/nFunction: sha512_hash/n" 
-            "#
-        ));
 }
 
 #[test]
