@@ -7,6 +7,8 @@ pub trait ISyscallProxy<TContractState> {
 pub mod SyscallProxy {
     use starknet::SyscallResultTrait;
     use core::keccak::keccak_u256s_le_inputs;
+    use core::sha512::compute_sha512_byte_array;
+    use core::sha384::compute_sha384_byte_array;
     use starknet::secp256_trait::{Secp256PointTrait, Secp256Trait, Signature, recover_public_key};
     use starknet::secp256k1::{Secp256k1Point};
     use starknet::secp256r1::{Secp256r1Point};
@@ -39,6 +41,10 @@ pub mod SyscallProxy {
             k1_point.get_coordinates().unwrap_syscall();
 
             let _ = keccak_u256s_le_inputs(array![0_u256, 1_u256].span());
+
+            let data = "Hello world";
+            let _sha512_hash = compute_sha512_byte_array(@data);
+            let _sha384_hash = compute_sha384_byte_array(@data);
         }
     }
 }

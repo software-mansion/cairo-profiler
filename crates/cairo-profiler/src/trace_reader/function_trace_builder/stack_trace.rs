@@ -320,6 +320,9 @@ pub fn map_syscall_to_selector(syscall: &StarknetConcreteLibfunc) -> DeprecatedS
         StarknetConcreteLibfunc::Sha256ProcessBlock(_) => {
             DeprecatedSyscallSelector::Sha256ProcessBlock
         }
+        StarknetConcreteLibfunc::Sha512ProcessBlock(_) => {
+            DeprecatedSyscallSelector::Sha512ProcessBlock
+        }
         StarknetConcreteLibfunc::MetaTxV0(_) => DeprecatedSyscallSelector::MetaTxV0,
         StarknetConcreteLibfunc::Secp256(concrete) => match concrete {
             Secp256ConcreteLibfunc::K1(k1_secp256_concrete_libfunc) => {
