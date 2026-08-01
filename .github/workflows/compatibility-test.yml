@@ -40,7 +40,7 @@ jobs:
 
       - uses: arduino/setup-protoc@v3
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: "stable"
 
@@ -74,7 +74,7 @@ jobs:
 
       - uses: arduino/setup-protoc@v3
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: "stable"
 
@@ -97,7 +97,7 @@ jobs:
     needs: [test-stable]
     steps:
       - name: Notifying about stable check fail!
-        uses: slackapi/slack-github-action@v3.0.3
+        uses: slackapi/slack-github-action@v4.0.0
         with:
           webhook: ${{ secrets.SLACK_SCHEDULED_CHECK_FAILURE_WEBHOOK_URL }}
           webhook-type: webhook-trigger
@@ -134,7 +134,7 @@ jobs:
 
       - name: Notifying about nightly check fail!
         if: steps.dedup.outputs.cache-hit != 'true'
-        uses: slackapi/slack-github-action@v3.0.3
+        uses: slackapi/slack-github-action@v4.0.0
         with:
           webhook: ${{ secrets.SLACK_SCHEDULED_CHECK_FAILURE_WEBHOOK_URL }}
           webhook-type: webhook-trigger

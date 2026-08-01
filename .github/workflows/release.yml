@@ -82,7 +82,7 @@ jobs:
         run: |
           echo "CARGO=cross" >> $GITHUB_ENV
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: "stable"
       - uses: arduino/setup-protoc@v3
