@@ -6,10 +6,23 @@ Profiler for Cairo programming language &amp; Starknet.
 
 ## Installation
 
-You can install `cairo-profiler` using [asdf](https://asdf-vm.com/guide/getting-started.html)
+You can install `cairo-profiler` using Starkup, [asdf](https://asdf-vm.com/guide/getting-started.html),
 or the installation script.
 
-### asdf (recommended):
+### Starkup (recommended)
+
+Starkup installs the tools used to develop Cairo packages and Starknet contracts.
+
+> [!NOTE]
+> On Windows, run Starkup in WSL. Starkup supports macOS and Linux directly.
+
+Run the installer and follow the onscreen instructions:
+
+```shell
+curl --proto '=https' --tlsv1.2 -sSf https://sh.starkup.sh | sh
+```
+
+### asdf
 
 ```shell
 asdf plugin add cairo-profiler
