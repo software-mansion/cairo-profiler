@@ -12,18 +12,22 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: arduino/setup-protoc@v3
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@v7.0.1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - uses: arduino/setup-protoc@v3.0.0
+      - uses: actions/setup-go@v7.0.0
       - run: cargo test --release
 
   rustfmt:
     name: Check formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@v7.0.1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
       - run: cargo fmt --check
 
   clippy:
@@ -33,15 +37,17 @@ jobs:
       # Make sure CI fails on all warnings - including Clippy lints.
       RUSTFLAGS: "-Dwarnings"
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: arduino/setup-protoc@v3
+      - uses: actions/checkout@v7.0.1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - uses: arduino/setup-protoc@v3.0.0
       - run: cargo lint
 
   typos:
     name: Check typos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - name: typos-action
-        uses: crate-ci/typos@7f9d0819ca1c008ade73f4b41fa9d258d48f605b # v1.51.1
+        uses: crate-ci/typos@v1.51.1
