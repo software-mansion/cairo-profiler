@@ -150,6 +150,8 @@ jobs:
         uses: taiki-e/create-gh-release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # Published only after all assets are uploaded, see below.
+          draft: true
           changelog: CHANGELOG.md
           allow-missing-changelog: true
           title: $version
@@ -158,6 +160,12 @@ jobs:
       - name: Upload artifacts to the release
         working-directory: artifacts
         run: gh release upload "$TAG" *
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.create-release.outputs.computed-prefix }}${{ steps.create-release.outputs.version }}
+
+      - name: Publish the release
+        run: gh release edit "$TAG" --draft=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.create-release.outputs.computed-prefix }}${{ steps.create-release.outputs.version }}
