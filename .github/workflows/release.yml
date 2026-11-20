@@ -169,3 +169,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.create-release.outputs.computed-prefix }}${{ steps.create-release.outputs.version }}
+
+      # Do not leave a dangling draft release behind if uploading or publishing failed.
+      # Only drafts are deleted, so a rerun can never remove an already published release.
+      - name: Delete draft release on failure
+        if: failure() && steps.create-release.outcome == 'success'
+        run: |
+          is_draft=$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null || echo "missing")
+          if [[ "$is_draft" == "true" ]]; then
+            gh release delete "$TAG" --yes
+          else
+            echo "Release $TAG is not a draft ($is_draft), not deleting."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.create-release.outputs.computed-prefix }}${{ steps.create-release.outputs.version }}
