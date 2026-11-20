@@ -17,6 +17,8 @@ jobs:
         with:
           toolchain: stable
       - uses: arduino/setup-protoc@v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-go@v7.0.0
       - run: cargo test --release
 
@@ -42,6 +44,8 @@ jobs:
         with:
           toolchain: stable
       - uses: arduino/setup-protoc@v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: cargo lint
 
   typos:

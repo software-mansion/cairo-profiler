@@ -41,6 +41,8 @@ jobs:
           toolchain: stable
 
       - uses: arduino/setup-protoc@v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-go@v7.0.0
         with:
@@ -77,6 +79,8 @@ jobs:
           toolchain: stable
 
       - uses: arduino/setup-protoc@v3.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-go@v7.0.0
         with:
