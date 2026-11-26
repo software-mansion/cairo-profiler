@@ -5,14 +5,12 @@ members = [
 ]
 
 [workspace.package]
-version = "0.17.0"
+version = "0.18.0"
 edition = "2024"
 
 
 [workspace.dependencies]
 prost = "0.14"
-# Only necessary if using Protobuf well-known types:
-prost-types = "0.14"
 bytes = "1.11.1"
 flate2 = "1.1.9"
 clap = { version = "4.6.1", features = ["derive"] }
@@ -33,10 +31,10 @@ regex = "1.12.3"
 console = "0.16.3"
 num-rational = "0.4.2"
 
-cairo-lang-sierra = "2.19.3"
-cairo-lang-sierra-to-casm = "2.19.3"
-cairo-lang-starknet-classes = "2.19.3"
-cairo-lang-sierra-gas = "2.19.3"
-cairo-lang-sierra-type-size = "2.19.3"
-cairo-lang-sierra-ap-change = "2.19.3"
-cairo-lang-utils = "2.19.3"
+cairo-lang-sierra = "2.22.0"
+cairo-lang-sierra-to-casm = "2.22.0"
+cairo-lang-starknet-classes = "2.22.0"
+cairo-lang-sierra-gas = "2.22.0"
+cairo-lang-sierra-type-size = "2.22.0"
+cairo-lang-sierra-ap-change = "2.22.0"
+cairo-lang-utils = "2.22.0"
